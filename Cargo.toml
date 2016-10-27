@@ -1,0 +1,8 @@
+[package]
+name = "bismuth"
+version = "0.1.0"
+authors = ["Sean Olson <olson.sean.k@gmail.com>"]
+
+[dependencies]
+gfx = "0.12.*"
+nalgebra = "0.10.*"
