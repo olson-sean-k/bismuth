@@ -16,5 +16,5 @@ fn main() {
         cube.subdivide().unwrap();
     }
     let cube = tree.cursor().resolve(&point, 0);
-    println!("{:?}", cube.partition().origin);
+    println!("{:?}", cube.partition().origin());
 }

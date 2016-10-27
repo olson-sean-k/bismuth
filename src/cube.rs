@@ -59,8 +59,8 @@ impl<T> Mask<T> for nalgebra::Point3<T>
 
 #[derive(Clone)]
 pub struct Partition {
-    pub origin: Point,
-    pub width: RootWidth,
+    origin: Point,
+    width: RootWidth,
 }
 
 impl Partition {
@@ -69,6 +69,14 @@ impl Partition {
             origin: point.mask(!0u32 << width),
             width: width,
         }
+    }
+
+    pub fn origin(&self) -> &Point {
+        &self.origin
+    }
+
+    pub fn width(&self) -> RootWidth {
+        self.width
     }
 }
 
@@ -98,10 +106,10 @@ impl<'a> Cursor<'a> {
 
     pub fn resolve(&self, point: &Point, width: RootWidth) -> Self {
         let mut cube = self.cube;
-        let mut depth = self.partition.width;
+        let mut depth = self.partition.width();
 
         // Clamp the inputs.
-        let point = point.clamp(0, (1u32 << self.root.width) - 1);
+        let point = point.clamp(0, (1u32 << self.root.width()) - 1);
         let width = 1u32 << width.clamp(MIN_WIDTH, depth);
 
         while (width >> depth) == 0 {
@@ -124,7 +132,7 @@ impl<'a> Traversal for Cursor<'a> {
     }
 
     fn depth(&self) -> u8 {
-        self.root.width - self.partition.width
+        self.root.width() - self.partition.width()
     }
 }
 
@@ -193,9 +201,9 @@ impl<'a> CursorMut<'a> {
 
     pub fn resolve(&'a mut self, point: &Point, width: RootWidth) -> Self {
         let mut cube: Option<&mut Cube> = Some(self.cube);
-        let mut depth = self.partition.width;
+        let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (1u32 << self.root.width) - 1);
+        let point = point.clamp(0, (1u32 << self.root.width()) - 1);
         let width = 1u32 << width.clamp(MIN_WIDTH, depth);
 
         while (width >> depth) == 0 {
@@ -223,7 +231,7 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
-        if self.partition.width > MIN_WIDTH {
+        if self.partition.width() > MIN_WIDTH {
             try!(self.cube.subdivide());
             Ok(self)
         } else {
@@ -238,7 +246,7 @@ impl<'a> Traversal for CursorMut<'a> {
     }
 
     fn depth(&self) -> u8 {
-        self.root.width - self.partition.width
+        self.root.width() - self.partition.width()
     }
 }
 
