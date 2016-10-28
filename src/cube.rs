@@ -9,6 +9,7 @@ use ::std::error::Error;
 use ::std::fmt;
 use ::std::mem;
 use ::std::ops;
+use ::std::ops::Deref;
 
 use resource::ResourceId;
 
@@ -64,10 +65,29 @@ pub struct Partition {
 }
 
 impl Partition {
-    fn new(point: &Point, width: RootWidth) -> Self {
+    fn at_point(point: &Point, width: RootWidth) -> Self {
         Partition {
             origin: point.mask(!0u32 << width),
             width: width,
+        }
+    }
+
+    fn at_index(&self, index: usize) -> Option<Self> {
+        assert!(index < 8);
+        if self.width > MIN_WIDTH {
+            let index = index as u32;
+            let width = self.width - 1;
+            let exp = 1u32 << width;
+            Some(Partition {
+                origin: self.origin + Vector::new(
+                    ((index >> 0) & 1u32) * exp,
+                    ((index >> 1) & 1u32) * exp,
+                    ((index >> 2) & 1u32) * exp),
+                width: width,
+            })
+        }
+        else {
+            None
         }
     }
 
@@ -104,6 +124,10 @@ impl<'a> Cursor<'a> {
         }
     }
 
+    pub fn iter(&self) -> CursorIter {
+        CursorIter::new(self.clone())
+    }
+
     pub fn resolve(&self, point: &Point, width: RootWidth) -> Self {
         let mut cube = self.cube;
         let mut depth = self.partition.width();
@@ -116,13 +140,13 @@ impl<'a> Cursor<'a> {
             match *cube {
                 Cube::Branch(ref branch) => {
                     depth = depth - 1;
-                    cube = &branch.cubes[cube_index_at_point(&point, depth)]
+                    cube = &branch.cubes[index_at_point(&point, depth)]
                 }
                 _ => break,
             }
         }
 
-        Cursor::new(cube, self.root, Partition::new(&point, depth))
+        Cursor::new(cube, self.root, Partition::at_point(&point, depth))
     }
 }
 
@@ -141,6 +165,42 @@ impl<'a> ops::Deref for Cursor<'a> {
 
     fn deref(&self) -> &Self::Target {
         self.cube
+    }
+}
+
+pub struct CursorIter<'a> {
+    cursors: Vec<Cursor<'a>>,
+}
+
+impl<'a> CursorIter<'a> {
+    fn new(cursor: Cursor<'a>) -> Self {
+        CursorIter {
+            cursors: vec![cursor],
+        }
+    }
+}
+
+impl<'a> Iterator for CursorIter<'a> {
+    type Item = Cursor<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(cursor) = self.cursors.pop() {
+            match *cursor.cube {
+                Cube::Branch(ref branch) => {
+                    for (index, cube) in branch.iter().enumerate() {
+                        self.cursors.push(Cursor::new(
+                            cube,
+                            cursor.root,
+                            cursor.partition().at_index(index).unwrap()));
+                    }
+                },
+                _ => {},
+            }
+            Some(cursor)
+        }
+        else {
+            None
+        }
     }
 }
 
@@ -211,7 +271,7 @@ impl<'a> CursorMut<'a> {
             match *inner {
                 Cube::Branch(ref mut branch) => {
                     depth = depth - 1;
-                    cube = Some(&mut branch.cubes[cube_index_at_point(&point, depth)]);
+                    cube = Some(&mut branch.cubes[index_at_point(&point, depth)]);
                 }
                 _ => {
                     cube = Some(inner);
@@ -222,7 +282,7 @@ impl<'a> CursorMut<'a> {
 
         CursorMut::new(cube.take().unwrap(),
                        self.root,
-                       Partition::new(&point, depth))
+                       Partition::at_point(&point, depth))
     }
 
     pub fn join(&mut self) -> Result<&mut Self, JoinError> {
@@ -275,7 +335,7 @@ impl Tree {
     pub fn new(width: RootWidth) -> Self {
         Tree {
             cube: Cube::new(),
-            partition: Partition::new(&Point::origin(), width),
+            partition: Partition::at_point(&Point::origin(), width),
         }
     }
 
@@ -350,6 +410,13 @@ impl Cube {
                 *self = cube;
                 Err(SubdivideError::BranchSubdivided)
             }
+        }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            Cube::Leaf(_) => true,
+            _ => false,
         }
     }
 }
@@ -428,6 +495,14 @@ impl Clone for BranchNode {
     }
 }
 
+impl ops::Deref for BranchNode {
+    type Target = [Cube];
+
+    fn deref(&self) -> &Self::Target {
+        &*self.cubes
+    }
+}
+
 trait Geometry {
     fn full() -> Self;
     fn empty() -> Self;
@@ -452,7 +527,7 @@ trait Storage {}
 impl Storage for Box<[Cube; 8]> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn cube_index_at_point(point: &Point, width: RootWidth) -> usize {
+fn index_at_point(point: &Point, width: RootWidth) -> usize {
     ((((point.x >> width) & 1u32) << 0) |
      (((point.y >> width) & 1u32) << 1) |
      (((point.z >> width) & 1u32) << 2)) as usize
