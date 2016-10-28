@@ -13,7 +13,7 @@ use ::std::ops::Deref;
 
 use resource::ResourceId;
 
-pub const MAX_WIDTH: RootWidth = 31;
+pub const MAX_WIDTH: RootWidth = 32;
 pub const MIN_WIDTH: RootWidth = 4;
 
 pub type Point = nalgebra::Point3<u32>;
@@ -73,16 +73,10 @@ impl Partition {
     }
 
     fn at_index(&self, index: usize) -> Option<Self> {
-        assert!(index < 8);
         if self.width > MIN_WIDTH {
-            let index = index as u32;
             let width = self.width - 1;
-            let exp = 1u32 << width;
             Some(Partition {
-                origin: self.origin + Vector::new(
-                    ((index >> 0) & 1u32) * exp,
-                    ((index >> 1) & 1u32) * exp,
-                    ((index >> 2) & 1u32) * exp),
+                origin: self.origin + vector_at_index(index, width),
                 width: width,
             })
         }
@@ -133,8 +127,8 @@ impl<'a> Cursor<'a> {
         let mut depth = self.partition.width();
 
         // Clamp the inputs.
-        let point = point.clamp(0, (1u32 << self.root.width()) - 1);
-        let width = 1u32 << width.clamp(MIN_WIDTH, depth);
+        let point = point.clamp(0, (exp(self.root.width())) - 1);
+        let width = exp(width.clamp(MIN_WIDTH, depth));
 
         while (width >> depth) == 0 {
             match *cube {
@@ -263,8 +257,8 @@ impl<'a> CursorMut<'a> {
         let mut cube: Option<&mut Cube> = Some(self.cube);
         let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (1u32 << self.root.width()) - 1);
-        let width = 1u32 << width.clamp(MIN_WIDTH, depth);
+        let point = point.clamp(0, (exp(self.root.width())) - 1);
+        let width = exp(width.clamp(MIN_WIDTH, depth));
 
         while (width >> depth) == 0 {
             let inner = cube.take().unwrap();
@@ -531,6 +525,25 @@ fn index_at_point(point: &Point, width: RootWidth) -> usize {
     ((((point.x >> width) & 1u32) << 0) |
      (((point.y >> width) & 1u32) << 1) |
      (((point.z >> width) & 1u32) << 2)) as usize
+}
+
+fn vector_at_index(index: usize, width: RootWidth) -> Vector {
+    assert!(index < 8);
+    let index = index as u32;
+    let width = exp(width);
+    Vector::new(
+        ((index >> 0) & 1u32) * width,
+        ((index >> 1) & 1u32) * width,
+        ((index >> 2) & 1u32) * width)
+}
+
+fn exp(width: RootWidth) -> u32 {
+    if width > 0 {
+        1u32 << (width - 1)
+    }
+    else {
+        0
+    }
 }
 
 #[cfg(test)]
