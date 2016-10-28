@@ -286,13 +286,13 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn join(&mut self) -> Result<&mut Self, JoinError> {
-        try!(self.cube.join());
+        try!(self.cube.join().ok_or(JoinError::LeafJoined));
         Ok(self)
     }
 
     pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
         if self.partition.width() > MIN_WIDTH {
-            try!(self.cube.subdivide());
+            try!(self.cube.subdivide().ok_or(SubdivideError::BranchSubdivided));
             Ok(self)
         } else {
             Err(SubdivideError::LimitExceeded)
@@ -385,30 +385,30 @@ impl Cube {
         Cube::Leaf(LeafNode::new())
     }
 
-    fn join(&mut self) -> Result<&mut Self, JoinError> {
+    fn join(&mut self) -> Option<&mut Self> {
         let cube = mem::replace(self, Cube::default());
         match cube {
             Cube::Branch(branch) => {
                 *self = branch.join().into();
-                Ok(self)
+                Some(self)
             }
             _ => {
                 *self = cube;
-                Err(JoinError::LeafJoined)
+                None
             }
         }
     }
 
-    fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
+    fn subdivide(&mut self) -> Option<&mut Self> {
         let cube = mem::replace(self, Cube::default());
         match cube {
             Cube::Leaf(leaf) => {
                 *self = leaf.subdivide().into();
-                Ok(self)
+                Some(self)
             }
             _ => {
                 *self = cube;
-                Err(SubdivideError::BranchSubdivided)
+                None
             }
         }
     }
