@@ -474,7 +474,7 @@ pub struct BranchNode {
 }
 
 impl BranchNode {
-    pub fn join(self) -> LeafNode {
+    fn join(self) -> LeafNode {
         // TODO: Copy data from one of the original leaves.
         LeafNode::new()
     }
