@@ -1,6 +1,7 @@
 extern crate nalgebra;
 
 mod cube;
+mod render;
 mod resource;
 
 use cube::*;
@@ -15,6 +16,9 @@ fn main() {
         let mut cube = cube.subdivide().unwrap().resolve(&point, 0);
         cube.subdivide().unwrap();
     }
-    let cube = tree.cursor().resolve(&point, 0);
-    println!("{:?}", cube.partition().origin());
+    for cube in tree.cursor().iter().filter(|cube| cube.is_leaf()) {
+        println!("{}W at {}",
+                 cube.partition().width(),
+                 cube.partition().origin());
+    }
 }
