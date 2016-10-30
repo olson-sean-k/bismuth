@@ -5,4 +5,6 @@ authors = ["Sean Olson <olson.sean.k@gmail.com>"]
 
 [dependencies]
 gfx = "0.12.*"
+gfx_window_glutin = "0.12.*"
+glutin = "0.6.*"
 nalgebra = "0.10.*"
