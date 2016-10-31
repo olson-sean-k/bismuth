@@ -537,7 +537,7 @@ fn vector_at_index(index: usize, width: RootWidth) -> Vector {
         ((index >> 2) & 1u32) * width)
 }
 
-fn exp(width: RootWidth) -> u32 {
+pub fn exp(width: RootWidth) -> u32 {
     if width > 0 {
         1u32 << (width - 1)
     }
