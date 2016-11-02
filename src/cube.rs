@@ -93,17 +93,17 @@ impl Partition {
     pub fn width(&self) -> RootWidth {
         self.width
     }
+
+    pub fn midpoint(&self) -> Point {
+        let m = exp(self.width - 1);
+        Point::new(m, m, m)
+    }
 }
 
 pub trait Traversal: ops::Deref<Target = Cube> {
     fn partition(&self) -> &Partition;
 
     fn depth(&self) -> u8;
-
-    fn midpoint(&self) -> Point {
-        let m = exp(self.partition().width() - 1);
-        Point::new(m, m, m)
-    }
 }
 
 pub trait TraversalMut: Traversal + ops::DerefMut {}

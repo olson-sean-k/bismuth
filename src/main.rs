@@ -46,7 +46,7 @@ fn main() {
 
     let tree = new_tree();
     let transform = {
-        let midpoint = render::map_point_to_domain(&tree.midpoint());
+        let midpoint = render::map_point_to_domain(&tree.partition().midpoint());
         let camera = render::Point3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
         let view = render::look_at_cube(&tree, &camera);
         let projection = render::projection_from_window(&window);

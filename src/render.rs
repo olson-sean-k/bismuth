@@ -138,7 +138,7 @@ pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
     where C: cube::Traversal
 {
     nalgebra::Isometry3::look_at_rh(from,
-                                    &map_point_to_domain(&cube.midpoint()),
+                                    &map_point_to_domain(&cube.partition().midpoint()),
                                     &Vector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
 }
