@@ -2,8 +2,10 @@
 //! spatial partition, its properties, and a deformable geometry.
 
 extern crate nalgebra;
+extern crate num;
 
 use ::nalgebra::Origin;
+use ::num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use ::std::error;
 use ::std::error::Error;
 use ::std::fmt;
@@ -16,8 +18,8 @@ pub const MAX_WIDTH: RootWidth = 32;
 pub const MIN_WIDTH: RootWidth = 4;
 
 pub type Domain = u32;
-pub type Point = nalgebra::Point3<u32>;
-pub type Vector = nalgebra::Vector3<u32>;
+pub type Point = nalgebra::Point3<Domain>;
+pub type Vector = nalgebra::Vector3<Domain>;
 pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
 pub trait Clamp<T>
@@ -67,7 +69,7 @@ pub struct Partition {
 impl Partition {
     fn at_point(point: &Point, width: RootWidth) -> Self {
         Partition {
-            origin: point.mask(!0u32 << width),
+            origin: point.mask(!Domain::zero() << width),
             width: width,
         }
     }
@@ -522,22 +524,22 @@ impl Storage for Box<[Cube; 8]> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 fn index_at_point(point: &Point, width: RootWidth) -> usize {
-    ((((point.x >> width) & 1u32) << 0) |
-     (((point.y >> width) & 1u32) << 1) |
-     (((point.z >> width) & 1u32) << 2)) as usize
+    ((((point.x >> width) & Domain::one()) << 0) |
+     (((point.y >> width) & Domain::one()) << 1) |
+     (((point.z >> width) & Domain::one()) << 2)) as usize
 }
 
 fn vector_at_index(index: usize, width: RootWidth) -> Vector {
     assert!(index < 8);
-    let index = index as u32;
+    let index = index as Domain;
     let width = exp(width);
-    Vector::new(((index >> 0) & 1u32) * width,
-                ((index >> 1) & 1u32) * width,
-                ((index >> 2) & 1u32) * width)
+    Vector::new(((index >> 0) & Domain::one()) * width,
+                ((index >> 1) & Domain::one()) * width,
+                ((index >> 2) & Domain::one()) * width)
 }
 
-pub fn exp(width: RootWidth) -> u32 {
-    if width > 0 { 1u32 << (width - 1) } else { 0 }
+pub fn exp(width: RootWidth) -> Domain {
+    if width > 0 { Domain::one() << (width - 1) } else { 0 }
 }
 
 #[cfg(test)]

@@ -5,6 +5,7 @@ extern crate glutin;
 #[macro_use]
 extern crate lazy_static;
 extern crate nalgebra;
+extern crate num;
 extern crate rand;
 
 use gfx::format;
