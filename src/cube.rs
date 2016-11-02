@@ -9,13 +9,13 @@ use ::std::error::Error;
 use ::std::fmt;
 use ::std::mem;
 use ::std::ops;
-use ::std::ops::Deref;
 
 use resource::ResourceId;
 
 pub const MAX_WIDTH: RootWidth = 32;
 pub const MIN_WIDTH: RootWidth = 4;
 
+pub type Domain = u32;
 pub type Point = nalgebra::Point3<u32>;
 pub type Vector = nalgebra::Vector3<u32>;
 pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
@@ -79,8 +79,7 @@ impl Partition {
                 origin: self.origin + vector_at_index(index, width),
                 width: width,
             })
-        }
-        else {
+        } else {
             None
         }
     }
@@ -98,6 +97,11 @@ pub trait Traversal: ops::Deref<Target = Cube> {
     fn partition(&self) -> &Partition;
 
     fn depth(&self) -> u8;
+
+    fn midpoint(&self) -> Point {
+        let m = exp(self.partition().width() - 1);
+        Point::new(m, m, m)
+    }
 }
 
 pub trait TraversalMut: Traversal + ops::DerefMut {}
@@ -122,7 +126,7 @@ impl<'a> Cursor<'a> {
         CursorIter::new(self.clone())
     }
 
-    pub fn resolve(&self, point: &Point, width: RootWidth) -> Self {
+    pub fn at_point(&self, point: &Point, width: RootWidth) -> Self {
         let mut cube = self.cube;
         let mut depth = self.partition.width();
 
@@ -168,9 +172,7 @@ pub struct CursorIter<'a> {
 
 impl<'a> CursorIter<'a> {
     fn new(cursor: Cursor<'a>) -> Self {
-        CursorIter {
-            cursors: vec![cursor],
-        }
+        CursorIter { cursors: vec![cursor] }
     }
 }
 
@@ -182,17 +184,15 @@ impl<'a> Iterator for CursorIter<'a> {
             match *cursor.cube {
                 Cube::Branch(ref branch) => {
                     for (index, cube) in branch.iter().enumerate() {
-                        self.cursors.push(Cursor::new(
-                            cube,
-                            cursor.root,
-                            cursor.partition().at_index(index).unwrap()));
+                        self.cursors.push(Cursor::new(cube,
+                                                      cursor.root,
+                                                      cursor.partition().at_index(index).unwrap()));
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
             Some(cursor)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -253,7 +253,7 @@ impl<'a> CursorMut<'a> {
         }
     }
 
-    pub fn resolve(&'a mut self, point: &Point, width: RootWidth) -> Self {
+    pub fn at_point(&'a mut self, point: &Point, width: RootWidth) -> Self {
         let mut cube: Option<&mut Cube> = Some(self.cube);
         let mut depth = self.partition.width();
 
@@ -531,19 +531,13 @@ fn vector_at_index(index: usize, width: RootWidth) -> Vector {
     assert!(index < 8);
     let index = index as u32;
     let width = exp(width);
-    Vector::new(
-        ((index >> 0) & 1u32) * width,
-        ((index >> 1) & 1u32) * width,
-        ((index >> 2) & 1u32) * width)
+    Vector::new(((index >> 0) & 1u32) * width,
+                ((index >> 1) & 1u32) * width,
+                ((index >> 2) & 1u32) * width)
 }
 
 pub fn exp(width: RootWidth) -> u32 {
-    if width > 0 {
-        1u32 << (width - 1)
-    }
-    else {
-        0
-    }
+    if width > 0 { 1u32 << (width - 1) } else { 0 }
 }
 
 #[cfg(test)]
