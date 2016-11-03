@@ -114,9 +114,9 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cursor,
     for (i, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         let width = cube.partition().width();
         let origin: Vector3 = cube.partition().origin().to_vector().into_domain();
-        let color = Vector4::new(rand::random::<Domain>(),
-                                 rand::random::<Domain>(),
-                                 rand::random::<Domain>(),
+        let color = Vector4::new(rand::random::<f32>(),
+                                 rand::random::<f32>(),
+                                 rand::random::<f32>(),
                                  1.0);
         points.extend(UNIT_CUBE_POINTS.iter()
             .map(|point| (point * cube::exp(width) as Domain) + origin)
