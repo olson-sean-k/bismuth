@@ -13,15 +13,17 @@ use gfx::Device;
 use gfx::traits::FactoryExt;
 
 mod cube;
+mod math;
 mod render;
 mod resource;
 
 use cube::Traversal;
+pub use math::*;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_tree() -> cube::Tree {
-    let point = cube::Point::new(0, 0, 0);
+    let point = cube::Point3::new(0, 0, 0);
     let mut tree = cube::Tree::new(10);
     {
         let mut cube = tree.cursor_mut();
@@ -41,12 +43,13 @@ fn main() {
             .with_vsync());
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
     let state = factory.create_pipeline_simple(include_bytes!("shader/cube.glslv"),
-                                               include_bytes!("shader/cube.glslf"),
-                                               render::pipeline::new()).unwrap();
+                                include_bytes!("shader/cube.glslf"),
+                                render::pipeline::new())
+        .unwrap();
 
     let tree = new_tree();
     let transform = {
-        let midpoint = render::map_point_to_domain(&tree.partition().midpoint());
+        let midpoint: render::Point3 = tree.partition().midpoint().into_domain();
         let camera = render::Point3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
         let view = render::look_at_cube(&tree, &camera);
         let projection = render::projection_from_window(&window);

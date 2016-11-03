@@ -9,6 +9,7 @@ use nalgebra::ToHomogeneous;
 
 use cube;
 use cube::Traversal;
+use math::IntoDomain;
 
 pub type Domain = f32;
 pub type Point3 = nalgebra::Point3<Domain>;
@@ -112,7 +113,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cursor,
     let mut indeces = Vec::new();
     for (i, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         let width = cube.partition().width();
-        let origin = map_point_to_domain(cube.partition().origin()).to_vector();
+        let origin: Vector3 = cube.partition().origin().to_vector().into_domain();
         let color = Vector4::new(rand::random::<Domain>(),
                                  rand::random::<Domain>(),
                                  rand::random::<Domain>(),
@@ -138,17 +139,9 @@ pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
     where C: cube::Traversal
 {
     nalgebra::Isometry3::look_at_rh(from,
-                                    &map_point_to_domain(&cube.partition().midpoint()),
+                                    &cube.partition().midpoint().into_domain(),
                                     &Vector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
-}
-
-pub fn map_point_to_domain(point: &cube::Point) -> Point3 {
-    Point3::new(point.x as Domain, point.y as Domain, point.z as Domain)
-}
-
-pub fn map_vector_to_domain(vector: &cube::Vector) -> Vector3 {
-    Vector3::new(vector.x as Domain, vector.y as Domain, vector.z as Domain)
 }
 
 #[cfg(test)]

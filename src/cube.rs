@@ -12,21 +12,16 @@ use ::std::fmt;
 use ::std::mem;
 use ::std::ops;
 
+use math::{Clamp, Mask};
 use resource::ResourceId;
 
 pub const MAX_WIDTH: RootWidth = 32;
 pub const MIN_WIDTH: RootWidth = 4;
 
 pub type Domain = u32;
-pub type Point = nalgebra::Point3<Domain>;
-pub type Vector = nalgebra::Vector3<Domain>;
+pub type Point3 = nalgebra::Point3<Domain>;
+pub type Vector3 = nalgebra::Vector3<Domain>;
 pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
-
-pub trait Clamp<T>
-    where T: PartialOrd
-{
-    fn clamp(&self, min: T, max: T) -> Self;
-}
 
 impl Clamp<RootWidth> for RootWidth {
     fn clamp(&self, min: RootWidth, max: RootWidth) -> Self {
@@ -34,40 +29,14 @@ impl Clamp<RootWidth> for RootWidth {
     }
 }
 
-impl<T> Clamp<T> for nalgebra::Point3<T>
-    where T: Copy,
-          T: PartialOrd
-{
-    fn clamp(&self, min: T, max: T) -> Self {
-        nalgebra::Point3::new(nalgebra::clamp(self.x, min, max),
-                              nalgebra::clamp(self.y, min, max),
-                              nalgebra::clamp(self.z, min, max))
-    }
-}
-
-pub trait Mask<T>
-    where T: ops::BitAnd<Output = T>
-{
-    fn mask(&self, value: T) -> Self;
-}
-
-impl<T> Mask<T> for nalgebra::Point3<T>
-    where T: Copy,
-          T: ops::BitAnd<Output = T>
-{
-    fn mask(&self, value: T) -> Self {
-        nalgebra::Point3::new(self.x & value, self.y & value, self.z & value)
-    }
-}
-
 #[derive(Clone)]
 pub struct Partition {
-    origin: Point,
+    origin: Point3,
     width: RootWidth,
 }
 
 impl Partition {
-    fn at_point(point: &Point, width: RootWidth) -> Self {
+    fn at_point(point: &Point3, width: RootWidth) -> Self {
         Partition {
             origin: point.mask(!Domain::zero() << width),
             width: width,
@@ -86,7 +55,7 @@ impl Partition {
         }
     }
 
-    pub fn origin(&self) -> &Point {
+    pub fn origin(&self) -> &Point3 {
         &self.origin
     }
 
@@ -94,9 +63,9 @@ impl Partition {
         self.width
     }
 
-    pub fn midpoint(&self) -> Point {
+    pub fn midpoint(&self) -> Point3 {
         let m = exp(self.width - 1);
-        Point::new(m, m, m)
+        Point3::new(m, m, m)
     }
 }
 
@@ -128,7 +97,7 @@ impl<'a> Cursor<'a> {
         CursorIter::new(self.clone())
     }
 
-    pub fn at_point(&self, point: &Point, width: RootWidth) -> Self {
+    pub fn at_point(&self, point: &Point3, width: RootWidth) -> Self {
         let mut cube = self.cube;
         let mut depth = self.partition.width();
 
@@ -255,7 +224,7 @@ impl<'a> CursorMut<'a> {
         }
     }
 
-    pub fn at_point(&'a mut self, point: &Point, width: RootWidth) -> Self {
+    pub fn at_point(&'a mut self, point: &Point3, width: RootWidth) -> Self {
         let mut cube: Option<&mut Cube> = Some(self.cube);
         let mut depth = self.partition.width();
 
@@ -331,7 +300,7 @@ impl Tree {
     pub fn new(width: RootWidth) -> Self {
         Tree {
             cube: Cube::new(),
-            partition: Partition::at_point(&Point::origin(), width),
+            partition: Partition::at_point(&Point3::origin(), width),
         }
     }
 
@@ -523,23 +492,27 @@ trait Storage {}
 impl Storage for Box<[Cube; 8]> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn index_at_point(point: &Point, width: RootWidth) -> usize {
+fn index_at_point(point: &Point3, width: RootWidth) -> usize {
     ((((point.x >> width) & Domain::one()) << 0) |
      (((point.y >> width) & Domain::one()) << 1) |
      (((point.z >> width) & Domain::one()) << 2)) as usize
 }
 
-fn vector_at_index(index: usize, width: RootWidth) -> Vector {
+fn vector_at_index(index: usize, width: RootWidth) -> Vector3 {
     assert!(index < 8);
     let index = index as Domain;
     let width = exp(width);
-    Vector::new(((index >> 0) & Domain::one()) * width,
-                ((index >> 1) & Domain::one()) * width,
-                ((index >> 2) & Domain::one()) * width)
+    Vector3::new(((index >> 0) & Domain::one()) * width,
+                 ((index >> 1) & Domain::one()) * width,
+                 ((index >> 2) & Domain::one()) * width)
 }
 
 pub fn exp(width: RootWidth) -> Domain {
-    if width > 0 { Domain::one() << (width - 1) } else { 0 }
+    if width > 0 {
+        Domain::one() << (width - 1)
+    } else {
+        0
+    }
 }
 
 #[cfg(test)]
