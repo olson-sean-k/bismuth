@@ -1,4 +1,5 @@
 # Bismuth
+[![Build Status](https://travis-ci.org/olson-sean-k/bismuth.svg?branch=master)](https://travis-ci.org/olson-sean-k/bismuth)
 
 ![screenshot](docs/bismuth.png)
 
