@@ -298,10 +298,10 @@ pub struct Tree {
 
 impl Tree {
     pub fn new(width: RootWidth) -> Self {
-        width.clamp(MIN_WIDTH, MAX_WIDTH);
         Tree {
             cube: Cube::new(),
-            partition: Partition::at_point(&Point3::origin(), width),
+            partition: Partition::at_point(&Point3::origin(),
+                                           width.clamp(MIN_WIDTH, MAX_WIDTH)),
         }
     }
 
