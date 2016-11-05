@@ -407,7 +407,7 @@ impl From<BranchNode> for Cube {
 
 #[derive(Clone, Copy)]
 pub struct LeafNode {
-    pub geometry: [u32; 3],
+    pub geometry: Geometry,
     pub material: ResourceId,
 }
 
@@ -469,18 +469,78 @@ impl ops::Deref for BranchNode {
     }
 }
 
-trait Geometry {
-    fn full() -> Self;
-    fn empty() -> Self;
-}
+#[derive(Copy, Clone)]
+pub struct Geometry([[Edge; 4]; 3]);
 
-impl Geometry for [u32; 3] {
+impl Geometry {
     fn full() -> Self {
-        [0x0F0F0F0F; 3]
+        Geometry([[Edge::full(); 4]; 3])
     }
 
     fn empty() -> Self {
-        [0x00000000; 3]
+        Geometry([[Edge::converged(0); 4]; 3])
+    }
+
+    pub fn as_edges_x(&self) -> &[Edge; 4] {
+        &self.0[0]
+    }
+    pub fn as_edges_y(&self) -> &[Edge; 4] {
+        &self.0[1]
+    }
+    pub fn as_edges_z(&self) -> &[Edge; 4] {
+        &self.0[2]
+    }
+
+    pub fn as_edges_x_mut(&mut self) -> &mut [Edge; 4] {
+        &mut self.0[0]
+    }
+    pub fn as_edges_y_mut(&mut self) -> &mut [Edge; 4] {
+        &mut self.0[1]
+    }
+    pub fn as_edges_z_mut(&mut self) -> &mut [Edge; 4] {
+        &mut self.0[2]
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+pub struct Edge(u8);
+
+const MAX_EDGE: u8 = 0x0F;
+
+impl Edge {
+    fn full() -> Self {
+        Edge(MAX_EDGE)
+    }
+
+    fn converged(value: u8) -> Self {
+        let value = nalgebra::clamp(value, 0, MAX_EDGE);
+        Edge((value << 4) | value)
+    }
+
+    pub fn set_front(&mut self, value: u8) {
+        let value = nalgebra::clamp(value, 0, self.back());
+        self.0 = (value << 4) | self.back();
+    }
+
+    pub fn set_back(&mut self, value: u8) {
+        let value = nalgebra::clamp(value, self.front(), MAX_EDGE);
+        self.0 = (self.front() << 4) | value;
+    }
+
+    pub fn front(&self) -> u8 {
+        (self.0 & 0xF0) >> 4
+    }
+
+    pub fn back(&self) -> u8 {
+        self.0 & 0x0F
+    }
+
+    pub fn front_transform(&self) -> f32 {
+        (self.front() as f32) / (MAX_EDGE as f32)
+    }
+
+    pub fn back_transform(&self) -> f32 {
+        -((MAX_EDGE - self.back()) as f32) / (MAX_EDGE as f32)
     }
 }
 
