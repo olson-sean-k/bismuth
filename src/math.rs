@@ -4,6 +4,9 @@ extern crate num;
 use num::cast;
 use std::ops;
 
+pub type DiscreteSpace = u32;
+pub type RealSpace = f32;
+
 pub trait FromDomain<T> {
     fn from_domain(value: T) -> Self;
 }

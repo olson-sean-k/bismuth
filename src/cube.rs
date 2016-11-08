@@ -12,15 +12,14 @@ use ::std::fmt;
 use ::std::mem;
 use ::std::ops;
 
-use math::{Clamp, Mask};
+use math::{Clamp, Mask, DiscreteSpace};
 use resource::ResourceId;
 
 pub const MAX_WIDTH: RootWidth = 32;
 pub const MIN_WIDTH: RootWidth = 4;
 
-pub type Domain = u32;
-pub type Point3 = nalgebra::Point3<Domain>;
-pub type Vector3 = nalgebra::Vector3<Domain>;
+pub type Point3 = nalgebra::Point3<DiscreteSpace>;
+pub type Vector3 = nalgebra::Vector3<DiscreteSpace>;
 pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
 impl Clamp<RootWidth> for RootWidth {
@@ -38,7 +37,7 @@ pub struct Partition {
 impl Partition {
     fn at_point(point: &Point3, width: RootWidth) -> Self {
         Partition {
-            origin: point.mask(!Domain::zero() << width),
+            origin: point.mask(!DiscreteSpace::zero() << width),
             width: width,
         }
     }
@@ -561,23 +560,23 @@ impl Storage for Box<[Cube; 8]> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 fn index_at_point(point: &Point3, width: RootWidth) -> usize {
-    ((((point.x >> width) & Domain::one()) << 0) |
-     (((point.y >> width) & Domain::one()) << 1) |
-     (((point.z >> width) & Domain::one()) << 2)) as usize
+    ((((point.x >> width) & DiscreteSpace::one()) << 0) |
+     (((point.y >> width) & DiscreteSpace::one()) << 1) |
+     (((point.z >> width) & DiscreteSpace::one()) << 2)) as usize
 }
 
 fn vector_at_index(index: usize, width: RootWidth) -> Vector3 {
     assert!(index < 8);
-    let index = index as Domain;
+    let index = index as DiscreteSpace;
     let width = exp(width);
-    Vector3::new(((index >> 0) & Domain::one()) * width,
-                 ((index >> 1) & Domain::one()) * width,
-                 ((index >> 2) & Domain::one()) * width)
+    Vector3::new(((index >> 0) & DiscreteSpace::one()) * width,
+                 ((index >> 1) & DiscreteSpace::one()) * width,
+                 ((index >> 2) & DiscreteSpace::one()) * width)
 }
 
-pub fn exp(width: RootWidth) -> Domain {
+pub fn exp(width: RootWidth) -> DiscreteSpace {
     if width > 0 {
-        Domain::one() << (width - 1)
+        DiscreteSpace::one() << (width - 1)
     } else {
         0
     }
