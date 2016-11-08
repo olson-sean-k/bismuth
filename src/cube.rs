@@ -132,23 +132,23 @@ pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {
 }
 
 #[derive(Clone)]
-pub struct Cursor<'a> {
+pub struct Traversal<'a> {
     cube: &'a Cube,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> Cursor<'a> {
+impl<'a> Traversal<'a> {
     fn new(cube: &'a Cube, root: &'a Partition, partition: Partition) -> Self {
-        Cursor {
+        Traversal {
             cube: cube,
             root: root,
             partition: partition,
         }
     }
 
-    pub fn iter(&self) -> CursorIter {
-        CursorIter::new(self.clone())
+    pub fn iter(&self) -> CubeIter {
+        CubeIter::new(self.clone())
     }
 
     pub fn at_point(&self, point: &Point3, width: RootWidth) -> Self {
@@ -169,11 +169,11 @@ impl<'a> Cursor<'a> {
             }
         }
 
-        Cursor::new(cube, self.root, Partition::at_point(&point, depth))
+        Traversal::new(cube, self.root, Partition::at_point(&point, depth))
     }
 }
 
-impl<'a> ComputedCube for Cursor<'a> {
+impl<'a> ComputedCube for Traversal<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -183,7 +183,7 @@ impl<'a> ComputedCube for Cursor<'a> {
     }
 }
 
-impl<'a> ops::Deref for Cursor<'a> {
+impl<'a> ops::Deref for Traversal<'a> {
     type Target = Cube;
 
     fn deref(&self) -> &Self::Target {
@@ -191,47 +191,48 @@ impl<'a> ops::Deref for Cursor<'a> {
     }
 }
 
-pub struct CursorIter<'a> {
-    cursors: Vec<Cursor<'a>>,
+pub struct CubeIter<'a> {
+    traversals: Vec<Traversal<'a>>,
 }
 
-impl<'a> CursorIter<'a> {
-    fn new(cursor: Cursor<'a>) -> Self {
-        CursorIter { cursors: vec![cursor] }
+impl<'a> CubeIter<'a> {
+    fn new(traversal: Traversal<'a>) -> Self {
+        CubeIter { traversals: vec![traversal] }
     }
 }
 
-impl<'a> Iterator for CursorIter<'a> {
-    type Item = Cursor<'a>;
+impl<'a> Iterator for CubeIter<'a> {
+    type Item = Traversal<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cursor) = self.cursors.pop() {
-            match *cursor.cube {
+        if let Some(traversal) = self.traversals.pop() {
+            match *traversal.cube {
                 Cube::Branch(ref branch) => {
                     for (index, cube) in branch.iter().enumerate() {
-                        self.cursors.push(Cursor::new(cube,
-                                                      cursor.root,
-                                                      cursor.partition().at_index(index).unwrap()));
+                        self.traversals.push(Traversal::new(
+                            cube,
+                            traversal.root,
+                            traversal.partition().at_index(index).unwrap()));
                     }
                 }
                 _ => {}
             }
-            Some(cursor)
+            Some(traversal)
         } else {
             None
         }
     }
 }
 
-pub struct CursorMut<'a> {
+pub struct TraversalMut<'a> {
     cube: &'a mut Cube,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> CursorMut<'a> {
+impl<'a> TraversalMut<'a> {
     fn new(cube: &'a mut Cube, root: &'a Partition, partition: Partition) -> Self {
-        CursorMut {
+        TraversalMut {
             cube: cube,
             root: root,
             partition: partition,
@@ -259,13 +260,13 @@ impl<'a> CursorMut<'a> {
             }
         }
 
-        CursorMut::new(cube.take().unwrap(),
+        TraversalMut::new(cube.take().unwrap(),
                        self.root,
                        Partition::at_point(&point, depth))
     }
 }
 
-impl<'a> ComputedCube for CursorMut<'a> {
+impl<'a> ComputedCube for TraversalMut<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -275,9 +276,9 @@ impl<'a> ComputedCube for CursorMut<'a> {
     }
 }
 
-impl<'a> ComputedCubeMut for CursorMut<'a> {}
+impl<'a> ComputedCubeMut for TraversalMut<'a> {}
 
-impl<'a> ops::Deref for CursorMut<'a> {
+impl<'a> ops::Deref for TraversalMut<'a> {
     type Target = Cube;
 
     fn deref(&self) -> &Self::Target {
@@ -285,7 +286,7 @@ impl<'a> ops::Deref for CursorMut<'a> {
     }
 }
 
-impl<'a> ops::DerefMut for CursorMut<'a> {
+impl<'a> ops::DerefMut for TraversalMut<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.cube
     }
@@ -305,12 +306,12 @@ impl Tree {
         }
     }
 
-    pub fn cursor(&self) -> Cursor {
-        Cursor::new(&self.cube, &self.partition, self.partition.clone())
+    pub fn traverse(&self) -> Traversal {
+        Traversal::new(&self.cube, &self.partition, self.partition.clone())
     }
 
-    pub fn cursor_mut(&mut self) -> CursorMut {
-        CursorMut::new(&mut self.cube, &self.partition, self.partition.clone())
+    pub fn traverse_mut(&mut self) -> TraversalMut {
+        TraversalMut::new(&mut self.cube, &self.partition, self.partition.clone())
     }
 }
 

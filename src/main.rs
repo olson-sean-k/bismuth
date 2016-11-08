@@ -27,7 +27,7 @@ fn new_tree() -> cube::Tree {
     let point = cube::Point3::new(0, 0, 0);
     let mut tree = cube::Tree::new(10);
     {
-        let mut cube = tree.cursor_mut();
+        let mut cube = tree.traverse_mut();
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         cube.subdivide().unwrap();
@@ -56,7 +56,7 @@ fn main() {
         let projection = render::projection_from_window(&window);
         projection * view
     };
-    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&tree.cursor(), &mut factory);
+    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&tree.traverse(), &mut factory);
     let data = render::pipeline::Data {
         vertex_buffer: vertex_buffer,
         transform: *transform.as_ref(),
