@@ -306,6 +306,10 @@ impl Tree {
         }
     }
 
+    pub fn iter(&self) -> CubeIter {
+        CubeIter::new(self.traverse())
+    }
+
     pub fn traverse(&self) -> Traversal {
         Traversal::new(&self.cube, &self.partition, self.partition.clone())
     }
