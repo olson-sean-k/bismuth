@@ -18,6 +18,7 @@ mod render;
 mod resource;
 
 use cube::ComputedCube;
+use cube::ComputedCubeMut;
 pub use math::*;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];

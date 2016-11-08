@@ -75,7 +75,61 @@ pub trait ComputedCube: ops::Deref<Target = Cube> {
     fn depth(&self) -> u8;
 }
 
-pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {}
+#[derive(Debug)]
+pub enum JoinError {
+    LeafJoined,
+}
+
+impl fmt::Display for JoinError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "{}", self.description())
+    }
+}
+
+impl error::Error for JoinError {
+    fn description(&self) -> &str {
+        match *self {
+            JoinError::LeafJoined => "attempted to join leaf",
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum SubdivideError {
+    LimitExceeded,
+    BranchSubdivided,
+}
+
+impl fmt::Display for SubdivideError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "{}", self.description())
+    }
+}
+
+impl error::Error for SubdivideError {
+    fn description(&self) -> &str {
+        match *self {
+            SubdivideError::LimitExceeded => "minimum width limit exceeded",
+            SubdivideError::BranchSubdivided => "attempted to subdivide branch",
+        }
+    }
+}
+
+pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {
+    fn join(&mut self) -> Result<&mut Self, JoinError> {
+        try!(self.deref_mut().join().ok_or(JoinError::LeafJoined));
+        Ok(self)
+    }
+
+    fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
+        if self.partition().width() > MIN_WIDTH {
+            try!(self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided));
+            Ok(self)
+        } else {
+            Err(SubdivideError::LimitExceeded)
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -169,46 +223,6 @@ impl<'a> Iterator for CursorIter<'a> {
     }
 }
 
-#[derive(Debug)]
-pub enum JoinError {
-    LeafJoined,
-}
-
-impl fmt::Display for JoinError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl error::Error for JoinError {
-    fn description(&self) -> &str {
-        match *self {
-            JoinError::LeafJoined => "attempted to join leaf",
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum SubdivideError {
-    LimitExceeded,
-    BranchSubdivided,
-}
-
-impl fmt::Display for SubdivideError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl error::Error for SubdivideError {
-    fn description(&self) -> &str {
-        match *self {
-            SubdivideError::LimitExceeded => "minimum width limit exceeded",
-            SubdivideError::BranchSubdivided => "attempted to subdivide branch",
-        }
-    }
-}
-
 pub struct CursorMut<'a> {
     cube: &'a mut Cube,
     root: &'a Partition,
@@ -248,20 +262,6 @@ impl<'a> CursorMut<'a> {
         CursorMut::new(cube.take().unwrap(),
                        self.root,
                        Partition::at_point(&point, depth))
-    }
-
-    pub fn join(&mut self) -> Result<&mut Self, JoinError> {
-        try!(self.cube.join().ok_or(JoinError::LeafJoined));
-        Ok(self)
-    }
-
-    pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
-        if self.partition.width() > MIN_WIDTH {
-            try!(self.cube.subdivide().ok_or(SubdivideError::BranchSubdivided));
-            Ok(self)
-        } else {
-            Err(SubdivideError::LimitExceeded)
-        }
     }
 }
 
