@@ -208,10 +208,11 @@ impl<'a> Iterator for CubeIter<'a> {
             match *traversal.cube {
                 Cube::Branch(ref branch) => {
                     for (index, cube) in branch.iter().enumerate() {
-                        self.traversals.push(Traversal::new(
-                            cube,
-                            traversal.root,
-                            traversal.partition().at_index(index).unwrap()));
+                        self.traversals.push(Traversal::new(cube,
+                                                            traversal.root,
+                                                            traversal.partition()
+                                                                .at_index(index)
+                                                                .unwrap()));
                     }
                 }
                 _ => {}
@@ -260,8 +261,8 @@ impl<'a> TraversalMut<'a> {
         }
 
         TraversalMut::new(cube.take().unwrap(),
-                       self.root,
-                       Partition::at_point(&point, depth))
+                          self.root,
+                          Partition::at_point(&point, depth))
     }
 }
 
@@ -300,8 +301,7 @@ impl Tree {
     pub fn new(width: RootWidth) -> Self {
         Tree {
             cube: Cube::new(),
-            partition: Partition::at_point(&Point3::origin(),
-                                           width.clamp(MIN_WIDTH, MAX_WIDTH)),
+            partition: Partition::at_point(&Point3::origin(), width.clamp(MIN_WIDTH, MAX_WIDTH)),
         }
     }
 
