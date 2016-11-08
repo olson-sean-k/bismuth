@@ -69,13 +69,13 @@ impl Partition {
     }
 }
 
-pub trait Traversal: ops::Deref<Target = Cube> {
+pub trait ComputedCube: ops::Deref<Target = Cube> {
     fn partition(&self) -> &Partition;
 
     fn depth(&self) -> u8;
 }
 
-pub trait TraversalMut: Traversal + ops::DerefMut {}
+pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {}
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
@@ -119,7 +119,7 @@ impl<'a> Cursor<'a> {
     }
 }
 
-impl<'a> Traversal for Cursor<'a> {
+impl<'a> ComputedCube for Cursor<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -265,7 +265,7 @@ impl<'a> CursorMut<'a> {
     }
 }
 
-impl<'a> Traversal for CursorMut<'a> {
+impl<'a> ComputedCube for CursorMut<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -275,7 +275,7 @@ impl<'a> Traversal for CursorMut<'a> {
     }
 }
 
-impl<'a> TraversalMut for CursorMut<'a> {}
+impl<'a> ComputedCubeMut for CursorMut<'a> {}
 
 impl<'a> ops::Deref for CursorMut<'a> {
     type Target = Cube;
@@ -314,7 +314,7 @@ impl Tree {
     }
 }
 
-impl Traversal for Tree {
+impl ComputedCube for Tree {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -324,7 +324,7 @@ impl Traversal for Tree {
     }
 }
 
-impl TraversalMut for Tree {}
+impl ComputedCubeMut for Tree {}
 
 impl ops::Deref for Tree {
     type Target = Cube;

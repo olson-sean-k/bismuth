@@ -8,7 +8,7 @@ extern crate rand;
 use nalgebra::ToHomogeneous;
 
 use cube;
-use cube::Traversal;
+use cube::ComputedCube;
 use math::IntoDomain;
 
 pub type Domain = f32;
@@ -136,7 +136,7 @@ pub fn projection_from_window(window: &glutin::Window) -> Matrix4 {
 }
 
 pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
-    where C: cube::Traversal
+    where C: cube::ComputedCube
 {
     nalgebra::Isometry3::look_at_rh(from,
                                     &cube.partition().midpoint().into_domain(),
