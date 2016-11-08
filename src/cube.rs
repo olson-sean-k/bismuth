@@ -505,6 +505,7 @@ impl Geometry {
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub struct Edge(u8);
 
+const MIN_EDGE: u8 = 0;
 const MAX_EDGE: u8 = 0x0F;
 
 impl Edge {
@@ -513,12 +514,12 @@ impl Edge {
     }
 
     fn converged(value: u8) -> Self {
-        let value = nalgebra::clamp(value, 0, MAX_EDGE);
+        let value = nalgebra::clamp(value, MIN_EDGE, MAX_EDGE);
         Edge((value << 4) | value)
     }
 
     pub fn set_front(&mut self, value: u8) {
-        let value = nalgebra::clamp(value, 0, self.back());
+        let value = nalgebra::clamp(value, MIN_EDGE, self.back());
         self.0 = (value << 4) | self.back();
     }
 
@@ -536,11 +537,12 @@ impl Edge {
     }
 
     pub fn front_transform(&self) -> f32 {
-        (self.front() as f32) / (MAX_EDGE as f32)
+        ((self.front() - MIN_EDGE) as f32) / ((MAX_EDGE - MIN_EDGE) as f32)
     }
 
     pub fn back_transform(&self) -> f32 {
-        -((MAX_EDGE - self.back()) as f32) / (MAX_EDGE as f32)
+        let range = MAX_EDGE - MIN_EDGE;
+        -((range - (self.back() - MIN_EDGE)) as f32) / (range as f32)
     }
 }
 
