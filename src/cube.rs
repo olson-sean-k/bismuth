@@ -9,6 +9,7 @@ use ::num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use ::std::error;
 use ::std::error::Error;
 use ::std::fmt;
+use ::std::iter;
 use ::std::mem;
 use ::std::ops;
 
@@ -25,6 +26,43 @@ pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 impl Clamp<RootWidth> for RootWidth {
     fn clamp(&self, min: RootWidth, max: RootWidth) -> Self {
         nalgebra::clamp(*self, min, max)
+    }
+}
+
+pub enum Axis {
+    X = 0,
+    Y = 1,
+    Z = 2,
+}
+
+pub enum Direction {
+    Positive,
+    Negative,
+}
+
+pub enum Orientation {
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Front,
+    Back,
+}
+
+impl Orientation {
+    pub fn axis(&self) -> Axis {
+        match *self {
+            Orientation::Left | Orientation::Right => Axis::X,
+            Orientation::Top | Orientation::Bottom => Axis::Y,
+            Orientation::Front | Orientation::Back => Axis::Z,
+        }
+    }
+
+    pub fn direction(&self) -> Direction {
+        match *self {
+            Orientation::Left | Orientation::Top | Orientation::Front => Direction::Positive,
+            Orientation::Right | Orientation::Bottom | Orientation::Back => Direction::Negative,
+        }
     }
 }
 
@@ -485,32 +523,20 @@ impl Geometry {
         Geometry([[Edge::converged(0); 4]; 3])
     }
 
-    pub fn as_edges_x(&self) -> &[Edge; 4] {
-        &self.0[0]
-    }
-    pub fn as_edges_y(&self) -> &[Edge; 4] {
-        &self.0[1]
-    }
-    pub fn as_edges_z(&self) -> &[Edge; 4] {
-        &self.0[2]
+    pub fn axis_edges(&self, axis: Axis) -> &[Edge; 4] {
+        &self.0[axis as usize]
     }
 
-    pub fn as_edges_x_mut(&mut self) -> &mut [Edge; 4] {
-        &mut self.0[0]
-    }
-    pub fn as_edges_y_mut(&mut self) -> &mut [Edge; 4] {
-        &mut self.0[1]
-    }
-    pub fn as_edges_z_mut(&mut self) -> &mut [Edge; 4] {
-        &mut self.0[2]
+    pub fn axis_edges_mut(&mut self, axis: Axis) -> &mut [Edge; 4] {
+        &mut self.0[axis as usize]
     }
 }
 
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub struct Edge(u8);
 
-const MIN_EDGE: u8 = 0;
-const MAX_EDGE: u8 = 0x0F;
+pub const MIN_EDGE: u8 = 0;
+pub const MAX_EDGE: u8 = 0x0F;
 
 impl Edge {
     fn full() -> Self {
