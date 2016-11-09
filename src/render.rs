@@ -19,48 +19,25 @@ pub type Index = u32;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const UNIT_CUBE_INDECES: [Index; 36] = [
-    0,  1,  2,  2,  3,  0,
-    4,  5,  6,  6,  7,  4,
-    8,  9,  10, 10, 11, 8,
-    12, 13, 14, 14, 15, 12,
-    16, 17, 18, 18, 19, 16,
-    20, 21, 22, 22, 23, 20
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4,
+    6, 5, 2, 2, 1, 6,
+    0, 3, 4, 4, 7, 0,
+    5, 4, 3, 3, 2, 5,
+    1, 0, 7, 7, 6, 1,
 ];
 lazy_static! {
-    // TODO: Remove redundant points and adjust the indeces accordingly. This
-    //       will use less data and make it easier to apply transformations
-    //       based on leaf geometry.
-    static ref UNIT_CUBE_POINTS: [Point3; 24] = [
-        // Top.
-        Point3::new(0.0, 0.0, 1.0),
-        Point3::new(1.0, 0.0, 1.0),
-        Point3::new(1.0, 1.0, 1.0),
-        Point3::new(0.0, 1.0, 1.0),
+    static ref UNIT_CUBE_POINTS: [Point3; 8] = [
         // Bottom.
-        Point3::new(0.0, 1.0, 0.0),
-        Point3::new(1.0, 1.0, 0.0),
-        Point3::new(1.0, 0.0, 0.0),
-        Point3::new(0.0, 0.0, 0.0),
-        // Right.
-        Point3::new(1.0, 0.0, 0.0),
-        Point3::new(1.0, 1.0, 0.0),
-        Point3::new(1.0, 1.0, 1.0),
-        Point3::new(1.0, 0.0, 1.0),
-        // Left.
-        Point3::new(0.0, 0.0, 1.0),
-        Point3::new(0.0, 1.0, 1.0),
-        Point3::new(0.0, 1.0, 0.0),
-        Point3::new(0.0, 0.0, 0.0),
-        // Front.
-        Point3::new(1.0, 1.0, 0.0),
-        Point3::new(0.0, 1.0, 0.0),
-        Point3::new(0.0, 1.0, 1.0),
-        Point3::new(1.0, 1.0, 1.0),
-        // Back.
-        Point3::new(1.0, 0.0, 1.0),
-        Point3::new(0.0, 0.0, 1.0),
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(1.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, 1.0), // 0
+        Point3::new(1.0, 0.0, 1.0), // 1
+        Point3::new(1.0, 1.0, 1.0), // 2
+        Point3::new(0.0, 1.0, 1.0), // 3
+        // Top.
+        Point3::new(0.0, 1.0, 0.0), // 4
+        Point3::new(1.0, 1.0, 0.0), // 5
+        Point3::new(1.0, 0.0, 0.0), // 6
+        Point3::new(0.0, 0.0, 0.0), // 7
     ];
 }
 
