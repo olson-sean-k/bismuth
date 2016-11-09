@@ -28,12 +28,12 @@ const UNIT_CUBE_INDECES: [Index; 36] = [
 ];
 lazy_static! {
     static ref UNIT_CUBE_POINTS: [Point3; 8] = [
-        // Bottom.
+        // Back.
         Point3::new(0.0, 0.0, 1.0), // 0
         Point3::new(1.0, 0.0, 1.0), // 1
         Point3::new(1.0, 1.0, 1.0), // 2
         Point3::new(0.0, 1.0, 1.0), // 3
-        // Top.
+        // Front.
         Point3::new(0.0, 1.0, 0.0), // 4
         Point3::new(1.0, 1.0, 0.0), // 5
         Point3::new(1.0, 0.0, 0.0), // 6
