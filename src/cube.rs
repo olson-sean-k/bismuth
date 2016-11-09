@@ -565,15 +565,6 @@ impl Edge {
     pub fn back(&self) -> u8 {
         self.0 & 0x0F
     }
-
-    pub fn front_transform(&self) -> f32 {
-        ((self.front() - MIN_EDGE) as f32) / ((MAX_EDGE - MIN_EDGE) as f32)
-    }
-
-    pub fn back_transform(&self) -> f32 {
-        let range = MAX_EDGE - MIN_EDGE;
-        -((range - (self.back() - MIN_EDGE)) as f32) / (range as f32)
-    }
 }
 
 trait Subdivision {}

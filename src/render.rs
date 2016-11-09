@@ -79,6 +79,33 @@ gfx_vertex_struct!{
     }
 }
 
+trait GeometricEdge {
+    fn front_unit_transform(&self) -> f32;
+    fn back_unit_transform(&self) -> f32;
+}
+
+impl GeometricEdge for cube::Edge {
+    fn front_unit_transform(&self) -> f32 {
+        ((self.front() - cube::MIN_EDGE) as f32) / ((cube::MAX_EDGE - cube::MIN_EDGE) as f32)
+    }
+
+    fn back_unit_transform(&self) -> f32 {
+        let range = cube::MAX_EDGE - cube::MIN_EDGE;
+        -((range - (self.back() - cube::MIN_EDGE)) as f32) / (range as f32)
+    }
+}
+
+pub trait GeometricCube: cube::ComputedCube {
+    fn points(&self) -> Vec<Point3>;
+}
+
+impl<T: cube::ComputedCube> GeometricCube for T {
+    fn points(&self) -> Vec<Point3> {
+        // TODO: Compute the points of this cube.
+        unimplemented!()
+    }
+}
+
 impl From<Vertex> for RawVertex {
     fn from(vertex: Vertex) -> Self {
         RawVertex {
