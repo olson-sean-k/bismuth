@@ -4,14 +4,13 @@
 extern crate nalgebra;
 extern crate num;
 
-use ::nalgebra::Origin;
-use ::num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
-use ::std::error;
-use ::std::error::Error;
-use ::std::fmt;
-use ::std::iter;
-use ::std::mem;
-use ::std::ops;
+use nalgebra::Origin;
+use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
+use std::error;
+use std::error::Error;
+use std::fmt;
+use std::mem;
+use std::ops;
 
 use math::{Clamp, Mask, DiscreteSpace};
 use resource::ResourceId;

@@ -1,25 +1,13 @@
+extern crate bismuth;
 #[macro_use]
 extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
-#[macro_use]
-extern crate lazy_static;
-extern crate nalgebra;
-extern crate num;
-extern crate rand;
 
-use gfx::format;
-use gfx::Device;
+use bismuth::{cube, render};
+use bismuth::prelude::*;
+use gfx::{format, Device};
 use gfx::traits::FactoryExt;
-
-mod cube;
-mod math;
-mod render;
-mod resource;
-
-use cube::ComputedCube;
-use cube::ComputedCubeMut;
-pub use math::*;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
