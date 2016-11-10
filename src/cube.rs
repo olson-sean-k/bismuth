@@ -153,13 +153,13 @@ impl error::Error for SubdivideError {
 
 pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {
     fn join(&mut self) -> Result<&mut Self, JoinError> {
-        try!(self.deref_mut().join().ok_or(JoinError::LeafJoined));
+        self.deref_mut().join().ok_or(JoinError::LeafJoined)?;
         Ok(self)
     }
 
     fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
         if self.partition().width() > MIN_WIDTH {
-            try!(self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided));
+            self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided)?;
             Ok(self)
         } else {
             Err(SubdivideError::LimitExceeded)
@@ -187,6 +187,14 @@ impl<'a> Traversal<'a> {
         CubeIter::new(self.clone())
     }
 
+    pub fn walk<F, R>(&'a self, f: &F)
+        where F: Fn(Traversal<'a>) -> R
+    {
+        for cube in self.iter() {
+            f(cube);
+        }
+    }
+
     pub fn at_point(&self, point: &Point3, width: RootWidth) -> Self {
         let mut cube = self.cube;
         let mut depth = self.partition.width();
@@ -199,7 +207,7 @@ impl<'a> Traversal<'a> {
             match *cube {
                 Cube::Branch(ref branch) => {
                     depth = depth - 1;
-                    cube = &branch.cubes[index_at_point(&point, depth)]
+                    cube = &branch[index_at_point(&point, depth)]
                 }
                 _ => break,
             }
@@ -227,40 +235,6 @@ impl<'a> ops::Deref for Traversal<'a> {
     }
 }
 
-pub struct CubeIter<'a> {
-    traversals: Vec<Traversal<'a>>,
-}
-
-impl<'a> CubeIter<'a> {
-    fn new(traversal: Traversal<'a>) -> Self {
-        CubeIter { traversals: vec![traversal] }
-    }
-}
-
-impl<'a> Iterator for CubeIter<'a> {
-    type Item = Traversal<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(traversal) = self.traversals.pop() {
-            match *traversal.cube {
-                Cube::Branch(ref branch) => {
-                    for (index, cube) in branch.iter().enumerate() {
-                        self.traversals.push(Traversal::new(cube,
-                                                            traversal.root,
-                                                            traversal.partition()
-                                                                .at_index(index)
-                                                                .unwrap()));
-                    }
-                }
-                _ => {}
-            }
-            Some(traversal)
-        } else {
-            None
-        }
-    }
-}
-
 pub struct TraversalMut<'a> {
     cube: &'a mut Cube,
     root: &'a Partition,
@@ -276,6 +250,20 @@ impl<'a> TraversalMut<'a> {
         }
     }
 
+    pub fn walk<F, R>(&'a mut self, f: &F)
+        where F: Fn(&mut TraversalMut) -> R
+    {
+        f(self);
+        if let Cube::Branch(ref mut branch) = *self.cube {
+            for (index, cube) in branch.iter_mut().enumerate() {
+                let mut traversal = TraversalMut::new(cube,
+                                                      self.root,
+                                                      self.partition.at_index(index).unwrap());
+                traversal.walk(f);
+            }
+        }
+    }
+
     pub fn at_point(&'a mut self, point: &Point3, width: RootWidth) -> Self {
         let mut cube: Option<&mut Cube> = Some(self.cube);
         let mut depth = self.partition.width();
@@ -288,7 +276,7 @@ impl<'a> TraversalMut<'a> {
             match *inner {
                 Cube::Branch(ref mut branch) => {
                     depth = depth - 1;
-                    cube = Some(&mut branch.cubes[index_at_point(&point, depth)]);
+                    cube = Some(&mut branch[index_at_point(&point, depth)]);
                 }
                 _ => {
                     cube = Some(inner);
@@ -329,6 +317,40 @@ impl<'a> ops::DerefMut for TraversalMut<'a> {
     }
 }
 
+pub struct CubeIter<'a> {
+    traversals: Vec<Traversal<'a>>,
+}
+
+impl<'a> CubeIter<'a> {
+    fn new(traversal: Traversal<'a>) -> Self {
+        CubeIter { traversals: vec![traversal] }
+    }
+}
+
+impl<'a> Iterator for CubeIter<'a> {
+    type Item = Traversal<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(traversal) = self.traversals.pop() {
+            match *traversal.cube {
+                Cube::Branch(ref branch) => {
+                    for (index, cube) in branch.iter().enumerate() {
+                        self.traversals.push(Traversal::new(cube,
+                                                            traversal.root,
+                                                            traversal.partition()
+                                                                .at_index(index)
+                                                                .unwrap()));
+                    }
+                }
+                _ => {}
+            }
+            Some(traversal)
+        } else {
+            None
+        }
+    }
+}
+
 pub struct Tree {
     cube: Cube,
     partition: Partition,
@@ -340,10 +362,6 @@ impl Tree {
             cube: Cube::new(),
             partition: Partition::at_point(&Point3::origin(), width.clamp(MIN_WIDTH, MAX_WIDTH)),
         }
-    }
-
-    pub fn iter(&self) -> CubeIter {
-        CubeIter::new(self.traverse())
     }
 
     pub fn traverse(&self) -> Traversal {
@@ -507,6 +525,12 @@ impl ops::Deref for BranchNode {
 
     fn deref(&self) -> &Self::Target {
         &*self.cubes
+    }
+}
+
+impl ops::DerefMut for BranchNode {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.cubes
     }
 }
 
