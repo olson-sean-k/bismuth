@@ -172,6 +172,7 @@ impl<'a> Cube<'a> {
         CubeIter::new(self.clone())
     }
 
+    // TODO: Is this useful? `CubeIter` already yields fully linked `Cube`s.
     pub fn walk<F, R>(&'a self, f: &F)
         where F: Fn(Cube<'a>) -> R
     {
@@ -202,7 +203,14 @@ impl<'a> Cube<'a> {
     }
 
     pub fn at_index(&self, index: usize) -> Option<Self> {
-        unimplemented!()
+        match *self.node {
+            Node::Branch(ref nodes, _) => {
+                self.partition
+                    .at_index(index)
+                    .map(|partition| Cube::new(&nodes[index], self.root, partition))
+            }
+            _ => None,
+        }
     }
 }
 
@@ -211,6 +219,12 @@ impl<'a> ops::Deref for Cube<'a> {
 
     fn deref(&self) -> &Self::Target {
         self.node
+    }
+}
+
+impl<'a> From<CubeMut<'a>> for Cube<'a> {
+    fn from(cube: CubeMut<'a>) -> Self {
+        Cube::new(&*cube.node, cube.root, cube.partition)
     }
 }
 
@@ -281,9 +295,7 @@ impl<'a> CubeMut<'a> {
         f(self);
         if let Node::Branch(ref mut nodes, _) = *self.node {
             for (index, node) in nodes.iter_mut().enumerate() {
-                let mut cube =
-                    CubeMut::new(node, self.root, self.partition.at_index(index).unwrap());
-                cube.walk(f);
+                CubeMut::new(node, self.root, self.partition.at_index(index).unwrap()).walk(f);
             }
         }
     }
@@ -314,18 +326,26 @@ impl<'a> CubeMut<'a> {
                      Partition::at_point(&point, depth))
     }
 
-    pub fn at_index(&mut self, index: usize) -> Option<Self> {
-        unimplemented!()
+    pub fn at_index(&'a mut self, index: usize) -> Option<Self> {
+        match *self.node {
+            Node::Branch(ref mut nodes, _) => {
+                let root = self.root;
+                self.partition
+                    .at_index(index)
+                    .map(move |partition| CubeMut::new(&mut nodes[index], root, partition))
+            }
+            _ => None,
+        }
     }
 
     pub fn join(&mut self) -> Result<&mut Self, JoinError> {
-        self.deref_mut().join().ok_or(JoinError::LeafJoined)?;
+        self.node.join().ok_or(JoinError::LeafJoined)?;
         Ok(self)
     }
 
     pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
         if self.partition().width() > MIN_WIDTH {
-            self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided)?;
+            self.node.subdivide().ok_or(SubdivideError::BranchSubdivided)?;
             Ok(self)
         } else {
             Err(SubdivideError::LimitExceeded)
@@ -517,7 +537,7 @@ impl Node {
             Node::Leaf(ref mut leaf) => (OrphanNodeMut::Leaf(leaf), None),
             Node::Branch(ref mut nodes, ref mut branch) => {
                 (OrphanNodeMut::Branch(branch), Some(nodes))
-            },
+            }
         }
     }
 
