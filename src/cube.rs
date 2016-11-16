@@ -1,5 +1,15 @@
-//! This module provides an oct-tree of cubes. Each leaf cube describes a
-//! spatial partition, its properties, and a deformable geometry.
+//! This module provides an oct-tree of cubes, which are the basic building
+//! blocks of Bismuth. A cube provides the following basic components:
+//!
+//!   1. Node data, which varies between branches and leaves.
+//!   2. Node links, which refer to other nodes in the oct-tree.
+//!   3. A spatial partition. This is calculated during traversals.
+//!
+//! Cubes bind this information together and act as a "recursive tree", where
+//! any cube can be used to traverse its sub-tree of cubes.
+//!
+//! Leaf cubes provide geometric data that represents the shape and layout of
+//! the game world.
 
 extern crate nalgebra;
 extern crate num;
@@ -16,12 +26,13 @@ use std::ops::DerefMut;
 use math::{Clamp, Mask, DiscreteSpace};
 use resource::ResourceId;
 
-pub const MAX_WIDTH: RootWidth = 32;
-pub const MIN_WIDTH: RootWidth = 4;
-
 pub type Point3 = nalgebra::Point3<DiscreteSpace>;
 pub type Vector3 = nalgebra::Vector3<DiscreteSpace>;
+
 pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
+
+pub const MAX_WIDTH: RootWidth = 32;
+pub const MIN_WIDTH: RootWidth = 4;
 
 impl Clamp<RootWidth> for RootWidth {
     fn clamp(&self, min: RootWidth, max: RootWidth) -> Self {
@@ -66,6 +77,8 @@ impl Orientation {
     }
 }
 
+/// A cubic spatial partition in the `DiscreteSpace`. `Partition`s are
+/// represented as an origin and a width.
 #[derive(Clone, Copy)]
 pub struct Partition {
     origin: Point3,
@@ -73,13 +86,22 @@ pub struct Partition {
 }
 
 impl Partition {
+    /// Constructs a `Partition` at the given point in space with the given
+    /// width. The width is clamped to [`MIN_WIDTH`, `MAX_WIDTH`].
     pub fn at_point(point: &Point3, width: RootWidth) -> Self {
         Partition {
             origin: point.mask(!DiscreteSpace::zero() << width),
-            width: width,
+            width: width.clamp(MIN_WIDTH, MAX_WIDTH),
         }
     }
 
+    /// Constructs the sub-`Partition` at the given index. Returns `None` if
+    /// there is no such `Partition`, because the minimum width has been
+    /// exceeded.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is not within the range [0, 8).
     pub fn at_index(&self, index: usize) -> Option<Self> {
         if self.is_min_width() {
             None
@@ -92,19 +114,23 @@ impl Partition {
         }
     }
 
+    /// Gets the origin of the `Partition`.
     pub fn origin(&self) -> &Point3 {
         &self.origin
     }
 
+    /// Gets the width of the `Partition`.
     pub fn width(&self) -> RootWidth {
         self.width
     }
 
+    /// Gets the midpoint of the `Partition`.
     pub fn midpoint(&self) -> Point3 {
         let m = exp(self.width - 1);
         self.origin + Vector3::new(m, m, m)
     }
 
+    /// Returns `true` if the `Partition` has the minimum possible width.
     pub fn is_min_width(&self) -> bool {
         self.width == MIN_WIDTH
     }
@@ -494,7 +520,7 @@ impl Root {
     pub fn new(width: RootWidth) -> Self {
         Root {
             node: Node::new(),
-            partition: Partition::at_point(&Point3::origin(), width.clamp(MIN_WIDTH, MAX_WIDTH)),
+            partition: Partition::at_point(&Point3::origin(), width),
         }
     }
 
