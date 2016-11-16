@@ -81,14 +81,14 @@ impl Partition {
     }
 
     pub fn at_index(&self, index: usize) -> Option<Self> {
-        if self.width > MIN_WIDTH {
+        if self.is_min_width() {
+            None
+        } else {
             let width = self.width - 1;
             Some(Partition {
                 origin: self.origin + vector_at_index(index, width),
                 width: width,
             })
-        } else {
-            None
         }
     }
 
@@ -103,6 +103,10 @@ impl Partition {
     pub fn midpoint(&self) -> Point3 {
         let m = exp(self.width - 1);
         self.origin + Vector3::new(m, m, m)
+    }
+
+    pub fn is_min_width(&self) -> bool {
+        self.width == MIN_WIDTH
     }
 }
 
@@ -344,11 +348,11 @@ impl<'a> CubeMut<'a> {
     }
 
     pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
-        if self.partition().width() > MIN_WIDTH {
+        if self.partition().is_min_width() {
+            Err(SubdivideError::LimitExceeded)
+        } else {
             self.node.subdivide().ok_or(SubdivideError::BranchSubdivided)?;
             Ok(self)
-        } else {
-            Err(SubdivideError::LimitExceeded)
         }
     }
 }
