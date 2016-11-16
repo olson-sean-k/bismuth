@@ -11,6 +11,7 @@ use std::error::Error;
 use std::fmt;
 use std::mem;
 use std::ops;
+use std::ops::DerefMut;
 
 use math::{Clamp, Mask, DiscreteSpace};
 use resource::ResourceId;
@@ -72,14 +73,14 @@ pub struct Partition {
 }
 
 impl Partition {
-    fn at_point(point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(point: &Point3, width: RootWidth) -> Self {
         Partition {
             origin: point.mask(!DiscreteSpace::zero() << width),
             width: width,
         }
     }
 
-    fn at_index(&self, index: usize) -> Option<Self> {
+    pub fn at_index(&self, index: usize) -> Option<Self> {
         if self.width > MIN_WIDTH {
             let width = self.width - 1;
             Some(Partition {
@@ -101,11 +102,11 @@ impl Partition {
 
     pub fn midpoint(&self) -> Point3 {
         let m = exp(self.width - 1);
-        Point3::new(m, m, m)
+        self.origin + Vector3::new(m, m, m)
     }
 }
 
-pub trait ComputedCube: ops::Deref<Target = Cube> {
+pub trait Spatial {
     fn partition(&self) -> &Partition;
 
     fn depth(&self) -> u8;
@@ -151,44 +152,28 @@ impl error::Error for SubdivideError {
     }
 }
 
-pub trait ComputedCubeMut: ComputedCube + ops::DerefMut {
-    fn join(&mut self) -> Result<&mut Self, JoinError> {
-        self.deref_mut().join().ok_or(JoinError::LeafJoined)?;
-        Ok(self)
-    }
-
-    fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
-        if self.partition().width() > MIN_WIDTH {
-            self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided)?;
-            Ok(self)
-        } else {
-            Err(SubdivideError::LimitExceeded)
-        }
-    }
-}
-
 #[derive(Clone)]
-pub struct Traversal<'a> {
+pub struct Tree<'a> {
     cube: &'a Cube,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> Traversal<'a> {
+impl<'a> Tree<'a> {
     fn new(cube: &'a Cube, root: &'a Partition, partition: Partition) -> Self {
-        Traversal {
+        Tree {
             cube: cube,
             root: root,
             partition: partition,
         }
     }
 
-    pub fn iter(&self) -> CubeIter {
-        CubeIter::new(self.clone())
+    pub fn iter(&self) -> TreeIter {
+        TreeIter::new(self.clone())
     }
 
     pub fn walk<F, R>(&'a self, f: &F)
-        where F: Fn(Traversal<'a>) -> R
+        where F: Fn(Tree<'a>) -> R
     {
         for cube in self.iter() {
             f(cube);
@@ -205,19 +190,31 @@ impl<'a> Traversal<'a> {
 
         while (width >> depth) == 0 {
             match *cube {
-                Cube::Branch(ref branch) => {
+                Cube::Branch(ref cubes, _) => {
                     depth = depth - 1;
-                    cube = &branch[index_at_point(&point, depth)]
-                }
+                    cube = &cubes[index_at_point(&point, depth)]
+                },
                 _ => break,
             }
         }
 
-        Traversal::new(cube, self.root, Partition::at_point(&point, depth))
+        Tree::new(cube, self.root, Partition::at_point(&point, depth))
+    }
+
+    pub fn at_index(&self, index: usize) -> Self {
+        unimplemented!()
     }
 }
 
-impl<'a> ComputedCube for Traversal<'a> {
+impl<'a> ops::Deref for Tree<'a> {
+    type Target = Cube;
+
+    fn deref(&self) -> &Self::Target {
+        self.cube
+    }
+}
+
+impl<'a> Spatial for Tree<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -227,39 +224,67 @@ impl<'a> ComputedCube for Traversal<'a> {
     }
 }
 
-impl<'a> ops::Deref for Traversal<'a> {
-    type Target = Cube;
+pub struct TreeIter<'a> {
+    trees: Vec<Tree<'a>>,
+}
 
-    fn deref(&self) -> &Self::Target {
-        self.cube
+impl<'a> TreeIter<'a> {
+    fn new(tree: Tree<'a>) -> Self {
+        TreeIter { trees: vec![tree] }
     }
 }
 
-pub struct TraversalMut<'a> {
+impl<'a> Iterator for TreeIter<'a> {
+    type Item = Tree<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(tree) = self.trees.pop() {
+            match *tree.cube {
+                Cube::Branch(ref cubes, _) => {
+                    for (index, cube) in cubes.iter().enumerate() {
+                        self.trees.push(Tree::new(cube,
+                                                  tree.root,
+                                                  tree.partition().at_index(index).unwrap()));
+                    }
+                }
+                _ => {}
+            }
+            Some(tree)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct TreeMut<'a> {
     cube: &'a mut Cube,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> TraversalMut<'a> {
+impl<'a> TreeMut<'a> {
     fn new(cube: &'a mut Cube, root: &'a Partition, partition: Partition) -> Self {
-        TraversalMut {
+        TreeMut {
             cube: cube,
             root: root,
             partition: partition,
         }
     }
 
+    pub fn iter(&'a mut self) -> TreeMutIter {
+        TreeMutIter::new(self)
+    }
+
     pub fn walk<F, R>(&'a mut self, f: &F)
-        where F: Fn(&mut TraversalMut) -> R
+        where F: Fn(&mut TreeMut) -> R
     {
         f(self);
-        if let Cube::Branch(ref mut branch) = *self.cube {
-            for (index, cube) in branch.iter_mut().enumerate() {
-                let mut traversal = TraversalMut::new(cube,
-                                                      self.root,
-                                                      self.partition.at_index(index).unwrap());
-                traversal.walk(f);
+        if let Cube::Branch(ref mut cubes, _) = *self.cube {
+            for (index, cube) in cubes.iter_mut().enumerate() {
+                let mut tree = TreeMut::new(cube,
+                                            self.root,
+                                            self.partition.at_index(index).unwrap());
+                tree.walk(f);
             }
         }
     }
@@ -272,26 +297,56 @@ impl<'a> TraversalMut<'a> {
         let width = exp(width.clamp(MIN_WIDTH, depth));
 
         while (width >> depth) == 0 {
-            let inner = cube.take().unwrap();
-            match *inner {
-                Cube::Branch(ref mut branch) => {
+            let taken = cube.take().unwrap();
+            match *taken {
+                Cube::Branch(ref mut cubes, _) => {
                     depth = depth - 1;
-                    cube = Some(&mut branch[index_at_point(&point, depth)]);
+                    cube = Some(&mut cubes[index_at_point(&point, depth)]);
                 }
                 _ => {
-                    cube = Some(inner);
+                    cube = Some(taken);
                     break;
                 }
             }
         }
 
-        TraversalMut::new(cube.take().unwrap(),
-                          self.root,
-                          Partition::at_point(&point, depth))
+        TreeMut::new(cube.take().unwrap(), self.root, Partition::at_point(&point, depth))
+    }
+
+    pub fn at_index(&mut self, index: usize) -> Self {
+        unimplemented!()
+    }
+
+    pub fn join(&mut self) -> Result<&mut Self, JoinError> {
+        self.deref_mut().join().ok_or(JoinError::LeafJoined)?;
+        Ok(self)
+    }
+
+    pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
+        if self.partition().width() > MIN_WIDTH {
+            self.deref_mut().subdivide().ok_or(SubdivideError::BranchSubdivided)?;
+            Ok(self)
+        } else {
+            Err(SubdivideError::LimitExceeded)
+        }
     }
 }
 
-impl<'a> ComputedCube for TraversalMut<'a> {
+impl<'a> ops::Deref for TreeMut<'a> {
+    type Target = Cube;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.cube
+    }
+}
+
+impl<'a> ops::DerefMut for TreeMut<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.cube
+    }
+}
+
+impl<'a> Spatial for TreeMut<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -301,120 +356,182 @@ impl<'a> ComputedCube for TraversalMut<'a> {
     }
 }
 
-impl<'a> ComputedCubeMut for TraversalMut<'a> {}
+pub struct TreeMutIter<'a> {
+    trees: Vec<TreeMut<'a>>,
+}
 
-impl<'a> ops::Deref for TraversalMut<'a> {
-    type Target = Cube;
-
-    fn deref(&self) -> &Self::Target {
-        self.cube
+impl<'a> TreeMutIter<'a> {
+    fn new(tree: &'a mut TreeMut<'a>) -> Self {
+        TreeMutIter {
+            trees: vec![TreeMut::new(tree.cube, tree.root, tree.partition.clone())],
+        }
     }
 }
 
-impl<'a> ops::DerefMut for TraversalMut<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.cube
-    }
-}
-
-pub struct CubeIter<'a> {
-    traversals: Vec<Traversal<'a>>,
-}
-
-impl<'a> CubeIter<'a> {
-    fn new(traversal: Traversal<'a>) -> Self {
-        CubeIter { traversals: vec![traversal] }
-    }
-}
-
-impl<'a> Iterator for CubeIter<'a> {
-    type Item = Traversal<'a>;
+impl<'a> Iterator for TreeMutIter<'a> {
+    type Item = OrphanMut<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(traversal) = self.traversals.pop() {
-            match *traversal.cube {
-                Cube::Branch(ref branch) => {
-                    for (index, cube) in branch.iter().enumerate() {
-                        self.traversals.push(Traversal::new(cube,
-                                                            traversal.root,
-                                                            traversal.partition()
-                                                                .at_index(index)
-                                                                .unwrap()));
-                    }
+        if let Some(tree) = self.trees.pop() {
+            let (orphan, cubes) = tree.cube.to_orphan_mut();
+            if let Some(cubes) = cubes {
+                for (index, cube) in cubes.iter_mut().enumerate() {
+                    self.trees.push(TreeMut::new(cube,
+                                                 tree.root,
+                                                 tree.partition.at_index(index).unwrap()));
                 }
-                _ => {}
             }
-            Some(traversal)
+            Some(OrphanMut::new(orphan, tree.root, tree.partition.clone()))
         } else {
             None
         }
     }
 }
 
-pub struct Tree {
-    cube: Cube,
+pub struct Orphan<'a> {
+    cube: OrphanCube<'a>,
+    root: &'a Partition,
     partition: Partition,
 }
 
-impl Tree {
-    pub fn new(width: RootWidth) -> Self {
-        Tree {
-            cube: Cube::new(),
-            partition: Partition::at_point(&Point3::origin(), width.clamp(MIN_WIDTH, MAX_WIDTH)),
+impl<'a> Orphan<'a> {
+    fn new(cube: OrphanCube<'a>, root: &'a Partition, partition: Partition) -> Self {
+        Orphan {
+            cube: cube,
+            root: root,
+            partition: partition,
         }
     }
-
-    pub fn traverse(&self) -> Traversal {
-        Traversal::new(&self.cube, &self.partition, self.partition.clone())
-    }
-
-    pub fn traverse_mut(&mut self) -> TraversalMut {
-        TraversalMut::new(&mut self.cube, &self.partition, self.partition.clone())
-    }
 }
 
-impl ComputedCube for Tree {
-    fn partition(&self) -> &Partition {
-        &self.partition
-    }
-
-    fn depth(&self) -> u8 {
-        0
-    }
-}
-
-impl ComputedCubeMut for Tree {}
-
-impl ops::Deref for Tree {
-    type Target = Cube;
+impl<'a> ops::Deref for Orphan<'a> {
+    type Target = OrphanCube<'a>;
 
     fn deref(&self) -> &Self::Target {
         &self.cube
     }
 }
 
-impl ops::DerefMut for Tree {
+impl<'a> Spatial for Orphan<'a> {
+    fn partition(&self) -> &Partition {
+        &self.partition
+    }
+
+    fn depth(&self) -> u8 {
+        self.root.width() - self.partition.width()
+    }
+}
+
+pub struct OrphanMut<'a> {
+    cube: OrphanCubeMut<'a>,
+    root: &'a Partition,
+    partition: Partition,
+}
+
+impl<'a> OrphanMut<'a> {
+    fn new(cube: OrphanCubeMut<'a>, root: &'a Partition, partition: Partition) -> Self {
+        OrphanMut {
+            cube: cube,
+            root: root,
+            partition: partition,
+        }
+    }
+}
+
+impl<'a> ops::Deref for OrphanMut<'a> {
+    type Target = OrphanCubeMut<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.cube
+    }
+}
+
+impl<'a> ops::DerefMut for OrphanMut<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.cube
     }
 }
 
-#[derive(Clone)]
+impl<'a> Spatial for OrphanMut<'a> {
+    fn partition(&self) -> &Partition {
+        &self.partition
+    }
+
+    fn depth(&self) -> u8 {
+        self.root.width() - self.partition.width()
+    }
+}
+
+pub struct Root {
+    cube: Cube,
+    partition: Partition,
+}
+
+impl Root {
+    pub fn new(width: RootWidth) -> Self {
+        Root {
+            cube: Cube::new(),
+            partition: Partition::at_point(&Point3::origin(), width.clamp(MIN_WIDTH, MAX_WIDTH)),
+        }
+    }
+
+    pub fn tree(&self) -> Tree {
+        Tree::new(&self.cube, &self.partition, self.partition.clone())
+    }
+
+    pub fn tree_mut(&mut self) -> TreeMut {
+        TreeMut::new(&mut self.cube, &self.partition, self.partition.clone())
+    }
+}
+
+impl Spatial for Root {
+    fn partition(&self) -> &Partition {
+        &self.partition
+    }
+
+    fn depth(&self) -> u8 {
+        0u8
+    }
+}
+
+pub type CubeLink = Box<[Cube; 8]>;
+
 pub enum Cube {
-    Leaf(LeafNode),
-    Branch(BranchNode),
+    Leaf(LeafCube),
+    Branch(CubeLink, BranchCube),
 }
 
 impl Cube {
     fn new() -> Self {
-        Cube::Leaf(LeafNode::new())
+        Cube::Leaf(LeafCube::new())
+    }
+
+    pub fn to_orphan<'a>(&'a self) -> (OrphanCube<'a>, Option<&'a CubeLink>) {
+        match *self {
+            Cube::Leaf(ref leaf) => (OrphanCube::Leaf(leaf), None),
+            Cube::Branch(ref cubes, ref branch) => (OrphanCube::Branch(branch), Some(cubes)),
+        }
+    }
+
+    pub fn to_orphan_mut<'a>(&'a mut self) -> (OrphanCubeMut<'a>, Option<&'a mut CubeLink>) {
+        match *self {
+            Cube::Leaf(ref mut leaf) => (OrphanCubeMut::Leaf(leaf), None),
+            Cube::Branch(ref mut cubes, ref mut branch) => (OrphanCubeMut::Branch(branch), Some(cubes)),
+        }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            Cube::Leaf(_) => true,
+            _ => false,
+        }
     }
 
     fn join(&mut self) -> Option<&mut Self> {
         let cube = mem::replace(self, Cube::default());
         match cube {
-            Cube::Branch(branch) => {
-                *self = branch.join().into();
+            Cube::Branch(_, _) => {
+                *self = Cube::Leaf(LeafCube::new());
                 Some(self)
             }
             _ => {
@@ -427,8 +544,17 @@ impl Cube {
     fn subdivide(&mut self) -> Option<&mut Self> {
         let cube = mem::replace(self, Cube::default());
         match cube {
-            Cube::Leaf(leaf) => {
-                *self = leaf.subdivide().into();
+            Cube::Leaf(cube) => {
+                let cube = Cube::new();
+                *self = Cube::Branch(Box::new([cube.clone(),
+                                               cube.clone(),
+                                               cube.clone(),
+                                               cube.clone(),
+                                               cube.clone(),
+                                               cube.clone(),
+                                               cube.clone(),
+                                               cube]),
+                                     BranchCube::new());
                 Some(self)
             }
             _ => {
@@ -437,11 +563,25 @@ impl Cube {
             }
         }
     }
+}
 
-    pub fn is_leaf(&self) -> bool {
+impl Clone for Cube {
+    fn clone(&self) -> Self {
         match *self {
-            Cube::Leaf(_) => true,
-            _ => false,
+            Cube::Leaf(leaf) => {
+                Cube::Leaf(leaf.clone())
+            },
+            Cube::Branch(ref cubes, branch) => {
+                Cube::Branch(Box::new([cubes[0].clone(),
+                                       cubes[1].clone(),
+                                       cubes[2].clone(),
+                                       cubes[3].clone(),
+                                       cubes[4].clone(),
+                                       cubes[5].clone(),
+                                       cubes[6].clone(),
+                                       cubes[7].clone()]),
+                             branch.clone())
+            },
         }
     }
 }
@@ -452,85 +592,37 @@ impl Default for Cube {
     }
 }
 
-impl From<LeafNode> for Cube {
-    fn from(leaf: LeafNode) -> Self {
-        Cube::Leaf(leaf)
-    }
+pub enum OrphanCube<'a> {
+    Leaf(&'a LeafCube),
+    Branch(&'a BranchCube),
 }
 
-impl From<BranchNode> for Cube {
-    fn from(branch: BranchNode) -> Self {
-        Cube::Branch(branch)
-    }
+pub enum OrphanCubeMut<'a> {
+    Leaf(&'a mut LeafCube),
+    Branch(&'a mut BranchCube),
 }
 
 #[derive(Clone, Copy)]
-pub struct LeafNode {
+pub struct LeafCube {
     pub geometry: Geometry,
     pub material: ResourceId,
 }
 
-impl LeafNode {
+impl LeafCube {
     fn new() -> Self {
-        LeafNode {
+        LeafCube {
             geometry: Geometry::full(),
             material: 0,
         }
     }
-
-    fn subdivide(self) -> BranchNode {
-        // TODO: Transform the geometry of the parent into the children.
-        let cube: Cube = self.into();
-        BranchNode {
-            cubes: Box::new([cube.clone(),
-                             cube.clone(),
-                             cube.clone(),
-                             cube.clone(),
-                             cube.clone(),
-                             cube.clone(),
-                             cube.clone(),
-                             cube]),
-        }
-    }
 }
 
-pub struct BranchNode {
-    cubes: Box<[Cube; 8]>,
-}
+#[derive(Clone, Copy)]
+pub struct BranchCube {}
 
-impl BranchNode {
-    fn join(self) -> LeafNode {
-        // TODO: Copy data from one of the original leaves.
-        LeafNode::new()
-    }
-}
-
-impl Clone for BranchNode {
-    fn clone(&self) -> Self {
-        BranchNode {
-            cubes: Box::new([self.cubes[0].clone(),
-                             self.cubes[1].clone(),
-                             self.cubes[2].clone(),
-                             self.cubes[3].clone(),
-                             self.cubes[4].clone(),
-                             self.cubes[5].clone(),
-                             self.cubes[6].clone(),
-                             self.cubes[7].clone()]),
-        }
-    }
-}
-
-impl ops::Deref for BranchNode {
-    type Target = [Cube];
-
-    fn deref(&self) -> &Self::Target {
-        &*self.cubes
-    }
-}
-
-impl ops::DerefMut for BranchNode {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.cubes
+impl BranchCube {
+    fn new() -> Self {
+        BranchCube {}
     }
 }
 
@@ -555,7 +647,7 @@ impl Geometry {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone)]
 pub struct Edge(u8);
 
 pub const MIN_EDGE: u8 = 0;
@@ -589,14 +681,6 @@ impl Edge {
         self.0 & 0x0F
     }
 }
-
-trait Subdivision {}
-
-impl Subdivision for [Cube; 8] {}
-
-trait Storage {}
-
-impl Storage for Box<[Cube; 8]> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 fn index_at_point(point: &Point3, width: RootWidth) -> usize {

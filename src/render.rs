@@ -8,7 +8,7 @@ extern crate rand;
 use nalgebra::ToHomogeneous;
 
 use cube;
-use cube::ComputedCube;
+use cube::Spatial;
 use math::{IntoDomain, RealSpace};
 
 pub type Point3 = nalgebra::Point3<RealSpace>;
@@ -72,15 +72,8 @@ impl GeometricEdge for cube::Edge {
     }
 }
 
-pub trait GeometricCube: cube::ComputedCube {
+pub trait GeometricCube {
     fn points(&self) -> Vec<Point3>;
-}
-
-impl<T: cube::ComputedCube> GeometricCube for T {
-    fn points(&self) -> Vec<Point3> {
-        // TODO: Compute the points of this cube.
-        unimplemented!()
-    }
 }
 
 impl From<Vertex> for RawVertex {
@@ -106,7 +99,7 @@ impl Vertex {
     }
 }
 
-pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Traversal,
+pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Tree,
                                      factory: &mut F)
                                      -> (gfx::handle::Buffer<R, RawVertex>, gfx::Slice<R>)
     where R: gfx::Resources,
@@ -114,7 +107,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Traversal,
 {
     let mut points = Vec::new();
     let mut indeces = Vec::new();
-    for (i, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
+    for (index, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         let width = cube.partition().width();
         let origin: Vector3 = cube.partition().origin().to_vector().into_domain();
         let color = Vector4::new(rand::random::<f32>(),
@@ -125,7 +118,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Traversal,
             .map(|point| (point * cube::exp(width) as RealSpace) + origin)
             .map(|point| RawVertex::from(Vertex::new(point, color))));
         indeces.extend(UNIT_CUBE_INDECES.iter()
-            .map(|j| ((UNIT_CUBE_POINTS.len() * i) as Index + *j)));
+            .map(|point| ((UNIT_CUBE_POINTS.len() * index) as Index + *point)));
     }
     factory.create_vertex_buffer_with_slice(points.as_slice(), indeces.as_slice())
 }
@@ -139,7 +132,7 @@ pub fn projection_from_window(window: &glutin::Window) -> Matrix4 {
 }
 
 pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
-    where C: cube::ComputedCube
+    where C: cube::Spatial
 {
     nalgebra::Isometry3::look_at_rh(from,
                                     &cube.partition().midpoint().into_domain(),

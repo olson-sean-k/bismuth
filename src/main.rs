@@ -11,16 +11,16 @@ use gfx::traits::FactoryExt;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
-fn new_tree() -> cube::Tree {
+fn new_root() -> cube::Root {
     let point = cube::Point3::new(0, 0, 0);
-    let mut tree = cube::Tree::new(10);
+    let mut root = cube::Root::new(10);
     {
-        let mut cube = tree.traverse_mut();
+        let mut cube = root.tree_mut();
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         cube.subdivide().unwrap();
     }
-    tree
+    root
 }
 
 fn main() {
@@ -36,15 +36,15 @@ fn main() {
                                 render::pipeline::new())
         .unwrap();
 
-    let tree = new_tree();
+    let root = new_root();
     let transform = {
-        let midpoint: render::Point3 = tree.partition().midpoint().into_domain();
+        let midpoint: render::Point3 = root.partition().midpoint().into_domain();
         let camera = render::Point3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
-        let view = render::look_at_cube(&tree, &camera);
+        let view = render::look_at_cube(&root, &camera);
         let projection = render::projection_from_window(&window);
         projection * view
     };
-    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&tree.traverse(), &mut factory);
+    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&root.tree(), &mut factory);
     let data = render::pipeline::Data {
         vertex_buffer: vertex_buffer,
         transform: *transform.as_ref(),
