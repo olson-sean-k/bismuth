@@ -66,7 +66,7 @@ impl Orientation {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Partition {
     origin: Point3,
     width: RootWidth,
@@ -387,7 +387,7 @@ pub struct CubeMutIter<'a> {
 
 impl<'a> CubeMutIter<'a> {
     fn new(cube: &'a mut CubeMut<'a>) -> Self {
-        CubeMutIter { cubes: vec![CubeMut::new(cube.node, cube.root, cube.partition.clone())] }
+        CubeMutIter { cubes: vec![CubeMut::new(cube.node, cube.root, cube.partition)] }
     }
 }
 
@@ -404,7 +404,7 @@ impl<'a> Iterator for CubeMutIter<'a> {
                                                  cube.partition.at_index(index).unwrap()));
                 }
             }
-            Some(OrphanCubeMut::new(orphan, cube.root, cube.partition.clone()))
+            Some(OrphanCubeMut::new(orphan, cube.root, cube.partition))
         } else {
             None
         }
@@ -499,11 +499,11 @@ impl Root {
     }
 
     pub fn to_cube(&self) -> Cube {
-        Cube::new(&self.node, &self.partition, self.partition.clone())
+        Cube::new(&self.node, &self.partition, self.partition)
     }
 
     pub fn to_cube_mut(&mut self) -> CubeMut {
-        CubeMut::new(&mut self.node, &self.partition, self.partition.clone())
+        CubeMut::new(&mut self.node, &self.partition, self.partition)
     }
 }
 
