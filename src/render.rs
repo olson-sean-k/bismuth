@@ -99,7 +99,7 @@ impl Vertex {
     }
 }
 
-pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Tree,
+pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube,
                                      factory: &mut F)
                                      -> (gfx::handle::Buffer<R, RawVertex>, gfx::Slice<R>)
     where R: gfx::Resources,

@@ -14,7 +14,7 @@ pub mod render;
 pub mod resource;
 
 pub mod prelude {
-    pub use cube::{Spatial};
+    pub use cube::Spatial;
     pub use math::*;
-    pub use render::{GeometricCube};
+    pub use render::GeometricCube;
 }

@@ -15,7 +15,7 @@ fn new_root() -> cube::Root {
     let point = cube::Point3::new(0, 0, 0);
     let mut root = cube::Root::new(10);
     {
-        let mut cube = root.tree_mut();
+        let mut cube = root.to_cube_mut();
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
         cube.subdivide().unwrap();
@@ -32,9 +32,8 @@ fn main() {
             .with_vsync());
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
     let state = factory.create_pipeline_simple(include_bytes!("shader/cube.glslv"),
-                                include_bytes!("shader/cube.glslf"),
-                                render::pipeline::new())
-        .unwrap();
+                                               include_bytes!("shader/cube.glslf"),
+                                               render::pipeline::new()).unwrap();
 
     let root = new_root();
     let transform = {
@@ -44,7 +43,7 @@ fn main() {
         let projection = render::projection_from_window(&window);
         projection * view
     };
-    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&root.tree(), &mut factory);
+    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&root.to_cube(), &mut factory);
     let data = render::pipeline::Data {
         vertex_buffer: vertex_buffer,
         transform: *transform.as_ref(),
