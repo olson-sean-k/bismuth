@@ -268,13 +268,11 @@ impl<'a> Spatial for Cube<'a> {
     }
 }
 
-pub struct CubeIter<'a> {
-    cubes: Vec<Cube<'a>>,
-}
+pub struct CubeIter<'a>(Vec<Cube<'a>>);
 
 impl<'a> CubeIter<'a> {
     fn new(cube: Cube<'a>) -> Self {
-        CubeIter { cubes: vec![cube] }
+        CubeIter(vec![cube])
     }
 }
 
@@ -282,13 +280,13 @@ impl<'a> Iterator for CubeIter<'a> {
     type Item = Cube<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cube) = self.cubes.pop() {
+        if let Some(cube) = self.0.pop() {
             match *cube.node {
                 Node::Branch(ref nodes, _) => {
                     for (index, node) in nodes.iter().enumerate() {
-                        self.cubes.push(Cube::new(node,
-                                                  cube.root,
-                                                  cube.partition().at_index(index).unwrap()));
+                        self.0.push(Cube::new(node,
+                                              cube.root,
+                                              cube.partition().at_index(index).unwrap()));
                     }
                 }
                 _ => {}
@@ -407,13 +405,11 @@ impl<'a> Spatial for CubeMut<'a> {
     }
 }
 
-pub struct CubeMutIter<'a> {
-    cubes: Vec<CubeMut<'a>>,
-}
+pub struct CubeMutIter<'a>(Vec<CubeMut<'a>>);
 
 impl<'a> CubeMutIter<'a> {
     fn new(cube: &'a mut CubeMut<'a>) -> Self {
-        CubeMutIter { cubes: vec![CubeMut::new(cube.node, cube.root, cube.partition)] }
+        CubeMutIter(vec![CubeMut::new(cube.node, cube.root, cube.partition)])
     }
 }
 
@@ -421,13 +417,13 @@ impl<'a> Iterator for CubeMutIter<'a> {
     type Item = OrphanCubeMut<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cube) = self.cubes.pop() {
+        if let Some(cube) = self.0.pop() {
             let (orphan, nodes) = cube.node.to_orphan_mut();
             if let Some(nodes) = nodes {
                 for (index, node) in nodes.iter_mut().enumerate() {
-                    self.cubes.push(CubeMut::new(node,
-                                                 cube.root,
-                                                 cube.partition.at_index(index).unwrap()));
+                    self.0.push(CubeMut::new(node,
+                                             cube.root,
+                                             cube.partition.at_index(index).unwrap()));
                 }
             }
             Some(OrphanCubeMut::new(orphan, cube.root, cube.partition))
