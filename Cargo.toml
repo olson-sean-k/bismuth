@@ -2,6 +2,9 @@
 name = "bismuth"
 version = "0.1.0"
 authors = ["Sean Olson <olson.sean.k@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/olson-sean-k/bismuth"
 
 [lib]
 name = "bismuth"
