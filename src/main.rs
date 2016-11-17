@@ -14,12 +14,7 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 fn new_root() -> cube::Root {
     let point = cube::Point3::new(0, 0, 0);
     let mut root = cube::Root::new(10);
-    {
-        let mut cube = root.to_cube_mut();
-        let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
-        let mut cube = cube.subdivide().unwrap().at_point(&point, 0);
-        cube.subdivide().unwrap();
-    }
+    root.to_cube_mut().subdivide_to_point(&point, 7);
     root
 }
 

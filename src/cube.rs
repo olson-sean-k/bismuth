@@ -328,7 +328,7 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn at_point(&'a mut self, point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(self, point: &Point3, width: RootWidth) -> Self {
         let mut node: Option<&mut Node> = Some(self.node);
         let mut depth = self.partition.width();
 
@@ -378,6 +378,18 @@ impl<'a> CubeMut<'a> {
             self.node.subdivide().ok_or(SubdivideError::BranchSubdivided)?;
             Ok(self)
         }
+    }
+
+    pub fn subdivide_to_point(self, point: &Point3, width: RootWidth) -> Self {
+        let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
+        let mut cube = self.at_point(point, width);
+
+        while cube.partition.width() > width {
+            cube.subdivide().unwrap();
+            cube = cube.at_point(point, width);
+        }
+
+        cube
     }
 }
 
