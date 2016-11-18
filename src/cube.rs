@@ -21,7 +21,6 @@ use std::error::Error;
 use std::fmt;
 use std::mem;
 use std::ops;
-use std::ops::DerefMut;
 
 use math::{Clamp, Mask, DiscreteSpace};
 use resource::ResourceId;
@@ -604,7 +603,7 @@ impl Node {
         let node = mem::replace(self, Node::default());
         match node {
             Node::Leaf(node) => {
-                let node = Node::new();
+                let node: Node = node.into();
                 *self = Node::Branch(Box::new([node.clone(),
                                                node.clone(),
                                                node.clone(),
@@ -646,6 +645,12 @@ impl Clone for Node {
 impl Default for Node {
     fn default() -> Self {
         Node::new()
+    }
+}
+
+impl From<LeafNode> for Node {
+    fn from(node: LeafNode) -> Self {
+        Node::Leaf(node)
     }
 }
 
