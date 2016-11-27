@@ -633,8 +633,7 @@ impl Node {
     fn subdivide(&mut self) -> Option<&mut Self> {
         let node = mem::replace(self, Node::default());
         match node {
-            Node::Leaf(node) => {
-                let node: Node = node.into();
+            Node::Leaf(_) => {
                 *self = Node::Branch(Box::new([node.clone(),
                                                node.clone(),
                                                node.clone(),
@@ -676,12 +675,6 @@ impl Clone for Node {
 impl Default for Node {
     fn default() -> Self {
         Node::new()
-    }
-}
-
-impl From<LeafNode> for Node {
-    fn from(node: LeafNode) -> Self {
-        Node::Leaf(node)
     }
 }
 
