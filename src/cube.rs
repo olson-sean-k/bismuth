@@ -19,7 +19,6 @@ use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::error;
 use std::error::Error;
 use std::fmt;
-use std::mem;
 use std::ops;
 
 use math::{Clamp, Mask, DiscreteSpace};
@@ -617,38 +616,30 @@ impl Node {
     }
 
     fn join(&mut self) -> Option<&mut Self> {
-        let node = mem::replace(self, Node::default());
-        match node {
-            Node::Branch(_, _) => {
-                *self = Node::Leaf(LeafNode::new());
-                Some(self)
-            }
-            _ => {
-                *self = node;
-                None
-            }
+        if let Node::Branch(..) = *self {
+            *self = Node::Leaf(LeafNode::new());
+            Some(self)
+        }
+        else {
+            None
         }
     }
 
     fn subdivide(&mut self) -> Option<&mut Self> {
-        let node = mem::replace(self, Node::default());
-        match node {
-            Node::Leaf(_) => {
-                *self = Node::Branch(Box::new([node.clone(),
-                                               node.clone(),
-                                               node.clone(),
-                                               node.clone(),
-                                               node.clone(),
-                                               node.clone(),
-                                               node.clone(),
-                                               node]),
-                                     BranchNode::new());
-                Some(self)
-            }
-            _ => {
-                *self = node;
-                None
-            }
+        if let Node::Leaf(..) = *self {
+            *self = Node::Branch(Box::new([self.clone(),
+                                           self.clone(),
+                                           self.clone(),
+                                           self.clone(),
+                                           self.clone(),
+                                           self.clone(),
+                                           self.clone(),
+                                           self.clone()]),
+                                 BranchNode::new());
+            Some(self)
+        }
+        else {
+            None
         }
     }
 }
