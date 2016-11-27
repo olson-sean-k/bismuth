@@ -197,6 +197,11 @@ impl<'a> Cube<'a> {
         }
     }
 
+    pub fn to_orphan(&self) -> OrphanCube {
+        let (orphan, _) = self.node.to_orphan();
+        OrphanCube::new(orphan, self.root, self.partition)
+    }
+
     pub fn iter(&self) -> CubeIter {
         CubeIter::new(self.clone())
     }
@@ -309,6 +314,11 @@ impl<'a> CubeMut<'a> {
             root: root,
             partition: partition,
         }
+    }
+
+    pub fn to_orphan(&mut self) -> OrphanCubeMut {
+        let (orphan, _) = self.node.to_orphan_mut();
+        OrphanCubeMut::new(orphan, self.root, self.partition)
     }
 
     pub fn iter(&mut self) -> CubeMutIter {
@@ -509,14 +519,6 @@ impl<'a> ops::DerefMut for OrphanCubeMut<'a> {
     }
 }
 
-impl<'a> From<CubeMut<'a>> for OrphanCubeMut<'a> {
-    fn from(cube: CubeMut<'a>) -> Self {
-        let mut cube = cube;
-        let (orphan, _) = cube.node.to_orphan_mut();
-        OrphanCubeMut::new(orphan, cube.root, cube.partition)
-    }
-}
-
 impl<'a> Spatial for OrphanCubeMut<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
@@ -594,27 +596,6 @@ impl Node {
         }
     }
 
-    fn at_point(&mut self, point: &Point3, basis: RootWidth, limit: u8) -> (&mut Self, u8) {
-        let mut node: Option<&mut Node> = Some(self);
-        let mut depth = 0u8;
-
-        while depth < limit {
-            let taken = node.take().unwrap();
-            match *taken {
-                Node::Branch(ref mut nodes, _) => {
-                    depth = depth + 1;
-                    node = Some(&mut nodes[index_at_point(&point, basis - depth)]);
-                }
-                _ => {
-                    node = Some(taken);
-                    break;
-                }
-            }
-        }
-
-        (node.take().unwrap(), depth)
-    }
-
     fn join(&mut self) -> Option<&mut Self> {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
@@ -660,12 +641,6 @@ impl Clone for Node {
                              branch.clone())
             }
         }
-    }
-}
-
-impl Default for Node {
-    fn default() -> Self {
-        Node::new()
     }
 }
 
