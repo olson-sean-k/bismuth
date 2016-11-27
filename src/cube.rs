@@ -311,11 +311,11 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn iter(&'a mut self) -> CubeMutIter {
+    pub fn iter(&mut self) -> CubeMutIter {
         CubeMutIter::new(self)
     }
 
-    pub fn walk<F, R>(&'a mut self, f: &F)
+    pub fn walk<F, R>(&mut self, f: &F)
         where F: Fn(&mut CubeMut) -> R
     {
         f(self);
@@ -326,7 +326,7 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn at_point(&'a mut self, point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(&mut self, point: &Point3, width: RootWidth) -> CubeMut {
         let mut node: Option<&mut Node> = Some(self.node);
         let mut depth = self.partition.width();
 
@@ -351,7 +351,7 @@ impl<'a> CubeMut<'a> {
                      Partition::at_point(&point, depth))
     }
 
-    pub fn at_index(&'a mut self, index: usize) -> Option<Self> {
+    pub fn at_index(&mut self, index: usize) -> Option<CubeMut> {
         match *self.node {
             Node::Branch(ref mut nodes, _) => {
                 let root = self.root;
@@ -377,7 +377,7 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn subdivide_to_point(&'a mut self, point: &Point3, width: RootWidth) -> &mut Self {
+    pub fn subdivide_to_point(&mut self, point: &Point3, width: RootWidth) -> &mut Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         if self.partition.width() > width {
             self.node.subdivide();
@@ -420,7 +420,7 @@ impl<'a> Spatial for CubeMut<'a> {
 pub struct CubeMutIter<'a>(Vec<CubeMut<'a>>);
 
 impl<'a> CubeMutIter<'a> {
-    fn new(cube: &'a mut CubeMut<'a>) -> Self {
+    fn new(cube: &'a mut CubeMut) -> Self {
         CubeMutIter(vec![CubeMut::new(cube.node, cube.root, cube.partition)])
     }
 }
