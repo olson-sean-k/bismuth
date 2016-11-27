@@ -88,9 +88,10 @@ impl Partition {
     /// Constructs a `Partition` at the given point in space with the given
     /// width. The width is clamped to [`MIN_WIDTH`, `MAX_WIDTH`].
     pub fn at_point(point: &Point3, width: RootWidth) -> Self {
+        let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
-            origin: point.mask(!DiscreteSpace::zero() << width),
-            width: width.clamp(MIN_WIDTH, MAX_WIDTH),
+            origin: point.mask(!DiscreteSpace::zero() << (width - 1)),
+            width: width,
         }
     }
 
@@ -216,9 +217,9 @@ impl<'a> Cube<'a> {
 
         // Clamp the inputs.
         let point = point.clamp(0, (exp(self.root.width())) - 1);
-        let width = exp(width.clamp(MIN_WIDTH, depth));
+        let width = width.clamp(MIN_WIDTH, depth);
 
-        while (width >> depth) == 0 {
+        while width < depth {
             match *node {
                 Node::Branch(ref nodes, _) => {
                     depth = depth - 1;
@@ -227,7 +228,6 @@ impl<'a> Cube<'a> {
                 _ => break,
             }
         }
-
         Cube::new(node, self.root, Partition::at_point(&point, depth))
     }
 
@@ -327,14 +327,14 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn at_point(self, point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(&'a mut self, point: &Point3, width: RootWidth) -> Self {
         let mut node: Option<&mut Node> = Some(self.node);
         let mut depth = self.partition.width();
 
         let point = point.clamp(0, (exp(self.root.width())) - 1);
-        let width = exp(width.clamp(MIN_WIDTH, depth));
+        let width = width.clamp(MIN_WIDTH, depth);
 
-        while (width >> depth) == 0 {
+        while width < depth {
             let taken = node.take().unwrap();
             match *taken {
                 Node::Branch(ref mut nodes, _) => {
@@ -347,7 +347,6 @@ impl<'a> CubeMut<'a> {
                 }
             }
         }
-
         CubeMut::new(node.take().unwrap(),
                      self.root,
                      Partition::at_point(&point, depth))
@@ -379,16 +378,19 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn subdivide_to_point(self, point: &Point3, width: RootWidth) -> Self {
+    pub fn subdivide_to_point(&'a mut self, point: &Point3, width: RootWidth) -> &mut Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
-        let mut cube = self.at_point(point, width);
-
-        while cube.partition.width() > width {
-            cube.subdivide().unwrap();
-            cube = cube.at_point(point, width);
+        if self.partition.width() > width {
+            self.node.subdivide();
+            if let Node::Branch(ref mut nodes, _) = *self.node {
+                let index = index_at_point(&point, width);
+                CubeMut::new(&mut nodes[index],
+                             self.root,
+                             self.partition.at_index(index).unwrap())
+                    .subdivide_to_point(&point, width);
+            }
         }
-
-        cube
+        self
     }
 }
 
@@ -508,6 +510,14 @@ impl<'a> ops::DerefMut for OrphanCubeMut<'a> {
     }
 }
 
+impl<'a> From<CubeMut<'a>> for OrphanCubeMut<'a> {
+    fn from(cube: CubeMut<'a>) -> Self {
+        let mut cube = cube;
+        let (orphan, _) = cube.node.to_orphan_mut();
+        OrphanCubeMut::new(orphan, cube.root, cube.partition)
+    }
+}
+
 impl<'a> Spatial for OrphanCubeMut<'a> {
     fn partition(&self) -> &Partition {
         &self.partition
@@ -562,14 +572,21 @@ impl Node {
         Node::Leaf(LeafNode::new())
     }
 
-    pub fn to_orphan<'a>(&'a self) -> (OrphanNode<'a>, Option<&'a NodeLink>) {
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            Node::Leaf(_) => true,
+            _ => false,
+        }
+    }
+
+    fn to_orphan<'a>(&'a self) -> (OrphanNode<'a>, Option<&'a NodeLink>) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(leaf), None),
             Node::Branch(ref nodes, ref branch) => (OrphanNode::Branch(branch), Some(nodes)),
         }
     }
 
-    pub fn to_orphan_mut<'a>(&'a mut self) -> (OrphanNodeMut<'a>, Option<&'a mut NodeLink>) {
+    fn to_orphan_mut<'a>(&'a mut self) -> (OrphanNodeMut<'a>, Option<&'a mut NodeLink>) {
         match *self {
             Node::Leaf(ref mut leaf) => (OrphanNodeMut::Leaf(leaf), None),
             Node::Branch(ref mut nodes, ref mut branch) => {
@@ -578,11 +595,25 @@ impl Node {
         }
     }
 
-    pub fn is_leaf(&self) -> bool {
-        match *self {
-            Node::Leaf(_) => true,
-            _ => false,
+    fn at_point(&mut self, point: &Point3, basis: RootWidth, limit: u8) -> (&mut Self, u8) {
+        let mut node: Option<&mut Node> = Some(self);
+        let mut depth = 0u8;
+
+        while depth < limit {
+            let taken = node.take().unwrap();
+            match *taken {
+                Node::Branch(ref mut nodes, _) => {
+                    depth = depth + 1;
+                    node = Some(&mut nodes[index_at_point(&point, basis - depth)]);
+                }
+                _ => {
+                    node = Some(taken);
+                    break;
+                }
+            }
         }
+
+        (node.take().unwrap(), depth)
     }
 
     fn join(&mut self) -> Option<&mut Self> {
@@ -770,5 +801,16 @@ pub fn exp(width: RootWidth) -> DiscreteSpace {
 
 #[cfg(test)]
 mod tests {
+    use nalgebra::Origin;
     use super::*;
+
+    #[test]
+    fn test_cube_subdivide_to_point() {
+        let point = Point3::origin();
+        let width = MIN_WIDTH;
+        let mut root = Root::new(MAX_WIDTH);
+
+        root.to_cube_mut().subdivide_to_point(&point, width);
+        assert!(root.to_cube().at_point(&point, width).partition().width() == width);
+    }
 }
