@@ -388,9 +388,9 @@ impl<'a> CubeMut<'a> {
     }
 
     pub fn subdivide_to_point(&mut self, point: &Point3, width: RootWidth) -> &mut Self {
+        let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
+        let mut depth = width;
         {
-            let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
-            let mut depth = width;
             let mut cube = Some(self.at_point(point, width));
             while cube.as_ref().unwrap().partition.width() > width {
                 depth = depth - 1;
@@ -605,8 +605,7 @@ impl Node {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
             Some(self)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -623,8 +622,7 @@ impl Node {
                                            self.clone()]),
                                  BranchNode::new());
             Some(self)
-        }
-        else {
+        } else {
             None
         }
     }
