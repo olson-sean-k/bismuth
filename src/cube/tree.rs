@@ -130,14 +130,14 @@ impl BranchNode {
 }
 
 pub struct Root {
-    node: Node,
+    node: Box<Node>,
     partition: Partition,
 }
 
 impl Root {
     pub fn new(width: RootWidth) -> Self {
         Root {
-            node: Node::new(),
+            node: Box::new(Node::new()),
             partition: Partition::at_point(&Point3::origin(), width),
         }
     }
