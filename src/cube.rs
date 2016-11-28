@@ -575,7 +575,7 @@ impl Node {
 
     pub fn is_leaf(&self) -> bool {
         match *self {
-            Node::Leaf(_) => true,
+            Node::Leaf(..) => true,
             _ => false,
         }
     }
