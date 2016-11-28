@@ -104,7 +104,8 @@ impl Partition {
     pub fn at_index(&self, index: usize) -> Option<Self> {
         if self.is_min_width() {
             None
-        } else {
+        }
+        else {
             let width = self.width - 1;
             Some(Partition {
                 origin: self.origin + vector_at_index(index, width),
@@ -295,7 +296,8 @@ impl<'a> Iterator for CubeIter<'a> {
                 _ => {}
             }
             Some(cube)
-        } else {
+        }
+        else {
             None
         }
     }
@@ -381,7 +383,8 @@ impl<'a> CubeMut<'a> {
     pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
         if self.partition().is_min_width() {
             Err(SubdivideError::LimitExceeded)
-        } else {
+        }
+        else {
             self.node.subdivide().ok_or(SubdivideError::BranchSubdivided)?;
             Ok(self)
         }
@@ -454,7 +457,8 @@ impl<'a> Iterator for CubeMutIter<'a> {
                 }
             }
             Some(OrphanCubeMut::new(orphan, cube.root, cube.partition))
-        } else {
+        }
+        else {
             None
         }
     }
@@ -605,7 +609,8 @@ impl Node {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
             Some(self)
-        } else {
+        }
+        else {
             None
         }
     }
@@ -622,7 +627,8 @@ impl Node {
                                            self.clone()]),
                                  BranchNode::new());
             Some(self)
-        } else {
+        }
+        else {
             None
         }
     }
@@ -756,7 +762,8 @@ fn vector_at_index(index: usize, width: RootWidth) -> Vector3 {
 pub fn exp(width: RootWidth) -> DiscreteSpace {
     if width > 0 {
         DiscreteSpace::one() << (width - 1)
-    } else {
+    }
+    else {
         0
     }
 }
