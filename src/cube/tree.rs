@@ -309,10 +309,16 @@ impl<'a> CubeMut<'a> {
     pub fn walk<F, R>(&mut self, f: &F)
         where F: Fn(&mut CubeMut) -> R
     {
-        f(self);
-        if let Node::Branch(ref mut nodes, _) = *self.node {
-            for (index, node) in nodes.iter_mut().enumerate() {
-                CubeMut::new(node, self.root, self.partition.at_index(index).unwrap()).walk(f);
+        let mut cubes = vec![CubeMut::new(self.node, self.root, self.partition)];
+        while let Some(mut cube) = cubes.pop() {
+            f(&mut cube);
+            let (_, nodes) = cube.node.to_orphan_mut();
+            if let Some(nodes) = nodes {
+                for (index, node) in nodes.iter_mut().enumerate() {
+                    cubes.push(CubeMut::new(node,
+                                            cube.root,
+                                            cube.partition.at_index(index).unwrap()));
+                }
             }
         }
     }
