@@ -135,7 +135,7 @@ pub struct Root {
 }
 
 impl Root {
-    pub fn new(width: RootWidth) -> Self {
+    pub fn new(width: LogWidth) -> Self {
         Root {
             node: Box::new(Node::new()),
             partition: Partition::at_point(&Point3::origin(), width),
@@ -195,7 +195,7 @@ impl<'a> Cube<'a> {
         }
     }
 
-    pub fn at_point(&self, point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Self {
         let mut node = self.node;
         let mut depth = self.partition.width();
 
@@ -323,7 +323,7 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn at_point(&mut self, point: &Point3, width: RootWidth) -> CubeMut {
+    pub fn at_point(&mut self, point: &Point3, width: LogWidth) -> CubeMut {
         let mut node: Option<&mut Node> = Some(self.node);
         let mut depth = self.partition.width();
 
@@ -375,7 +375,7 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn subdivide_to_point(&mut self, point: &Point3, width: RootWidth) -> &mut Self {
+    pub fn subdivide_to_point(&mut self, point: &Point3, width: LogWidth) -> &mut Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         let mut depth = width;
         {

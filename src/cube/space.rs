@@ -8,13 +8,13 @@ use math::{Clamp, Mask, DiscreteSpace};
 pub type Point3 = nalgebra::Point3<DiscreteSpace>;
 pub type Vector3 = nalgebra::Vector3<DiscreteSpace>;
 
-pub type RootWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
+pub type LogWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
-pub const MAX_WIDTH: RootWidth = 32;
-pub const MIN_WIDTH: RootWidth = 4;
+pub const MAX_WIDTH: LogWidth = 32;
+pub const MIN_WIDTH: LogWidth = 4;
 
-impl Clamp<RootWidth> for RootWidth {
-    fn clamp(&self, min: RootWidth, max: RootWidth) -> Self {
+impl Clamp<LogWidth> for LogWidth {
+    fn clamp(&self, min: LogWidth, max: LogWidth) -> Self {
         nalgebra::clamp(*self, min, max)
     }
 }
@@ -61,13 +61,13 @@ impl Orientation {
 #[derive(Clone, Copy)]
 pub struct Partition {
     origin: Point3,
-    width: RootWidth,
+    width: LogWidth,
 }
 
 impl Partition {
     /// Constructs a `Partition` at the given point in space with the given
     /// width. The width is clamped to [`MIN_WIDTH`, `MAX_WIDTH`].
-    pub fn at_point(point: &Point3, width: RootWidth) -> Self {
+    pub fn at_point(point: &Point3, width: LogWidth) -> Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
             origin: point.mask(!DiscreteSpace::zero() << (width - 1)),
@@ -101,7 +101,7 @@ impl Partition {
     }
 
     /// Gets the width of the `Partition`.
-    pub fn width(&self) -> RootWidth {
+    pub fn width(&self) -> LogWidth {
         self.width
     }
 
@@ -123,7 +123,7 @@ pub trait Spatial {
     fn depth(&self) -> u8;
 }
 
-pub fn exp(width: RootWidth) -> DiscreteSpace {
+pub fn exp(width: LogWidth) -> DiscreteSpace {
     if width > 0 {
         DiscreteSpace::one() << (width - 1)
     }
@@ -133,13 +133,13 @@ pub fn exp(width: RootWidth) -> DiscreteSpace {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub fn index_at_point(point: &Point3, width: RootWidth) -> usize {
+pub fn index_at_point(point: &Point3, width: LogWidth) -> usize {
     ((((point.x >> width) & DiscreteSpace::one()) << 0) |
      (((point.y >> width) & DiscreteSpace::one()) << 1) |
      (((point.z >> width) & DiscreteSpace::one()) << 2)) as usize
 }
 
-pub fn vector_at_index(index: usize, width: RootWidth) -> Vector3 {
+pub fn vector_at_index(index: usize, width: LogWidth) -> Vector3 {
     assert!(index < 8);
     let index = index as DiscreteSpace;
     let width = exp(width);
