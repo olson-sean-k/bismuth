@@ -188,15 +188,15 @@ impl<'a> Cube<'a> {
     }
 
     // TODO: Is this useful? `CubeIter` already yields fully linked `Cube`s.
-    pub fn walk<F, R>(&'a self, f: &F)
-        where F: Fn(Cube<'a>) -> R
+    pub fn walk<F, R>(&self, f: &F)
+        where F: Fn(&Cube) -> R
     {
         for node in self.iter() {
-            f(node);
+            f(&node);
         }
     }
 
-    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Self {
+    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Cube {
         let mut node = self.node;
         let mut depth = self.partition.width();
 
@@ -216,7 +216,7 @@ impl<'a> Cube<'a> {
         Cube::new(node, self.root, Partition::at_point(&point, depth))
     }
 
-    pub fn at_index(&self, index: usize) -> Option<Self> {
+    pub fn at_index(&self, index: usize) -> Option<Cube> {
         match *self.node {
             Node::Branch(ref nodes, _) => {
                 self.partition
