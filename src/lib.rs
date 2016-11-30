@@ -8,6 +8,8 @@ extern crate nalgebra;
 extern crate num;
 extern crate rand;
 
+use std::marker;
+
 pub mod cube;
 pub mod math;
 pub mod render;
@@ -18,3 +20,9 @@ pub mod prelude {
     pub use math::*;
     pub use render::GeometricCube;
 }
+
+pub trait IgnorableResult: marker::Sized {
+    fn ignore(self) {}
+}
+
+impl<T, E> IgnorableResult for Result<T, E> {}

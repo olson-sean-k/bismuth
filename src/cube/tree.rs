@@ -7,6 +7,7 @@ use std::error::Error;
 use std::fmt;
 use std::ops;
 
+use IgnorableResult;
 use math::Clamp;
 use resource::ResourceId;
 use super::geometry::*;
@@ -47,17 +48,17 @@ impl Node {
         }
     }
 
-    fn join(&mut self) -> Option<&mut Self> {
+    fn join(&mut self) -> Result<(), JoinError> {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
-            Some(self)
+            Ok(())
         }
         else {
-            None
+            Err(JoinError::AlreadyJoined)
         }
     }
 
-    fn subdivide(&mut self) -> Option<&mut Self> {
+    fn subdivide(&mut self) -> Result<(), SubdivideError> {
         if let Node::Leaf(..) = *self {
             *self = Node::Branch(Box::new([self.clone(),
                                            self.clone(),
@@ -68,10 +69,10 @@ impl Node {
                                            self.clone(),
                                            self.clone()]),
                                  BranchNode::new());
-            Some(self)
+            Ok(())
         }
         else {
-            None
+            Err(SubdivideError::AlreadySubdivided)
         }
     }
 }
@@ -360,18 +361,16 @@ impl<'a> CubeMut<'a> {
         }
     }
 
-    pub fn join(&mut self) -> Result<&mut Self, JoinError> {
-        self.node.join().ok_or(JoinError::LeafJoined)?;
-        Ok(self)
+    pub fn join(&mut self) -> Result<(), JoinError> {
+        self.node.join()
     }
 
-    pub fn subdivide(&mut self) -> Result<&mut Self, SubdivideError> {
+    pub fn subdivide(&mut self) -> Result<(), SubdivideError> {
         if self.partition().is_min_width() {
             Err(SubdivideError::LimitExceeded)
         }
         else {
-            self.node.subdivide().ok_or(SubdivideError::BranchSubdivided)?;
-            Ok(self)
+            self.node.subdivide()
         }
     }
 
@@ -382,7 +381,7 @@ impl<'a> CubeMut<'a> {
         while cube.as_ref().unwrap().partition.width() > width {
             depth = depth - 1;
             let mut taken = cube.take().unwrap();
-            taken.node.subdivide();
+            taken.node.subdivide().ignore();
             if let Node::Branch(ref mut nodes, _) = *taken.node {
                 let index = index_at_point(point, depth);
                 cube = Some(CubeMut::new(&mut nodes[index],
@@ -523,7 +522,7 @@ impl<'a> Spatial for OrphanCubeMut<'a> {
 
 #[derive(Debug)]
 pub enum JoinError {
-    LeafJoined,
+    AlreadyJoined,
 }
 
 impl fmt::Display for JoinError {
@@ -535,7 +534,7 @@ impl fmt::Display for JoinError {
 impl error::Error for JoinError {
     fn description(&self) -> &str {
         match *self {
-            JoinError::LeafJoined => "attempted to join leaf",
+            JoinError::AlreadyJoined => "attempted to join leaf",
         }
     }
 }
@@ -543,7 +542,7 @@ impl error::Error for JoinError {
 #[derive(Debug)]
 pub enum SubdivideError {
     LimitExceeded,
-    BranchSubdivided,
+    AlreadySubdivided,
 }
 
 impl fmt::Display for SubdivideError {
@@ -556,7 +555,7 @@ impl error::Error for SubdivideError {
     fn description(&self) -> &str {
         match *self {
             SubdivideError::LimitExceeded => "minimum width limit exceeded",
-            SubdivideError::BranchSubdivided => "attempted to subdivide branch",
+            SubdivideError::AlreadySubdivided => "attempted to subdivide branch",
         }
     }
 }
