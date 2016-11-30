@@ -7,7 +7,6 @@ use std::error::Error;
 use std::fmt;
 use std::ops;
 
-use IgnorableResult;
 use math::Clamp;
 use resource::ResourceId;
 use super::geometry::*;
@@ -381,7 +380,7 @@ impl<'a> CubeMut<'a> {
         while cube.as_ref().unwrap().partition.width() > width {
             depth = depth - 1;
             let mut taken = cube.take().unwrap();
-            taken.node.subdivide().ignore();
+            let _ = taken.node.subdivide();
             if let Node::Branch(ref mut nodes, _) = *taken.node {
                 let index = index_at_point(point, depth);
                 cube = Some(CubeMut::new(&mut nodes[index],
