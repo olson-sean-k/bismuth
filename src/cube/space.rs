@@ -56,6 +56,33 @@ impl Orientation {
     }
 }
 
+pub struct AABB {
+    pub origin: Point3,
+    pub extent: Vector3,
+}
+
+impl AABB {
+    pub fn new(origin: Point3, extent: Vector3) -> Self {
+        AABB {
+            origin: origin,
+            extent: extent,
+        }
+    }
+
+    // TODO: Return detailed intersection information.
+    pub fn intersects(&self, other: &Self) -> bool {
+        for axis in 0..3 {
+            if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
+                return false;
+            }
+            if self.origin[axis] > (other.origin[axis] + other.extent[axis]) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 /// A cubic spatial partition in the `DiscreteSpace`. `Partition`s are
 /// represented as an origin and a width.
 #[derive(Clone, Copy)]
@@ -109,6 +136,14 @@ impl Partition {
     pub fn midpoint(&self) -> Point3 {
         let m = exp(self.width - 1);
         self.origin + Vector3::new(m, m, m)
+    }
+
+    pub fn extent(&self) -> Vector3 {
+        Vector3::one() * exp(self.width)
+    }
+
+    pub fn bounds(&self) -> AABB {
+        AABB::new(self.origin, self.extent())
     }
 
     /// Returns `true` if the `Partition` has the minimum possible width.

@@ -34,11 +34,11 @@ impl Cursor {
         &self.span
     }
 
-    pub fn bounds(&self) -> (Point3, Point3) {
-        (self.origin.clone(), self.origin + self.extent())
+    pub fn extent(&self) -> Vector3 {
+        (Vector3::from_domain(self.span) + Vector3::one()) * exp(self.width)
     }
 
-    fn extent(&self) -> Vector3 {
-        (Vector3::from_domain(self.span) + Vector3::one()) * exp(self.width)
+    pub fn bounds(&self) -> AABB {
+        AABB::new(self.origin, self.extent())
     }
 }

@@ -7,6 +7,7 @@ use std::error::Error;
 use std::fmt;
 use std::ops;
 
+use edit::Cursor;
 use math::Clamp;
 use resource::ResourceId;
 use super::geometry::*;
@@ -306,6 +307,10 @@ impl<'a> CubeMut<'a> {
         CubeMutIter::new(self)
     }
 
+    pub fn iter_cursor<'b>(&'b mut self, cursor: &'b Cursor) -> CursorMutIter {
+        CursorMutIter::new(self, cursor)
+    }
+
     pub fn walk<F, R>(&mut self, f: &F)
         where F: Fn(&mut CubeMut) -> R
     {
@@ -442,6 +447,45 @@ impl<'a> Iterator for CubeMutIter<'a> {
         else {
             None
         }
+    }
+}
+
+pub struct CursorMutIter<'a> {
+    cubes: Vec<CubeMut<'a>>,
+    cursor: &'a Cursor,
+}
+
+impl<'a> CursorMutIter<'a> {
+    fn new(cube: &'a mut CubeMut, cursor: &'a Cursor) -> Self {
+        CursorMutIter {
+            cubes: vec![CubeMut::new(cube.node, cube.root, cube.partition)],
+            cursor: cursor,
+        }
+    }
+}
+
+impl<'a> Iterator for CursorMutIter<'a> {
+    type Item = CubeMut<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(cube) = self.cubes.pop() {
+            if cube.partition.bounds().intersects(&self.cursor.bounds()) {
+                if cube.partition.width() <= self.cursor.width() {
+                    return Some(cube);
+                }
+                else {
+                    let (_, nodes) = cube.node.to_orphan_mut();
+                    if let Some(nodes) = nodes {
+                        for (index, node) in nodes.iter_mut().enumerate() {
+                            self.cubes.push(CubeMut::new(node,
+                                                         cube.root,
+                                                         cube.partition.at_index(index).unwrap()));
+                        }
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
