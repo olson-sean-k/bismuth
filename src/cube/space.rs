@@ -156,6 +156,10 @@ pub trait Spatial {
     fn partition(&self) -> &Partition;
 
     fn depth(&self) -> u8;
+
+    fn aabb(&self) -> AABB {
+        self.partition().aabb()
+    }
 }
 
 pub fn exp(width: LogWidth) -> DiscreteSpace {
