@@ -9,6 +9,7 @@ extern crate num;
 extern crate rand;
 
 pub mod cube;
+pub mod edit;
 pub mod math;
 pub mod render;
 pub mod resource;
