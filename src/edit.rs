@@ -42,3 +42,8 @@ impl Cursor {
         AABB::new(self.origin, self.extent())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

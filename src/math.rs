@@ -76,3 +76,8 @@ impl<T> Mask<T> for nalgebra::Point3<T>
         nalgebra::Point3::new(self.x & value, self.y & value, self.z & value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

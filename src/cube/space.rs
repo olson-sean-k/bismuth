@@ -182,3 +182,8 @@ pub fn vector_at_index(index: usize, width: LogWidth) -> Vector3 {
                  ((index >> 1) & DiscreteSpace::one()) * width,
                  ((index >> 2) & DiscreteSpace::one()) * width)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

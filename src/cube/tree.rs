@@ -605,16 +605,5 @@ impl error::Error for SubdivideError {
 
 #[cfg(test)]
 mod tests {
-    use nalgebra::Origin;
     use super::*;
-
-    #[test]
-    fn test_cube_subdivide_to_point() {
-        let point = Point3::origin();
-        let width = MIN_WIDTH;
-        let mut root = Root::new(MAX_WIDTH);
-
-        root.to_cube_mut().subdivide_to_point(&point, width);
-        assert!(root.to_cube().at_point(&point, width).partition().width() == width);
-    }
 }

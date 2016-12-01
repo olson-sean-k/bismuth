@@ -57,3 +57,8 @@ impl Geometry {
         &mut self.0[axis as usize]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}
