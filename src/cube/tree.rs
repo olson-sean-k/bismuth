@@ -469,7 +469,7 @@ impl<'a> Iterator for CursorMutIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(cube) = self.cubes.pop() {
-            if cube.partition.bounds().intersects(&self.cursor.bounds()) {
+            if cube.partition.aabb().intersects(&self.cursor.aabb()) {
                 if cube.partition.width() <= self.cursor.width() {
                     return Some(cube);
                 }

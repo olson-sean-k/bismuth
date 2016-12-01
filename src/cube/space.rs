@@ -142,7 +142,7 @@ impl Partition {
         Vector3::one() * exp(self.width)
     }
 
-    pub fn bounds(&self) -> AABB {
+    pub fn aabb(&self) -> AABB {
         AABB::new(self.origin, self.extent())
     }
 
