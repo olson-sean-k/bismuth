@@ -14,7 +14,7 @@ name = "bismuth"
 doc = false
 
 [dependencies]
-gfx = "0.12.*"
+gfx = "0.12.2"
 gfx_window_glutin = "0.12.*"
 glutin = "0.6.*"
 lazy_static = "0.1.*"
