@@ -395,6 +395,32 @@ impl<'a> CubeMut<'a> {
         }
         cube.take().unwrap()
     }
+
+    pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<CubeMut> {
+        let mut cubes = vec![];
+        let mut traversal = vec![CubeMut::new(self.node, self.root, self.partition)];
+        while let Some(cube) = traversal.pop() {
+            if cube.aabb().intersects(&cursor.aabb()) {
+                if cube.partition.width() == cursor.width() {
+                    cubes.push(cube);
+                }
+                else if cube.partition.width() > cursor.width() {
+                    if cube.node.is_leaf() {
+                        let _ = cube.node.subdivide();
+                    }
+                    let (_, nodes) = cube.node.to_orphan_mut();
+                    if let Some(nodes) = nodes {
+                        for (index, node) in nodes.iter_mut().enumerate() {
+                            traversal.push(CubeMut::new(node,
+                                                        cube.root,
+                                                        cube.partition.at_index(index).unwrap()));
+                        }
+                    }
+                }
+            }
+        }
+        cubes
+    }
 }
 
 impl<'a> ops::Deref for CubeMut<'a> {
