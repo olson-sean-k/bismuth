@@ -473,7 +473,7 @@ impl<'a> Iterator for CursorMutIter<'a> {
                 if cube.partition.width() == self.cursor.width() || cube.node.is_leaf() {
                     return Some(cube);
                 }
-                else {
+                else if cube.partition.width() > self.cursor.width() {
                     let (_, nodes) = cube.node.to_orphan_mut();
                     if let Some(nodes) = nodes {
                         for (index, node) in nodes.iter_mut().enumerate() {
