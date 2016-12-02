@@ -69,7 +69,6 @@ impl AABB {
         }
     }
 
-    // TODO: Return detailed intersection information.
     pub fn intersects(&self, other: &Self) -> bool {
         for axis in 0..3 {
             if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
