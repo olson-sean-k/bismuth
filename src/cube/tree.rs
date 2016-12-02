@@ -314,7 +314,7 @@ impl<'a> CubeMut<'a> {
     pub fn walk<F, R>(&mut self, f: &F)
         where F: Fn(&mut CubeMut) -> R
     {
-        let mut cubes = vec![CubeMut::new(self.node, self.root, self.partition)];
+        let mut cubes = vec![self.to_value()];
         while let Some(mut cube) = cubes.pop() {
             f(&mut cube);
             let (_, nodes) = cube.node.to_orphan_mut();
@@ -398,7 +398,7 @@ impl<'a> CubeMut<'a> {
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<CubeMut> {
         let mut cubes = vec![];
-        let mut traversal = vec![CubeMut::new(self.node, self.root, self.partition)];
+        let mut traversal = vec![self.to_value()];
         while let Some(cube) = traversal.pop() {
             if cube.aabb().intersects(&cursor.aabb()) {
                 if cube.partition.width() == cursor.width() {
@@ -420,6 +420,10 @@ impl<'a> CubeMut<'a> {
             }
         }
         cubes
+    }
+
+    fn to_value(&mut self) -> CubeMut {
+        CubeMut::new(self.node, self.root, self.partition)
     }
 }
 
@@ -451,7 +455,7 @@ pub struct CubeMutIter<'a>(Vec<CubeMut<'a>>);
 
 impl<'a> CubeMutIter<'a> {
     fn new(cube: &'a mut CubeMut) -> Self {
-        CubeMutIter(vec![CubeMut::new(cube.node, cube.root, cube.partition)])
+        CubeMutIter(vec![cube.to_value()])
     }
 }
 
@@ -484,7 +488,7 @@ pub struct CursorMutIter<'a> {
 impl<'a> CursorMutIter<'a> {
     fn new(cube: &'a mut CubeMut, cursor: &'a Cursor) -> Self {
         CursorMutIter {
-            cubes: vec![CubeMut::new(cube.node, cube.root, cube.partition)],
+            cubes: vec![cube.to_value()],
             cursor: cursor,
         }
     }
