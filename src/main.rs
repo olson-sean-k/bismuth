@@ -14,7 +14,9 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> cube::Root {
     let width = cube::MAX_WIDTH;
-    let cursor = edit::Cursor::at_point(&cube::Point3::new(0, 0, 0), width - 3);
+    let cursor = edit::Cursor::at_point_with_span(&cube::Point3::new(0, 0, 0),
+                                                  width - 3,
+                                                  &cube::Vector3::new(7, 1, 7));
     let mut root = cube::Root::new(width);
     root.to_cube_mut().subdivide_to_cursor(&cursor);
     root
