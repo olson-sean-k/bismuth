@@ -405,9 +405,7 @@ impl<'a> CubeMut<'a> {
                     cubes.push(cube);
                 }
                 else if cube.partition.width() > cursor.width() {
-                    if cube.node.is_leaf() {
-                        let _ = cube.node.subdivide();
-                    }
+                    let _ = cube.node.subdivide();
                     let (_, nodes) = cube.node.to_orphan_mut();
                     if let Some(nodes) = nodes {
                         for (index, node) in nodes.iter_mut().enumerate() {

@@ -3,8 +3,9 @@ extern crate bismuth;
 extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
+extern crate num;
 
-use bismuth::{cube, render};
+use bismuth::{cube, edit, render};
 use bismuth::prelude::*;
 use gfx::{format, Device};
 use gfx::traits::FactoryExt;
@@ -12,9 +13,10 @@ use gfx::traits::FactoryExt;
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> cube::Root {
-    let point = cube::Point3::new(0, 0, 0);
-    let mut root = cube::Root::new(10);
-    root.to_cube_mut().subdivide_to_point(&point, 7);
+    let width = cube::MAX_WIDTH;
+    let cursor = edit::Cursor::at_point(&cube::Point3::new(0, 0, 0), width - 3);
+    let mut root = cube::Root::new(width);
+    root.to_cube_mut().subdivide_to_cursor(&cursor);
     root
 }
 

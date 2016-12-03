@@ -3,14 +3,12 @@ extern crate num;
 
 use cube::*;
 use math::FromDomain;
-use num::One;
-
-pub type Span3 = nalgebra::Vector3<u8>;
+use num::{One, Zero};
 
 pub struct Cursor {
     origin: Point3,
     width: LogWidth,
-    span: Span3,
+    span: Vector3,
 }
 
 impl Cursor {
@@ -18,7 +16,16 @@ impl Cursor {
         Cursor {
             origin: cube.partition().origin().clone(),
             width: cube.partition().width(),
-            span: Span3::new(0, 0, 0),
+            span: Vector3::zero(),
+        }
+    }
+
+    pub fn at_point(point: &Point3, width: LogWidth) -> Self {
+        let partition = Partition::at_point(point, width);
+        Cursor {
+            origin: partition.origin().clone(),
+            width: partition.width(),
+            span: Vector3::zero(),
         }
     }
 
@@ -30,12 +37,12 @@ impl Cursor {
         self.width
     }
 
-    pub fn span(&self) -> &Span3 {
+    pub fn span(&self) -> &Vector3 {
         &self.span
     }
 
     pub fn extent(&self) -> Vector3 {
-        (Vector3::from_domain(self.span) + Vector3::one()) * exp(self.width)
+        ((self.span + Vector3::one()) * exp(self.width)) - Vector3::one()
     }
 
     pub fn aabb(&self) -> AABB {

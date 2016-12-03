@@ -10,7 +10,7 @@ pub type Vector3 = nalgebra::Vector3<DiscreteSpace>;
 
 pub type LogWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
-pub const MAX_WIDTH: LogWidth = 32;
+pub const MAX_WIDTH: LogWidth = 31;
 pub const MIN_WIDTH: LogWidth = 4;
 
 impl Clamp<LogWidth> for LogWidth {
@@ -96,7 +96,7 @@ impl Partition {
     pub fn at_point(point: &Point3, width: LogWidth) -> Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
-            origin: point.mask(!DiscreteSpace::zero() << (width - 1)),
+            origin: point.mask(!DiscreteSpace::zero() << width),
             width: width,
         }
     }
@@ -138,7 +138,7 @@ impl Partition {
     }
 
     pub fn extent(&self) -> Vector3 {
-        Vector3::one() * exp(self.width)
+        (Vector3::one() * exp(self.width)) - Vector3::one()
     }
 
     pub fn aabb(&self) -> AABB {
@@ -162,12 +162,7 @@ pub trait Spatial {
 }
 
 pub fn exp(width: LogWidth) -> DiscreteSpace {
-    if width > 0 {
-        DiscreteSpace::one() << (width - 1)
-    }
-    else {
-        0
-    }
+    DiscreteSpace::one() << width
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
