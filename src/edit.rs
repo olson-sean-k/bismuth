@@ -2,7 +2,6 @@ extern crate nalgebra;
 extern crate num;
 
 use cube::*;
-use math::FromDomain;
 use num::{One, Zero};
 
 pub struct Cursor {
