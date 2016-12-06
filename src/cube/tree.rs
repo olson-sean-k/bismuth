@@ -380,20 +380,20 @@ impl<'a> CubeMut<'a> {
 
     pub fn subdivide_to_point(&mut self, point: &Point3, width: LogWidth) -> CubeMut {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
-        let mut depth = width;
-        let mut cube = Some(self.at_point(point, width));
-        while cube.as_ref().unwrap().partition.width() > width {
+        let cube = self.at_point(point, width);
+        let mut depth = cube.partition.width();
+        let mut node: Option<&mut Node> = Some(cube.node);
+        while depth > width {
             depth = depth - 1;
-            let mut taken = cube.take().unwrap();
-            let _ = taken.node.subdivide();
-            if let Node::Branch(ref mut nodes, _) = *taken.node {
-                let index = index_at_point(point, depth);
-                cube = Some(CubeMut::new(&mut nodes[index],
-                                         taken.root,
-                                         taken.partition.at_index(index).unwrap()));
+            let mut taken = node.take().unwrap();
+            let _ = taken.subdivide();
+            if let Node::Branch(ref mut nodes, _) = *taken {
+                node = Some(&mut nodes[index_at_point(point, depth)]);
             }
         }
-        cube.take().unwrap()
+        CubeMut::new(node.take().unwrap(),
+                     self.root,
+                     Partition::at_point(point, depth))
     }
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<CubeMut> {
