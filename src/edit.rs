@@ -4,6 +4,47 @@ extern crate num;
 use cube::*;
 use num::{One, Zero};
 
+pub struct Selection {
+    cursor: Cursor,
+}
+
+impl Selection {
+    pub fn at_cube<C: Spatial>(cube: &C) -> Self {
+        Selection {
+            cursor: Cursor::new(cube.partition().origin(),
+                                cube.partition().width(),
+                                &Vector3::zero()),
+        }
+    }
+
+    pub fn at_point(point: &Point3, width: LogWidth) -> Self {
+        let partition = Partition::at_point(point, width);
+        Selection { cursor: Cursor::new(partition.origin(), partition.width(), &Vector3::zero()) }
+    }
+
+    pub fn at_cursor(cursor: &Cursor) -> Self {
+        Selection { cursor: cursor.clone() }
+    }
+
+    pub fn span(&mut self, span: &Vector3) -> &mut Self {
+        self.cursor.span = span.clone();
+        self
+    }
+
+    pub fn span_to_point(&mut self, point: &Point3) -> &mut Self {
+        unimplemented!()
+    }
+
+    pub fn to_cursor(&self) -> Cursor {
+        self.cursor.clone()
+    }
+
+    pub fn into_cursor(self) -> Cursor {
+        self.cursor
+    }
+}
+
+#[derive(Clone)]
 pub struct Cursor {
     origin: Point3,
     width: LogWidth,
@@ -11,33 +52,12 @@ pub struct Cursor {
 }
 
 impl Cursor {
-    pub fn at_cube<C: Spatial>(cube: &C) -> Self {
+    fn new(origin: &Point3, width: LogWidth, span: &Vector3) -> Self {
         Cursor {
-            origin: cube.partition().origin().clone(),
-            width: cube.partition().width(),
-            span: Vector3::zero(),
+            origin: origin.clone(),
+            width: width,
+            span: span.clone(),
         }
-    }
-
-    pub fn at_cube_with_span<C: Spatial>(cube: &C, span: &Vector3) -> Self {
-        let mut cursor = Cursor::at_cube(cube);
-        cursor.span = span.clone();
-        cursor
-    }
-
-    pub fn at_point(point: &Point3, width: LogWidth) -> Self {
-        let partition = Partition::at_point(point, width);
-        Cursor {
-            origin: partition.origin().clone(),
-            width: partition.width(),
-            span: Vector3::zero(),
-        }
-    }
-
-    pub fn at_point_with_span(point: &Point3, width: LogWidth, span: &Vector3) -> Self {
-        let mut cursor = Cursor::at_point(point, width);
-        cursor.span = span.clone();
-        cursor
     }
 
     pub fn origin(&self) -> &Point3 {
@@ -50,10 +70,6 @@ impl Cursor {
 
     pub fn span(&self) -> &Vector3 {
         &self.span
-    }
-
-    pub fn span_mut(&mut self) -> &mut Vector3 {
-        &mut self.span
     }
 
     pub fn extent(&self) -> Vector3 {

@@ -14,9 +14,9 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> cube::Root {
     let width = cube::MAX_WIDTH;
-    let cursor = edit::Cursor::at_point_with_span(&cube::Point3::new(0, 0, 0),
-                                                  width - 3,
-                                                  &cube::Vector3::new(7, 1, 7));
+    let cursor = edit::Selection::at_point(&cube::Point3::new(0, 0, 0), width - 3)
+        .span(&cube::Vector3::new(7, 1, 7))
+        .to_cursor();
     let mut root = cube::Root::new(width);
     root.to_cube_mut().subdivide_to_cursor(&cursor);
     root
@@ -32,7 +32,8 @@ fn main() {
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
     let state = factory.create_pipeline_simple(include_bytes!("shader/cube.glslv"),
                                                include_bytes!("shader/cube.glslf"),
-                                               render::pipeline::new()).unwrap();
+                                               render::pipeline::new())
+        .unwrap();
 
     let root = new_root();
     let transform = {
