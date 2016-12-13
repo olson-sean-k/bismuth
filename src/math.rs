@@ -1,7 +1,5 @@
 extern crate nalgebra;
-extern crate num;
 
-use num::cast;
 use std::ops;
 
 pub type DiscreteSpace = u32;
@@ -36,24 +34,20 @@ pub trait Mask<T>
 }
 
 impl<T, U> FromDomain<nalgebra::Point3<U>> for nalgebra::Point3<T>
-    where T: cast::NumCast,
-          U: num::ToPrimitive
+    where T: nalgebra::Cast<U> + Copy,
+          U: Copy
 {
     fn from_domain(point: nalgebra::Point3<U>) -> Self {
-        nalgebra::Point3::new(T::from(point.x).unwrap(),
-                              T::from(point.y).unwrap(),
-                              T::from(point.z).unwrap())
+        nalgebra::cast(point)
     }
 }
 
 impl<T, U> FromDomain<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
-    where T: cast::NumCast,
-          U: num::ToPrimitive
+    where T: nalgebra::Cast<U> + Copy,
+          U: Copy
 {
     fn from_domain(vector: nalgebra::Vector3<U>) -> Self {
-        nalgebra::Vector3::new(T::from(vector.x).unwrap(),
-                               T::from(vector.y).unwrap(),
-                               T::from(vector.z).unwrap())
+        nalgebra::cast(vector)
     }
 }
 
