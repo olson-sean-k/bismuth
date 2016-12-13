@@ -3,10 +3,10 @@ extern crate num;
 
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 
-use math::{Clamp, Mask, DiscreteSpace};
+use math::{Clamp, Mask, DiscreteScalar};
 
-pub type Point3 = nalgebra::Point3<DiscreteSpace>;
-pub type Vector3 = nalgebra::Vector3<DiscreteSpace>;
+pub type Point3 = nalgebra::Point3<DiscreteScalar>;
+pub type Vector3 = nalgebra::Vector3<DiscreteScalar>;
 
 pub type LogWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
@@ -82,7 +82,7 @@ impl AABB {
     }
 }
 
-/// A cubic spatial partition in the `DiscreteSpace`. `Partition`s are
+/// A cubic spatial partition in the `DiscreteScalar` space. `Partition`s are
 /// represented as an origin and a width.
 #[derive(Clone, Copy)]
 pub struct Partition {
@@ -96,7 +96,7 @@ impl Partition {
     pub fn at_point(point: &Point3, width: LogWidth) -> Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
-            origin: point.mask(!DiscreteSpace::zero() << width),
+            origin: point.mask(!DiscreteScalar::zero() << width),
             width: width,
         }
     }
@@ -161,24 +161,24 @@ pub trait Spatial {
     }
 }
 
-pub fn exp(width: LogWidth) -> DiscreteSpace {
-    DiscreteSpace::one() << width
+pub fn exp(width: LogWidth) -> DiscreteScalar {
+    DiscreteScalar::one() << width
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn index_at_point(point: &Point3, width: LogWidth) -> usize {
-    ((((point.x >> width) & DiscreteSpace::one()) << 0) |
-     (((point.y >> width) & DiscreteSpace::one()) << 1) |
-     (((point.z >> width) & DiscreteSpace::one()) << 2)) as usize
+    ((((point.x >> width) & DiscreteScalar::one()) << 0) |
+     (((point.y >> width) & DiscreteScalar::one()) << 1) |
+     (((point.z >> width) & DiscreteScalar::one()) << 2)) as usize
 }
 
 pub fn vector_at_index(index: usize, width: LogWidth) -> Vector3 {
     assert!(index < 8);
-    let index = index as DiscreteSpace;
+    let index = index as DiscreteScalar;
     let width = exp(width);
-    Vector3::new(((index >> 0) & DiscreteSpace::one()) * width,
-                 ((index >> 1) & DiscreteSpace::one()) * width,
-                 ((index >> 2) & DiscreteSpace::one()) * width)
+    Vector3::new(((index >> 0) & DiscreteScalar::one()) * width,
+                 ((index >> 1) & DiscreteScalar::one()) * width,
+                 ((index >> 2) & DiscreteScalar::one()) * width)
 }
 
 #[cfg(test)]

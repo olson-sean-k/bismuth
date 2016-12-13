@@ -9,12 +9,12 @@ use nalgebra::ToHomogeneous;
 
 use cube;
 use cube::Spatial;
-use math::{IntoDomain, RealSpace};
+use math::{IntoDomain, RealScalar};
 
-pub type Point3 = nalgebra::Point3<RealSpace>;
-pub type Vector3 = nalgebra::Vector3<RealSpace>;
-pub type Vector4 = nalgebra::Vector4<RealSpace>;
-pub type Matrix4 = nalgebra::Matrix4<RealSpace>;
+pub type Point3 = nalgebra::Point3<RealScalar>;
+pub type Vector3 = nalgebra::Vector3<RealScalar>;
+pub type Vector4 = nalgebra::Vector4<RealScalar>;
+pub type Matrix4 = nalgebra::Matrix4<RealScalar>;
 pub type Index = u32;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -115,7 +115,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube,
                                  rand::random::<f32>(),
                                  1.0);
         points.extend(UNIT_CUBE_POINTS.iter()
-            .map(|point| (point * cube::exp(width) as RealSpace) + origin)
+            .map(|point| (point * cube::exp(width) as RealScalar) + origin)
             .map(|point| RawVertex::from(Vertex::new(point, color))));
         indeces.extend(UNIT_CUBE_INDECES.iter()
             .map(|point| ((UNIT_CUBE_POINTS.len() * index) as Index + *point)));
