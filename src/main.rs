@@ -37,7 +37,7 @@ fn main() {
 
     let root = new_root();
     let transform = {
-        let midpoint: render::Point3 = root.partition().midpoint().into_domain();
+        let midpoint: render::Point3 = root.partition().midpoint().into_space();
         let camera = render::Point3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
         let view = render::look_at_cube(&root, &camera);
         let projection = render::projection_from_window(&window);

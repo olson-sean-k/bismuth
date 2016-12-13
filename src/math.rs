@@ -5,19 +5,19 @@ use std::ops;
 pub type DiscreteScalar = u32;
 pub type RealScalar = f32;
 
-pub trait FromDomain<T> {
-    fn from_domain(value: T) -> Self;
+pub trait FromSpace<T> {
+    fn from_space(value: T) -> Self;
 }
 
-pub trait IntoDomain<T> {
-    fn into_domain(self) -> T;
+pub trait IntoSpace<T> {
+    fn into_space(self) -> T;
 }
 
-impl<T, U> IntoDomain<U> for T
-    where U: FromDomain<T>
+impl<T, U> IntoSpace<U> for T
+    where U: FromSpace<T>
 {
-    fn into_domain(self) -> U {
-        U::from_domain(self)
+    fn into_space(self) -> U {
+        U::from_space(self)
     }
 }
 
@@ -33,20 +33,20 @@ pub trait Mask<T>
     fn mask(&self, value: T) -> Self;
 }
 
-impl<T, U> FromDomain<nalgebra::Point3<U>> for nalgebra::Point3<T>
+impl<T, U> FromSpace<nalgebra::Point3<U>> for nalgebra::Point3<T>
     where T: nalgebra::Cast<U> + Copy,
           U: Copy
 {
-    fn from_domain(point: nalgebra::Point3<U>) -> Self {
+    fn from_space(point: nalgebra::Point3<U>) -> Self {
         nalgebra::cast(point)
     }
 }
 
-impl<T, U> FromDomain<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
+impl<T, U> FromSpace<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
     where T: nalgebra::Cast<U> + Copy,
           U: Copy
 {
-    fn from_domain(vector: nalgebra::Vector3<U>) -> Self {
+    fn from_space(vector: nalgebra::Vector3<U>) -> Self {
         nalgebra::cast(vector)
     }
 }

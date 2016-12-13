@@ -9,7 +9,7 @@ use nalgebra::ToHomogeneous;
 
 use cube;
 use cube::Spatial;
-use math::{IntoDomain, RealScalar};
+use math::{IntoSpace, RealScalar};
 
 pub type Point3 = nalgebra::Point3<RealScalar>;
 pub type Vector3 = nalgebra::Vector3<RealScalar>;
@@ -109,7 +109,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube,
     let mut indeces = Vec::new();
     for (index, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         let width = cube.partition().width();
-        let origin: Vector3 = cube.partition().origin().to_vector().into_domain();
+        let origin: Vector3 = cube.partition().origin().to_vector().into_space();
         let color = Vector4::new(rand::random::<f32>(),
                                  rand::random::<f32>(),
                                  rand::random::<f32>(),
@@ -135,7 +135,7 @@ pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
     where C: cube::Spatial
 {
     nalgebra::Isometry3::look_at_rh(from,
-                                    &cube.partition().midpoint().into_domain(),
+                                    &cube.partition().midpoint().into_space(),
                                     &Vector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
 }
