@@ -2,6 +2,7 @@ extern crate nalgebra;
 extern crate num;
 
 use nalgebra::Origin;
+use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
 use std::fmt;
@@ -32,18 +33,20 @@ impl Node {
         }
     }
 
-    fn to_orphan<'a>(&'a self) -> (OrphanNode<'a>, Option<&'a NodeLink>) {
+    fn to_orphan<'a>(&'a self) -> (OrphanNode<&'a LeafNode, &'a BranchNode>, Option<&'a NodeLink>) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(leaf), None),
             Node::Branch(ref nodes, ref branch) => (OrphanNode::Branch(branch), Some(nodes)),
         }
     }
 
-    fn to_orphan_mut<'a>(&'a mut self) -> (OrphanNodeMut<'a>, Option<&'a mut NodeLink>) {
+    fn to_orphan_mut<'a>
+        (&'a mut self)
+         -> (OrphanNode<&'a mut LeafNode, &'a mut BranchNode>, Option<&'a mut NodeLink>) {
         match *self {
-            Node::Leaf(ref mut leaf) => (OrphanNodeMut::Leaf(leaf), None),
+            Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(leaf), None),
             Node::Branch(ref mut nodes, ref mut branch) => {
-                (OrphanNodeMut::Branch(branch), Some(nodes))
+                (OrphanNode::Branch(branch), Some(nodes))
             }
         }
     }
@@ -77,6 +80,18 @@ impl Node {
     }
 }
 
+impl AsRef<Node> for Node {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl AsMut<Node> for Node {
+    fn as_mut(&mut self) -> &mut Self {
+        self
+    }
+}
+
 impl Clone for Node {
     fn clone(&self) -> Self {
         match *self {
@@ -96,14 +111,12 @@ impl Clone for Node {
     }
 }
 
-pub enum OrphanNode<'a> {
-    Leaf(&'a LeafNode),
-    Branch(&'a BranchNode),
-}
-
-pub enum OrphanNodeMut<'a> {
-    Leaf(&'a mut LeafNode),
-    Branch(&'a mut BranchNode),
+pub enum OrphanNode<L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
+    Leaf(L),
+    Branch(B),
 }
 
 #[derive(Clone, Copy)]
@@ -121,12 +134,36 @@ impl LeafNode {
     }
 }
 
+impl AsRef<LeafNode> for LeafNode {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl AsMut<LeafNode> for LeafNode {
+    fn as_mut(&mut self) -> &mut Self {
+        self
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct BranchNode {}
 
 impl BranchNode {
     fn new() -> Self {
         BranchNode {}
+    }
+}
+
+impl AsRef<BranchNode> for BranchNode {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl AsMut<BranchNode> for BranchNode {
+    fn as_mut(&mut self) -> &mut Self {
+        self
     }
 }
 
@@ -143,12 +180,12 @@ impl Root {
         }
     }
 
-    pub fn to_cube(&self) -> Cube {
+    pub fn to_cube(&self) -> Cube<&Node> {
         Cube::new(&self.node, &self.partition, self.partition)
     }
 
-    pub fn to_cube_mut(&mut self) -> CubeMut {
-        CubeMut::new(&mut self.node, &self.partition, self.partition)
+    pub fn to_cube_mut(&mut self) -> Cube<&mut Node> {
+        Cube::new(&mut self.node, &self.partition, self.partition)
     }
 }
 
@@ -163,14 +200,18 @@ impl Spatial for Root {
 }
 
 #[derive(Clone)]
-pub struct Cube<'a> {
-    node: &'a Node,
+pub struct Cube<'a, N>
+    where N: AsRef<Node>
+{
+    node: N,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> Cube<'a> {
-    fn new(node: &'a Node, root: &'a Partition, partition: Partition) -> Self {
+impl<'a, N> Cube<'a, N>
+    where N: AsRef<Node>
+{
+    fn new(node: N, root: &'a Partition, partition: Partition) -> Self {
         Cube {
             node: node,
             root: root,
@@ -178,29 +219,30 @@ impl<'a> Cube<'a> {
         }
     }
 
-    pub fn to_orphan(&self) -> OrphanCube {
-        let (orphan, _) = self.node.to_orphan();
+    pub fn to_orphan(&self) -> OrphanCube<&LeafNode, &BranchNode> {
+        let (orphan, _) = self.node.as_ref().to_orphan();
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn iter(&self) -> CubeIter {
-        CubeIter::new(self.clone())
-    }
-
-    // TODO: Is this useful? `CubeIter` already yields fully linked `Cube`s.
     pub fn walk<F, R>(&self, f: &F)
-        where F: Fn(&Cube) -> R
+        where F: Fn(&Cube<&Node>) -> R
     {
-        for node in self.iter() {
-            f(&node);
+        let mut cubes = vec![self.to_value()];
+        while let Some(cube) = cubes.pop() {
+            f(&cube);
+            let (_, nodes) = cube.node.as_ref().to_orphan();
+            if let Some(nodes) = nodes {
+                for (index, node) in nodes.iter().enumerate() {
+                    cubes.push(Cube::new(node, cube.root, cube.partition.at_index(index).unwrap()));
+                }
+            }
         }
     }
 
-    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Cube {
-        let mut node = self.node;
+    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Cube<&Node> {
+        let mut node = self.node.as_ref();
         let mut depth = self.partition.width();
 
-        // Clamp the inputs.
         let point = point.clamp(0, (exp(self.root.width())) - 1);
         let width = width.clamp(MIN_WIDTH, depth);
 
@@ -216,8 +258,8 @@ impl<'a> Cube<'a> {
         Cube::new(node, self.root, Partition::at_point(&point, depth))
     }
 
-    pub fn at_index(&self, index: usize) -> Option<Cube> {
-        match *self.node {
+    pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
+        match *self.node.as_ref() {
             Node::Branch(ref nodes, _) => {
                 self.partition
                     .at_index(index)
@@ -226,110 +268,52 @@ impl<'a> Cube<'a> {
             _ => None,
         }
     }
-}
 
-impl<'a> ops::Deref for Cube<'a> {
-    type Target = Node;
-
-    fn deref(&self) -> &Self::Target {
-        self.node
+    fn to_value(&self) -> Cube<&Node> {
+        Cube::new(self.node.as_ref(), self.root, self.partition)
     }
 }
 
-impl<'a> From<CubeMut<'a>> for Cube<'a> {
-    fn from(cube: CubeMut<'a>) -> Self {
-        Cube::new(&*cube.node, cube.root, cube.partition)
-    }
-}
-
-impl<'a> Spatial for Cube<'a> {
-    fn partition(&self) -> &Partition {
-        &self.partition
+impl<'a, N> Cube<'a, &'a N>
+    where N: AsRef<Node>
+{
+    pub fn iter(&self) -> CubeIter<&N> {
+        CubeIter(vec![self.clone()])
     }
 
-    fn depth(&self) -> u8 {
-        self.root.width() - self.partition.width()
-    }
-}
-
-pub struct CubeIter<'a>(Vec<Cube<'a>>);
-
-impl<'a> CubeIter<'a> {
-    fn new(cube: Cube<'a>) -> Self {
-        CubeIter(vec![cube])
-    }
-}
-
-impl<'a> Iterator for CubeIter<'a> {
-    type Item = Cube<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cube) = self.0.pop() {
-            match *cube.node {
-                Node::Branch(ref nodes, _) => {
-                    for (index, node) in nodes.iter().enumerate() {
-                        self.0.push(Cube::new(node,
-                                              cube.root,
-                                              cube.partition().at_index(index).unwrap()));
-                    }
-                }
-                _ => {}
-            }
-            Some(cube)
-        }
-        else {
-            None
+    pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
+        CursorIter {
+            cubes: vec![self.clone()],
+            cursor: cursor,
         }
     }
 }
 
-pub struct CubeMut<'a> {
-    node: &'a mut Node,
-    root: &'a Partition,
-    partition: Partition,
-}
-
-impl<'a> CubeMut<'a> {
-    fn new(node: &'a mut Node, root: &'a Partition, partition: Partition) -> Self {
-        CubeMut {
-            node: node,
-            root: root,
-            partition: partition,
-        }
+impl<'a, N> Cube<'a, N>
+    where N: AsRef<Node> + AsMut<Node>
+{
+    pub fn to_orphan_mut(&mut self) -> OrphanCube<&mut LeafNode, &mut BranchNode> {
+        let (orphan, _) = self.node.as_mut().to_orphan_mut();
+        OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn to_orphan(&mut self) -> OrphanCubeMut {
-        let (orphan, _) = self.node.to_orphan_mut();
-        OrphanCubeMut::new(orphan, self.root, self.partition)
-    }
-
-    pub fn iter(&mut self) -> CubeMutIter {
-        CubeMutIter::new(self)
-    }
-
-    pub fn iter_cursor<'b>(&'b mut self, cursor: &'b Cursor) -> CursorMutIter {
-        CursorMutIter::new(self, cursor)
-    }
-
-    pub fn walk<F, R>(&mut self, f: &F)
-        where F: Fn(&mut CubeMut) -> R
+    pub fn walk_mut<F, R>(&mut self, f: &F)
+        where F: Fn(&mut Cube<&mut Node>) -> R
     {
-        let mut cubes = vec![self.to_value()];
+        let mut cubes = vec![self.to_value_mut()];
         while let Some(mut cube) = cubes.pop() {
             f(&mut cube);
-            let (_, nodes) = cube.node.to_orphan_mut();
+            let (_, nodes) = cube.node.as_mut().to_orphan_mut();
             if let Some(nodes) = nodes {
                 for (index, node) in nodes.iter_mut().enumerate() {
-                    cubes.push(CubeMut::new(node,
-                                            cube.root,
-                                            cube.partition.at_index(index).unwrap()));
+                    cubes.push(Cube::new(node, cube.root, cube.partition.at_index(index).unwrap()));
                 }
             }
         }
     }
 
-    pub fn at_point(&mut self, point: &Point3, width: LogWidth) -> CubeMut {
-        let mut node: Option<&mut Node> = Some(self.node);
+    pub fn at_point_mut(&mut self, point: &Point3, width: LogWidth) -> Cube<&mut Node> {
+        let mut node: Option<&mut Node> = Some(self.node.as_mut());
         let mut depth = self.partition.width();
 
         let point = point.clamp(0, (exp(self.root.width())) - 1);
@@ -348,25 +332,25 @@ impl<'a> CubeMut<'a> {
                 }
             }
         }
-        CubeMut::new(node.take().unwrap(),
-                     self.root,
-                     Partition::at_point(&point, depth))
+        Cube::new(node.take().unwrap(),
+                  self.root,
+                  Partition::at_point(&point, depth))
     }
 
-    pub fn at_index(&mut self, index: usize) -> Option<CubeMut> {
-        match *self.node {
+    pub fn at_index_mut(&mut self, index: usize) -> Option<Cube<&mut Node>> {
+        match *self.node.as_mut() {
             Node::Branch(ref mut nodes, _) => {
                 let root = self.root;
                 self.partition
                     .at_index(index)
-                    .map(move |partition| CubeMut::new(&mut nodes[index], root, partition))
+                    .map(move |partition| Cube::new(&mut nodes[index], root, partition))
             }
             _ => None,
         }
     }
 
     pub fn join(&mut self) -> Result<(), JoinError> {
-        self.node.join()
+        self.node.as_mut().join()
     }
 
     pub fn subdivide(&mut self) -> Result<(), SubdivideError> {
@@ -374,15 +358,15 @@ impl<'a> CubeMut<'a> {
             Err(SubdivideError::LimitExceeded)
         }
         else {
-            self.node.subdivide()
+            self.node.as_mut().subdivide()
         }
     }
 
-    pub fn subdivide_to_point(&mut self, point: &Point3, width: LogWidth) -> CubeMut {
+    pub fn subdivide_to_point(&mut self, point: &Point3, width: LogWidth) -> Cube<&mut Node> {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
-        let cube = self.at_point(point, width);
+        let cube = self.at_point_mut(point, width);
         let mut depth = cube.partition.width();
-        let mut node: Option<&mut Node> = Some(cube.node);
+        let mut node: Option<&mut Node> = Some(cube.node.as_mut());
         while depth > width {
             depth = depth - 1;
             let mut taken = node.take().unwrap();
@@ -391,27 +375,27 @@ impl<'a> CubeMut<'a> {
                 node = Some(&mut nodes[index_at_point(point, depth)]);
             }
         }
-        CubeMut::new(node.take().unwrap(),
-                     self.root,
-                     Partition::at_point(point, depth))
+        Cube::new(node.take().unwrap(),
+                  self.root,
+                  Partition::at_point(point, depth))
     }
 
-    pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<CubeMut> {
+    pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
         let mut cubes = vec![];
-        let mut traversal = vec![self.to_value()];
+        let mut traversal = vec![self.to_value_mut()];
         while let Some(cube) = traversal.pop() {
             if cube.aabb().intersects(&cursor.aabb()) {
                 if cube.partition.width() == cursor.width() {
                     cubes.push(cube);
                 }
                 else if cube.partition.width() > cursor.width() {
-                    let _ = cube.node.subdivide();
-                    let (_, nodes) = cube.node.to_orphan_mut();
+                    let _ = cube.node.as_mut().subdivide();
+                    let (_, nodes) = cube.node.as_mut().to_orphan_mut();
                     if let Some(nodes) = nodes {
                         for (index, node) in nodes.iter_mut().enumerate() {
-                            traversal.push(CubeMut::new(node,
-                                                        cube.root,
-                                                        cube.partition.at_index(index).unwrap()));
+                            traversal.push(Cube::new(node,
+                                                     cube.root,
+                                                     cube.partition.at_index(index).unwrap()));
                         }
                     }
                 }
@@ -420,26 +404,47 @@ impl<'a> CubeMut<'a> {
         cubes
     }
 
-    fn to_value(&mut self) -> CubeMut {
-        CubeMut::new(self.node, self.root, self.partition)
+    fn to_value_mut(&mut self) -> Cube<&mut Node> {
+        Cube::new(self.node.as_mut(), self.root, self.partition)
     }
 }
 
-impl<'a> ops::Deref for CubeMut<'a> {
+impl<'a, N> Cube<'a, &'a mut N>
+    where N: AsRef<Node> + AsMut<Node>
+{
+    pub fn iter_mut(&mut self) -> CubeIter<&mut N> {
+        CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
+    }
+
+    pub fn iter_cursor_mut(&mut self, cursor: &'a Cursor) -> CursorIter<&mut N> {
+        CursorIter {
+            cubes: vec![Cube::new(&mut *self.node, self.root, self.partition)],
+            cursor: cursor,
+        }
+    }
+}
+
+impl<'a, N> ops::Deref for Cube<'a, N>
+    where N: AsRef<Node>
+{
     type Target = Node;
 
     fn deref(&self) -> &Self::Target {
-        &*self.node
+        self.node.as_ref()
     }
 }
 
-impl<'a> ops::DerefMut for CubeMut<'a> {
+impl<'a, N> ops::DerefMut for Cube<'a, N>
+    where N: AsRef<Node> + AsMut<Node>
+{
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.node
+        self.node.as_mut()
     }
 }
 
-impl<'a> Spatial for CubeMut<'a> {
+impl<'a, N> Spatial for Cube<'a, N>
+    where N: AsRef<Node>
+{
     fn partition(&self) -> &Partition {
         &self.partition
     }
@@ -449,28 +454,24 @@ impl<'a> Spatial for CubeMut<'a> {
     }
 }
 
-pub struct CubeMutIter<'a>(Vec<CubeMut<'a>>);
+pub struct CubeIter<'a, N>(Vec<Cube<'a, N>>) where N: AsRef<Node>;
 
-impl<'a> CubeMutIter<'a> {
-    fn new(cube: &'a mut CubeMut) -> Self {
-        CubeMutIter(vec![cube.to_value()])
-    }
-}
-
-impl<'a> Iterator for CubeMutIter<'a> {
-    type Item = OrphanCubeMut<'a>;
+impl<'a> Iterator for CubeIter<'a, &'a Node> {
+    type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cube) = self.0.pop() {
-            let (orphan, nodes) = cube.node.to_orphan_mut();
-            if let Some(nodes) = nodes {
-                for (index, node) in nodes.iter_mut().enumerate() {
-                    self.0.push(CubeMut::new(node,
-                                             cube.root,
-                                             cube.partition.at_index(index).unwrap()));
+            match *cube.node.as_ref() {
+                Node::Branch(ref nodes, _) => {
+                    for (index, node) in nodes.iter().enumerate() {
+                        self.0.push(Cube::new(node,
+                                              cube.root,
+                                              cube.partition().at_index(index).unwrap()));
+                    }
                 }
+                _ => {}
             }
-            Some(OrphanCubeMut::new(orphan, cube.root, cube.partition))
+            Some(cube)
         }
         else {
             None
@@ -478,36 +479,50 @@ impl<'a> Iterator for CubeMutIter<'a> {
     }
 }
 
-pub struct CursorMutIter<'a> {
-    cubes: Vec<CubeMut<'a>>,
-    cursor: &'a Cursor,
-}
+impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
+    type Item = OrphanCube<'a, &'a mut LeafNode, &'a mut BranchNode>;
 
-impl<'a> CursorMutIter<'a> {
-    fn new(cube: &'a mut CubeMut, cursor: &'a Cursor) -> Self {
-        CursorMutIter {
-            cubes: vec![cube.to_value()],
-            cursor: cursor,
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(cube) = self.0.pop() {
+            let (orphan, nodes) = cube.node.as_mut().to_orphan_mut();
+            if let Some(nodes) = nodes {
+                for (index, node) in nodes.iter_mut().enumerate() {
+                    self.0.push(Cube::new(node,
+                                          cube.root,
+                                          cube.partition.at_index(index).unwrap()));
+                }
+            }
+            Some(OrphanCube::new(orphan, cube.root, cube.partition))
+        }
+        else {
+            None
         }
     }
 }
 
-impl<'a> Iterator for CursorMutIter<'a> {
-    type Item = CubeMut<'a>;
+pub struct CursorIter<'a, N>
+    where N: AsRef<Node>
+{
+    cubes: Vec<Cube<'a, N>>,
+    cursor: &'a Cursor,
+}
+
+impl<'a> Iterator for CursorIter<'a, &'a Node> {
+    type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(cube) = self.cubes.pop() {
             if cube.aabb().intersects(&self.cursor.aabb()) {
-                if cube.partition.width() == self.cursor.width() || cube.node.is_leaf() {
+                if cube.partition.width() == self.cursor.width() || cube.node.as_ref().is_leaf() {
                     return Some(cube);
                 }
                 else if cube.partition.width() > self.cursor.width() {
-                    let (_, nodes) = cube.node.to_orphan_mut();
+                    let (_, nodes) = cube.node.as_ref().to_orphan();
                     if let Some(nodes) = nodes {
-                        for (index, node) in nodes.iter_mut().enumerate() {
-                            self.cubes.push(CubeMut::new(node,
-                                                         cube.root,
-                                                         cube.partition.at_index(index).unwrap()));
+                        for (index, node) in nodes.iter().enumerate() {
+                            self.cubes.push(Cube::new(node,
+                                                      cube.root,
+                                                      cube.partition.at_index(index).unwrap()));
                         }
                     }
                 }
@@ -517,14 +532,45 @@ impl<'a> Iterator for CursorMutIter<'a> {
     }
 }
 
-pub struct OrphanCube<'a> {
-    node: OrphanNode<'a>,
+impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
+    type Item = Cube<'a, &'a mut Node>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(cube) = self.cubes.pop() {
+            if cube.aabb().intersects(&self.cursor.aabb()) {
+                if cube.partition.width() == self.cursor.width() || cube.node.as_ref().is_leaf() {
+                    return Some(cube);
+                }
+                else if cube.partition.width() > self.cursor.width() {
+                    let (_, nodes) = cube.node.as_mut().to_orphan_mut();
+                    if let Some(nodes) = nodes {
+                        for (index, node) in nodes.iter_mut().enumerate() {
+                            self.cubes.push(Cube::new(node,
+                                                      cube.root,
+                                                      cube.partition.at_index(index).unwrap()));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
+pub struct OrphanCube<'a, L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
+    node: OrphanNode<L, B>,
     root: &'a Partition,
     partition: Partition,
 }
 
-impl<'a> OrphanCube<'a> {
-    fn new(node: OrphanNode<'a>, root: &'a Partition, partition: Partition) -> Self {
+impl<'a, L, B> OrphanCube<'a, L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
+    fn new(node: OrphanNode<L, B>, root: &'a Partition, partition: Partition) -> Self {
         OrphanCube {
             node: node,
             root: root,
@@ -533,55 +579,30 @@ impl<'a> OrphanCube<'a> {
     }
 }
 
-impl<'a> ops::Deref for OrphanCube<'a> {
-    type Target = OrphanNode<'a>;
+impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
+    type Target = OrphanNode<L, B>;
 
     fn deref(&self) -> &Self::Target {
         &self.node
     }
 }
 
-impl<'a> Spatial for OrphanCube<'a> {
-    fn partition(&self) -> &Partition {
-        &self.partition
-    }
-
-    fn depth(&self) -> u8 {
-        self.root.width() - self.partition.width()
-    }
-}
-
-pub struct OrphanCubeMut<'a> {
-    node: OrphanNodeMut<'a>,
-    root: &'a Partition,
-    partition: Partition,
-}
-
-impl<'a> OrphanCubeMut<'a> {
-    fn new(node: OrphanNodeMut<'a>, root: &'a Partition, partition: Partition) -> Self {
-        OrphanCubeMut {
-            node: node,
-            root: root,
-            partition: partition,
-        }
-    }
-}
-
-impl<'a> ops::Deref for OrphanCubeMut<'a> {
-    type Target = OrphanNodeMut<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.node
-    }
-}
-
-impl<'a> ops::DerefMut for OrphanCubeMut<'a> {
+impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
+    where L: AsRef<LeafNode> + AsMut<LeafNode>,
+          B: AsRef<BranchNode> + AsMut<BranchNode>
+{
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.node
     }
 }
 
-impl<'a> Spatial for OrphanCubeMut<'a> {
+impl<'a, L, B> Spatial for OrphanCube<'a, L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
     fn partition(&self) -> &Partition {
         &self.partition
     }
