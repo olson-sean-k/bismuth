@@ -9,7 +9,7 @@ use std::fmt;
 use std::ops;
 
 use edit::Cursor;
-use math::Clamp;
+use math::{Clamp, UPoint3};
 use resource::ResourceId;
 use super::geometry::*;
 use super::space::*;
@@ -176,7 +176,7 @@ impl Root {
     pub fn new(width: LogWidth) -> Self {
         Root {
             node: Box::new(Node::new()),
-            partition: Partition::at_point(&Point3::origin(), width),
+            partition: Partition::at_point(&UPoint3::origin(), width),
         }
     }
 
@@ -239,7 +239,7 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn at_point(&self, point: &Point3, width: LogWidth) -> Cube<&Node> {
+    pub fn at_point(&self, point: &UPoint3, width: LogWidth) -> Cube<&Node> {
         let mut node = self.node.as_ref();
         let mut depth = self.partition.width();
 
@@ -312,7 +312,7 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn at_point_mut(&mut self, point: &Point3, width: LogWidth) -> Cube<&mut Node> {
+    pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
         let mut node: Option<&mut Node> = Some(self.node.as_mut());
         let mut depth = self.partition.width();
 
@@ -362,7 +362,7 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn subdivide_to_point(&mut self, point: &Point3, width: LogWidth) -> Cube<&mut Node> {
+    pub fn subdivide_to_point(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         let cube = self.at_point_mut(point, width);
         let mut depth = cube.partition.width();

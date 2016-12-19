@@ -3,10 +3,7 @@ extern crate num;
 
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 
-use math::{Clamp, Mask, DiscreteScalar};
-
-pub type Point3 = nalgebra::Point3<DiscreteScalar>;
-pub type Vector3 = nalgebra::Vector3<DiscreteScalar>;
+use math::{Clamp, Mask, UPoint3, UScalar, UVector3};
 
 pub type LogWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
 
@@ -57,12 +54,12 @@ impl Orientation {
 }
 
 pub struct AABB {
-    pub origin: Point3,
-    pub extent: Vector3,
+    pub origin: UPoint3,
+    pub extent: UVector3,
 }
 
 impl AABB {
-    pub fn new(origin: Point3, extent: Vector3) -> Self {
+    pub fn new(origin: UPoint3, extent: UVector3) -> Self {
         AABB {
             origin: origin,
             extent: extent,
@@ -82,21 +79,21 @@ impl AABB {
     }
 }
 
-/// A cubic spatial partition in the `DiscreteScalar` space. `Partition`s are
+/// A cubic spatial partition in the `UScalar` space. `Partition`s are
 /// represented as an origin and a width.
 #[derive(Clone, Copy)]
 pub struct Partition {
-    origin: Point3,
+    origin: UPoint3,
     width: LogWidth,
 }
 
 impl Partition {
     /// Constructs a `Partition` at the given point in space with the given
     /// width. The width is clamped to [`MIN_WIDTH`, `MAX_WIDTH`].
-    pub fn at_point(point: &Point3, width: LogWidth) -> Self {
+    pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
         let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
-            origin: point.mask(!DiscreteScalar::zero() << width),
+            origin: point.mask(!UScalar::zero() << width),
             width: width,
         }
     }
@@ -122,7 +119,7 @@ impl Partition {
     }
 
     /// Gets the origin of the `Partition`.
-    pub fn origin(&self) -> &Point3 {
+    pub fn origin(&self) -> &UPoint3 {
         &self.origin
     }
 
@@ -132,13 +129,13 @@ impl Partition {
     }
 
     /// Gets the midpoint of the `Partition`.
-    pub fn midpoint(&self) -> Point3 {
+    pub fn midpoint(&self) -> UPoint3 {
         let m = exp(self.width - 1);
-        self.origin + Vector3::new(m, m, m)
+        self.origin + UVector3::new(m, m, m)
     }
 
-    pub fn extent(&self) -> Vector3 {
-        (Vector3::one() * exp(self.width)) - Vector3::one()
+    pub fn extent(&self) -> UVector3 {
+        (UVector3::one() * exp(self.width)) - UVector3::one()
     }
 
     pub fn aabb(&self) -> AABB {
@@ -161,24 +158,24 @@ pub trait Spatial {
     }
 }
 
-pub fn exp(width: LogWidth) -> DiscreteScalar {
-    DiscreteScalar::one() << width
+pub fn exp(width: LogWidth) -> UScalar {
+    UScalar::one() << width
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub fn index_at_point(point: &Point3, width: LogWidth) -> usize {
-    ((((point.x >> width) & DiscreteScalar::one()) << 0) |
-     (((point.y >> width) & DiscreteScalar::one()) << 1) |
-     (((point.z >> width) & DiscreteScalar::one()) << 2)) as usize
+pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
+    ((((point.x >> width) & UScalar::one()) << 0) |
+     (((point.y >> width) & UScalar::one()) << 1) |
+     (((point.z >> width) & UScalar::one()) << 2)) as usize
 }
 
-pub fn vector_at_index(index: usize, width: LogWidth) -> Vector3 {
+pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
     assert!(index < 8);
-    let index = index as DiscreteScalar;
+    let index = index as UScalar;
     let width = exp(width);
-    Vector3::new(((index >> 0) & DiscreteScalar::one()) * width,
-                 ((index >> 1) & DiscreteScalar::one()) * width,
-                 ((index >> 2) & DiscreteScalar::one()) * width)
+    UVector3::new(((index >> 0) & UScalar::one()) * width,
+                  ((index >> 1) & UScalar::one()) * width,
+                  ((index >> 2) & UScalar::one()) * width)
 }
 
 #[cfg(test)]

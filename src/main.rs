@@ -14,8 +14,8 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> cube::Root {
     let width = cube::MAX_WIDTH;
-    let cursor = edit::Selection::at_point(&cube::Point3::new(0, 0, 0), width - 3)
-        .span(&cube::Vector3::new(7, 1, 7))
+    let cursor = edit::Selection::at_point(&UPoint3::new(0, 0, 0), width - 3)
+        .span(&UVector3::new(7, 1, 7))
         .to_cursor();
     let mut root = cube::Root::new(width);
     root.to_cube_mut().subdivide_to_cursor(&cursor);
@@ -37,8 +37,8 @@ fn main() {
 
     let root = new_root();
     let transform = {
-        let midpoint: render::Point3 = root.partition().midpoint().into_space();
-        let camera = render::Point3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
+        let midpoint: FPoint3 = root.partition().midpoint().into_space();
+        let camera = FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
         let view = render::look_at_cube(&root, &camera);
         let projection = render::projection_from_window(&window);
         projection * view

@@ -9,12 +9,8 @@ use nalgebra::ToHomogeneous;
 
 use cube;
 use cube::Spatial;
-use math::{IntoSpace, RealScalar};
+use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
 
-pub type Point3 = nalgebra::Point3<RealScalar>;
-pub type Vector3 = nalgebra::Vector3<RealScalar>;
-pub type Vector4 = nalgebra::Vector4<RealScalar>;
-pub type Matrix4 = nalgebra::Matrix4<RealScalar>;
 pub type Index = u32;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -27,17 +23,17 @@ const UNIT_CUBE_INDECES: [Index; 36] = [
     1, 0, 7, 7, 6, 1,
 ];
 lazy_static! {
-    static ref UNIT_CUBE_POINTS: [Point3; 8] = [
+    static ref UNIT_CUBE_POINTS: [FPoint3; 8] = [
         // Back.
-        Point3::new(0.0, 0.0, 1.0), // 0
-        Point3::new(1.0, 0.0, 1.0), // 1
-        Point3::new(1.0, 1.0, 1.0), // 2
-        Point3::new(0.0, 1.0, 1.0), // 3
+        FPoint3::new(0.0, 0.0, 1.0), // 0
+        FPoint3::new(1.0, 0.0, 1.0), // 1
+        FPoint3::new(1.0, 1.0, 1.0), // 2
+        FPoint3::new(0.0, 1.0, 1.0), // 3
         // Front.
-        Point3::new(0.0, 1.0, 0.0), // 4
-        Point3::new(1.0, 1.0, 0.0), // 5
-        Point3::new(1.0, 0.0, 0.0), // 6
-        Point3::new(0.0, 0.0, 0.0), // 7
+        FPoint3::new(0.0, 1.0, 0.0), // 4
+        FPoint3::new(1.0, 1.0, 0.0), // 5
+        FPoint3::new(1.0, 0.0, 0.0), // 6
+        FPoint3::new(0.0, 0.0, 0.0), // 7
     ];
 }
 
@@ -73,7 +69,7 @@ impl GeometricEdge for cube::Edge {
 }
 
 pub trait GeometricCube {
-    fn points(&self) -> Vec<Point3>;
+    fn points(&self) -> Vec<FPoint3>;
 }
 
 impl From<Vertex> for RawVertex {
@@ -86,12 +82,12 @@ impl From<Vertex> for RawVertex {
 }
 
 struct Vertex {
-    pub position: Point3,
-    pub color: Vector4,
+    pub position: FPoint3,
+    pub color: FVector4,
 }
 
 impl Vertex {
-    pub fn new(position: Point3, color: Vector4) -> Self {
+    pub fn new(position: FPoint3, color: FVector4) -> Self {
         Vertex {
             position: position,
             color: color,
@@ -109,13 +105,13 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube<&cube::Node>,
     let mut indeces = Vec::new();
     for (index, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         let width = cube.partition().width();
-        let origin: Vector3 = cube.partition().origin().to_vector().into_space();
-        let color = Vector4::new(rand::random::<f32>(),
+        let origin: FVector3 = cube.partition().origin().to_vector().into_space();
+        let color = FVector4::new(rand::random::<f32>(),
                                  rand::random::<f32>(),
                                  rand::random::<f32>(),
                                  1.0);
         points.extend(UNIT_CUBE_POINTS.iter()
-            .map(|point| (point * cube::exp(width) as RealScalar) + origin)
+            .map(|point| (point * cube::exp(width) as FScalar) + origin)
             .map(|point| RawVertex::from(Vertex::new(point, color))));
         indeces.extend(UNIT_CUBE_INDECES.iter()
             .map(|point| ((UNIT_CUBE_POINTS.len() * index) as Index + *point)));
@@ -123,7 +119,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube<&cube::Node>,
     factory.create_vertex_buffer_with_slice(points.as_slice(), indeces.as_slice())
 }
 
-pub fn projection_from_window(window: &glutin::Window) -> Matrix4 {
+pub fn projection_from_window(window: &glutin::Window) -> FMatrix4 {
     let aspect = {
         let (width, height) = window.get_inner_size_pixels().unwrap();
         width as f32 / height as f32
@@ -131,12 +127,12 @@ pub fn projection_from_window(window: &glutin::Window) -> Matrix4 {
     nalgebra::PerspectiveMatrix3::new(aspect, 1.0, -1.0, 1.0).to_matrix()
 }
 
-pub fn look_at_cube<C>(cube: &C, from: &Point3) -> Matrix4
+pub fn look_at_cube<C>(cube: &C, from: &FPoint3) -> FMatrix4
     where C: cube::Spatial
 {
     nalgebra::Isometry3::look_at_rh(from,
                                     &cube.partition().midpoint().into_space(),
-                                    &Vector3::new(0.0, 0.0, 1.0))
+                                    &FVector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
 }
 

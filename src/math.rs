@@ -2,8 +2,16 @@ extern crate nalgebra;
 
 use std::ops;
 
-pub type DiscreteScalar = u32;
-pub type RealScalar = f32;
+pub type UScalar = u32;
+pub type FScalar = f32;
+
+pub type UPoint3 = nalgebra::Point3<UScalar>;
+pub type UVector3 = nalgebra::Vector3<UScalar>;
+
+pub type FPoint3 = nalgebra::Point3<FScalar>;
+pub type FVector3 = nalgebra::Vector3<FScalar>;
+pub type FVector4 = nalgebra::Vector4<FScalar>;
+pub type FMatrix4 = nalgebra::Matrix4<FScalar>;
 
 pub trait FromSpace<T> {
     fn from_space(value: T) -> Self;
