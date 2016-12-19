@@ -11,8 +11,9 @@ use std::ops;
 use edit::Cursor;
 use math::{Clamp, UPoint3};
 use resource::ResourceId;
-use super::geometry::*;
-use super::space::*;
+use super::geometry::Geometry;
+use super::space;
+use super::space::{LogWidth, MAX_WIDTH, MIN_WIDTH, Partition, Spatial};
 
 pub type NodeLink = Box<[Node; 8]>;
 
@@ -243,14 +244,14 @@ impl<'a, N> Cube<'a, N>
         let mut node = self.node.as_ref();
         let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (exp(self.root.width())) - 1);
+        let point = point.clamp(0, (space::exp(self.root.width())) - 1);
         let width = width.clamp(MIN_WIDTH, depth);
 
         while width < depth {
             match *node {
                 Node::Branch(ref nodes, _) => {
                     depth = depth - 1;
-                    node = &nodes[index_at_point(&point, depth)]
+                    node = &nodes[space::index_at_point(&point, depth)]
                 }
                 _ => break,
             }
@@ -316,7 +317,7 @@ impl<'a, N> Cube<'a, N>
         let mut node: Option<&mut Node> = Some(self.node.as_mut());
         let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (exp(self.root.width())) - 1);
+        let point = point.clamp(0, (space::exp(self.root.width())) - 1);
         let width = width.clamp(MIN_WIDTH, depth);
 
         while width < depth {
@@ -324,7 +325,7 @@ impl<'a, N> Cube<'a, N>
             match *taken {
                 Node::Branch(ref mut nodes, _) => {
                     depth = depth - 1;
-                    node = Some(&mut nodes[index_at_point(&point, depth)]);
+                    node = Some(&mut nodes[space::index_at_point(&point, depth)]);
                 }
                 _ => {
                     node = Some(taken);
@@ -372,7 +373,7 @@ impl<'a, N> Cube<'a, N>
             let mut taken = node.take().unwrap();
             let _ = taken.subdivide();
             if let Node::Branch(ref mut nodes, _) = *taken {
-                node = Some(&mut nodes[index_at_point(point, depth)]);
+                node = Some(&mut nodes[space::index_at_point(point, depth)]);
             }
         }
         Cube::new(node.take().unwrap(),

@@ -1,6 +1,6 @@
 extern crate nalgebra;
 
-use super::space::*;
+use super::space::{Axis};
 
 #[derive(Copy, Clone)]
 pub struct Edge(u8);
