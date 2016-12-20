@@ -59,14 +59,20 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
 {
     let mut points = Vec::new();
     let mut indeces = Vec::new();
-    for (n, cube) in cube.iter().enumerate() {
+    for (n, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
         if let Node::Leaf(ref leaf) = *cube {
             let width = cube.partition().width();
             let origin: FVector3 = cube.partition().origin().to_vector().into_space();
             let units = leaf.geometry.points();
-            points.extend(units.iter()
+            let color = random_color();
+            // TODO: The ordering of the points must agree with the indeces.
+            //       This seems to be broken (and can be seen when using more
+            //       elaborate colors). Reversing the `Vec` seems to help, but
+            //       this may still be broken, and using `rev` shouldn't be
+            //       required of clients in any case.
+            points.extend(units.iter().rev()
                 .map(|point| (point * cube::exp(width) as FScalar) + origin)
-                .map(|point| RawVertex::from(Vertex::new(point, random_color()))));
+                .map(|point| RawVertex::from(Vertex::new(point, color))));
             indeces.extend(leaf.geometry
                 .indeces()
                 .iter()
@@ -94,9 +100,9 @@ pub fn look_at_cube<C>(cube: &C, from: &FPoint3) -> FMatrix4
 }
 
 fn random_color() -> FVector4 {
-    FVector4::new(rand::random::<f32>(),
-                  rand::random::<f32>(),
-                  rand::random::<f32>(),
+    FVector4::new(rand::random::<FScalar>(),
+                  rand::random::<FScalar>(),
+                  rand::random::<FScalar>(),
                   1.0)
 }
 
