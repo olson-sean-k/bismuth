@@ -120,6 +120,18 @@ pub enum OrphanNode<L, B>
     Branch(B),
 }
 
+impl<L, B> OrphanNode<L, B>
+    where L: AsRef<LeafNode>,
+          B: AsRef<BranchNode>
+{
+    pub fn is_leaf(&self) -> bool {
+        match *self {
+            OrphanNode::Leaf(..) => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct LeafNode {
     pub geometry: Geometry,
