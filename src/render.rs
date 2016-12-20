@@ -8,34 +8,10 @@ extern crate rand;
 use nalgebra::ToHomogeneous;
 
 use cube;
-use cube::Spatial;
+use cube::{Cube, Node, Spatial};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
 
 pub type Index = u32;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-const UNIT_CUBE_INDECES: [Index; 36] = [
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4,
-    6, 5, 2, 2, 1, 6,
-    0, 3, 4, 4, 7, 0,
-    5, 4, 3, 3, 2, 5,
-    1, 0, 7, 7, 6, 1,
-];
-lazy_static! {
-    static ref UNIT_CUBE_POINTS: [FPoint3; 8] = [
-        // Back.
-        FPoint3::new(0.0, 0.0, 1.0), // 0
-        FPoint3::new(1.0, 0.0, 1.0), // 1
-        FPoint3::new(1.0, 1.0, 1.0), // 2
-        FPoint3::new(0.0, 1.0, 1.0), // 3
-        // Front.
-        FPoint3::new(0.0, 1.0, 0.0), // 4
-        FPoint3::new(1.0, 1.0, 0.0), // 5
-        FPoint3::new(1.0, 0.0, 0.0), // 6
-        FPoint3::new(0.0, 0.0, 0.0), // 7
-    ];
-}
 
 gfx_pipeline!{
     pipeline {
@@ -50,26 +26,6 @@ gfx_vertex_struct!{
         position: [f32; 3] = "a_position",
         color: [f32; 4] = "a_color",
     }
-}
-
-trait GeometricEdge {
-    fn front_unit_transform(&self) -> f32;
-    fn back_unit_transform(&self) -> f32;
-}
-
-impl GeometricEdge for cube::Edge {
-    fn front_unit_transform(&self) -> f32 {
-        ((self.front() - cube::MIN_EDGE) as f32) / ((cube::MAX_EDGE - cube::MIN_EDGE) as f32)
-    }
-
-    fn back_unit_transform(&self) -> f32 {
-        let range = cube::MAX_EDGE - cube::MIN_EDGE;
-        -((range - (self.back() - cube::MIN_EDGE)) as f32) / (range as f32)
-    }
-}
-
-pub trait GeometricCube {
-    fn points(&self) -> Vec<FPoint3>;
 }
 
 impl From<Vertex> for RawVertex {
@@ -95,7 +51,7 @@ impl Vertex {
     }
 }
 
-pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube<&cube::Node>,
+pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
                                      factory: &mut F)
                                      -> (gfx::handle::Buffer<R, RawVertex>, gfx::Slice<R>)
     where R: gfx::Resources,
@@ -103,18 +59,19 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &cube::Cube<&cube::Node>,
 {
     let mut points = Vec::new();
     let mut indeces = Vec::new();
-    for (index, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
-        let width = cube.partition().width();
-        let origin: FVector3 = cube.partition().origin().to_vector().into_space();
-        let color = FVector4::new(rand::random::<f32>(),
-                                 rand::random::<f32>(),
-                                 rand::random::<f32>(),
-                                 1.0);
-        points.extend(UNIT_CUBE_POINTS.iter()
-            .map(|point| (point * cube::exp(width) as FScalar) + origin)
-            .map(|point| RawVertex::from(Vertex::new(point, color))));
-        indeces.extend(UNIT_CUBE_INDECES.iter()
-            .map(|point| ((UNIT_CUBE_POINTS.len() * index) as Index + *point)));
+    for (n, cube) in cube.iter().enumerate() {
+        if let Node::Leaf(ref leaf) = *cube {
+            let width = cube.partition().width();
+            let origin: FVector3 = cube.partition().origin().to_vector().into_space();
+            let units = leaf.geometry.points();
+            points.extend(units.iter()
+                .map(|point| (point * cube::exp(width) as FScalar) + origin)
+                .map(|point| RawVertex::from(Vertex::new(point, random_color()))));
+            indeces.extend(leaf.geometry
+                .indeces()
+                .iter()
+                .map(|index| ((units.len() * n) as Index + *index)));
+        }
     }
     factory.create_vertex_buffer_with_slice(points.as_slice(), indeces.as_slice())
 }
@@ -128,12 +85,19 @@ pub fn projection_from_window(window: &glutin::Window) -> FMatrix4 {
 }
 
 pub fn look_at_cube<C>(cube: &C, from: &FPoint3) -> FMatrix4
-    where C: cube::Spatial
+    where C: Spatial
 {
     nalgebra::Isometry3::look_at_rh(from,
                                     &cube.partition().midpoint().into_space(),
                                     &FVector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
+}
+
+fn random_color() -> FVector4 {
+    FVector4::new(rand::random::<f32>(),
+                  rand::random::<f32>(),
+                  rand::random::<f32>(),
+                  1.0)
 }
 
 #[cfg(test)]
