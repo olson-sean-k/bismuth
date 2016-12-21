@@ -2,6 +2,7 @@ extern crate nalgebra;
 extern crate num;
 
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
+use std::ops;
 
 use math::{Clamp, Mask, UPoint3, UScalar, UVector3};
 
@@ -20,6 +21,23 @@ pub enum Axis {
     X = 0,
     Y = 1,
     Z = 2,
+}
+
+impl Axis {
+    pub fn range() -> ops::Range<usize> {
+        (Axis::X as usize)..(Axis::Z as usize + 1)
+    }
+}
+
+impl From<usize> for Axis {
+    fn from(index: usize) -> Self {
+        match index {
+            0 => Axis::X,
+            1 => Axis::Y,
+            2 => Axis::Z,
+            _ => panic!() // TODO: Use `TryFrom`.
+        }
+    }
 }
 
 pub enum Direction {
