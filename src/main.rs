@@ -36,7 +36,7 @@ fn new_root() -> cube::Root {
 }
 
 fn main() {
-    let (window, mut device, mut factory, surface, _) =
+    let (window, mut device, mut factory, color, _) =
         gfx_window_glutin::init::<format::Rgba8,
                                   format::DepthStencil>(glutin::WindowBuilder::new()
             .with_title("Bismuth")
@@ -60,7 +60,7 @@ fn main() {
     let data = render::pipeline::Data {
         vertex_buffer: vertex_buffer,
         transform: *transform.as_ref(),
-        output: surface,
+        output: color,
     };
 
     'main: loop {
