@@ -19,6 +19,19 @@ fn new_root() -> cube::Root {
         .to_cursor();
     let mut root = cube::Root::new(width);
     root.to_cube_mut().subdivide_to_cursor(&cursor);
+    let _ = root.to_cube_mut().at_point_mut(&UPoint3::new(0, 0, 0), width - 2).join();
+    for mut cube in root.to_cube_mut().iter_cursor_mut(&cursor) {
+        for mut cube in cube.iter_mut() {
+            if let cube::OrphanNode::Leaf(ref mut leaf) = *cube {
+                for axis in cube::Axis::range() {
+                    for edge in leaf.geometry.edges_mut(axis.into()) {
+                        edge.set_front(2);
+                        edge.set_back(14);
+                    }
+                }
+            }
+        }
+    }
     root
 }
 
