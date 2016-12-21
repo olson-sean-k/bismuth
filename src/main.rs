@@ -43,8 +43,8 @@ fn main() {
             .with_dimensions(640, 480)
             .with_vsync());
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
-    let state = factory.create_pipeline_simple(include_bytes!("shader/cube.glslv"),
-                                               include_bytes!("shader/cube.glslf"),
+    let state = factory.create_pipeline_simple(include_bytes!("shader/cube.v.glsl"),
+                                               include_bytes!("shader/cube.f.glsl"),
                                                render::pipeline::new())
         .unwrap();
 
