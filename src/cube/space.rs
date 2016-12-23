@@ -17,6 +17,7 @@ impl Clamp<LogWidth> for LogWidth {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Axis {
     X = 0,
     Y = 1,
