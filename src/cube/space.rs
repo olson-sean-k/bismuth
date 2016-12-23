@@ -85,7 +85,7 @@ impl AABB {
     }
 
     pub fn intersects(&self, other: &Self) -> bool {
-        for axis in 0..3 {
+        for axis in Axis::range() {
             if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
                 return false;
             }
