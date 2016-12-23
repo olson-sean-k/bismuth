@@ -63,7 +63,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
         if let Node::Leaf(ref leaf) = *cube {
             let width = cube.partition().width();
             let origin: FVector3 = cube.partition().origin().to_vector().into_space();
-            let units = leaf.geometry.points();
+            let units = leaf.payload.geometry.points();
             let color = random_color();
             // TODO: The ordering of the points must agree with the indeces.
             //       This seems to be broken (and can be seen when using more
@@ -73,7 +73,7 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
             points.extend(units.iter().rev()
                 .map(|point| (point * cube::exp(width) as FScalar) + origin)
                 .map(|point| RawVertex::from(Vertex::new(point, color))));
-            indeces.extend(leaf.geometry
+            indeces.extend(leaf.payload.geometry
                 .indeces()
                 .iter()
                 .map(|index| ((units.len() * n) as Index + *index)));

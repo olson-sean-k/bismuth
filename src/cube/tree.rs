@@ -15,11 +15,11 @@ use super::geometry::Geometry;
 use super::space;
 use super::space::{LogWidth, MAX_WIDTH, MIN_WIDTH, Partition, Spatial};
 
-pub type NodeLink = Box<[Node; 8]>;
+type NodeLink = Box<[Node; 8]>;
 
 pub enum Node {
     Leaf(LeafNode),
-    Branch(NodeLink, BranchNode),
+    Branch(BranchNode),
 }
 
 impl Node {
@@ -34,20 +34,20 @@ impl Node {
         }
     }
 
-    fn to_orphan<'a>(&'a self) -> (OrphanNode<&'a LeafNode, &'a BranchNode>, Option<&'a NodeLink>) {
+    fn to_orphan<'a>(&'a self) -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
         match *self {
-            Node::Leaf(ref leaf) => (OrphanNode::Leaf(leaf), None),
-            Node::Branch(ref nodes, ref branch) => (OrphanNode::Branch(branch), Some(nodes)),
+            Node::Leaf(ref leaf) => (OrphanNode::Leaf(&leaf.payload), None),
+            Node::Branch(ref branch) => (OrphanNode::Branch(&branch.payload), Some(&branch.nodes)),
         }
     }
 
     fn to_orphan_mut<'a>
         (&'a mut self)
-         -> (OrphanNode<&'a mut LeafNode, &'a mut BranchNode>, Option<&'a mut NodeLink>) {
+         -> (OrphanNode<&'a mut LeafPayload, &'a mut BranchPayload>, Option<&'a mut NodeLink>) {
         match *self {
-            Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(leaf), None),
-            Node::Branch(ref mut nodes, ref mut branch) => {
-                (OrphanNode::Branch(branch), Some(nodes))
+            Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(&mut leaf.payload), None),
+            Node::Branch(ref mut branch) => {
+                (OrphanNode::Branch(&mut branch.payload), Some(&mut branch.nodes))
             }
         }
     }
@@ -64,15 +64,14 @@ impl Node {
 
     fn subdivide(&mut self) -> Result<(), SubdivideError> {
         if let Node::Leaf(..) = *self {
-            *self = Node::Branch(Box::new([self.clone(),
-                                           self.clone(),
-                                           self.clone(),
-                                           self.clone(),
-                                           self.clone(),
-                                           self.clone(),
-                                           self.clone(),
-                                           self.clone()]),
-                                 BranchNode::new());
+            *self = Node::Branch(BranchNode::new(Box::new([self.clone(),
+                                                           self.clone(),
+                                                           self.clone(),
+                                                           self.clone(),
+                                                           self.clone(),
+                                                           self.clone(),
+                                                           self.clone(),
+                                                           self.clone()])));
             Ok(())
         }
         else {
@@ -96,33 +95,23 @@ impl AsMut<Node> for Node {
 impl Clone for Node {
     fn clone(&self) -> Self {
         match *self {
-            Node::Leaf(leaf) => Node::Leaf(leaf.clone()),
-            Node::Branch(ref nodes, branch) => {
-                Node::Branch(Box::new([nodes[0].clone(),
-                                       nodes[1].clone(),
-                                       nodes[2].clone(),
-                                       nodes[3].clone(),
-                                       nodes[4].clone(),
-                                       nodes[5].clone(),
-                                       nodes[6].clone(),
-                                       nodes[7].clone()]),
-                             branch.clone())
-            }
+            Node::Leaf(ref leaf) => Node::Leaf(leaf.clone()),
+            Node::Branch(ref branch) => Node::Branch(branch.clone()),
         }
     }
 }
 
 pub enum OrphanNode<L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     Leaf(L),
     Branch(B),
 }
 
 impl<L, B> OrphanNode<L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     pub fn is_leaf(&self) -> bool {
         match *self {
@@ -132,49 +121,89 @@ impl<L, B> OrphanNode<L, B>
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct LeafNode {
-    pub geometry: Geometry,
-    pub material: ResourceId,
+    pub payload: LeafPayload,
 }
 
 impl LeafNode {
     fn new() -> Self {
         LeafNode {
+            payload: LeafPayload::new(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct LeafPayload {
+    pub geometry: Geometry,
+    pub material: ResourceId,
+}
+
+impl LeafPayload {
+    fn new() -> Self {
+        LeafPayload {
             geometry: Geometry::full(),
             material: 0,
         }
     }
 }
 
-impl AsRef<LeafNode> for LeafNode {
+impl AsRef<LeafPayload> for LeafPayload {
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl AsMut<LeafNode> for LeafNode {
+impl AsMut<LeafPayload> for LeafPayload {
     fn as_mut(&mut self) -> &mut Self {
         self
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct BranchNode {}
+pub struct BranchNode {
+    nodes: NodeLink,
+    pub payload: BranchPayload,
+}
 
 impl BranchNode {
-    fn new() -> Self {
-        BranchNode {}
+    fn new(nodes: NodeLink) -> Self {
+        BranchNode {
+            nodes: nodes,
+            payload: BranchPayload::new(),
+        }
     }
 }
 
-impl AsRef<BranchNode> for BranchNode {
+impl Clone for BranchNode {
+    fn clone(&self) -> Self {
+        BranchNode::new(Box::new([self.nodes[0].clone(),
+                                  self.nodes[1].clone(),
+                                  self.nodes[2].clone(),
+                                  self.nodes[3].clone(),
+                                  self.nodes[4].clone(),
+                                  self.nodes[5].clone(),
+                                  self.nodes[6].clone(),
+                                  self.nodes[7].clone()]))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct BranchPayload {}
+
+impl BranchPayload {
+    fn new() -> Self {
+        BranchPayload {}
+    }
+}
+
+impl AsRef<BranchPayload> for BranchPayload {
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl AsMut<BranchNode> for BranchNode {
+impl AsMut<BranchPayload> for BranchPayload {
     fn as_mut(&mut self) -> &mut Self {
         self
     }
@@ -232,7 +261,7 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn to_orphan(&self) -> OrphanCube<&LeafNode, &BranchNode> {
+    pub fn to_orphan(&self) -> OrphanCube<&LeafPayload, &BranchPayload> {
         let (orphan, _) = self.node.as_ref().to_orphan();
         OrphanCube::new(orphan, self.root, self.partition)
     }
@@ -261,9 +290,9 @@ impl<'a, N> Cube<'a, N>
 
         while width < depth {
             match *node {
-                Node::Branch(ref nodes, _) => {
+                Node::Branch(ref branch) => {
                     depth = depth - 1;
-                    node = &nodes[space::index_at_point(&point, depth)]
+                    node = &branch.nodes[space::index_at_point(&point, depth)]
                 }
                 _ => break,
             }
@@ -273,10 +302,10 @@ impl<'a, N> Cube<'a, N>
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
         match *self.node.as_ref() {
-            Node::Branch(ref nodes, _) => {
+            Node::Branch(ref branch) => {
                 self.partition
                     .at_index(index)
-                    .map(|partition| Cube::new(&nodes[index], self.root, partition))
+                    .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
             }
             _ => None,
         }
@@ -305,7 +334,7 @@ impl<'a, N> Cube<'a, &'a N>
 impl<'a, N> Cube<'a, N>
     where N: AsRef<Node> + AsMut<Node>
 {
-    pub fn to_orphan_mut(&mut self) -> OrphanCube<&mut LeafNode, &mut BranchNode> {
+    pub fn to_orphan_mut(&mut self) -> OrphanCube<&mut LeafPayload, &mut BranchPayload> {
         let (orphan, _) = self.node.as_mut().to_orphan_mut();
         OrphanCube::new(orphan, self.root, self.partition)
     }
@@ -335,9 +364,9 @@ impl<'a, N> Cube<'a, N>
         while width < depth {
             let taken = node.take().unwrap();
             match *taken {
-                Node::Branch(ref mut nodes, _) => {
+                Node::Branch(ref mut branch) => {
                     depth = depth - 1;
-                    node = Some(&mut nodes[space::index_at_point(&point, depth)]);
+                    node = Some(&mut branch.nodes[space::index_at_point(&point, depth)]);
                 }
                 _ => {
                     node = Some(taken);
@@ -352,11 +381,11 @@ impl<'a, N> Cube<'a, N>
 
     pub fn at_index_mut(&mut self, index: usize) -> Option<Cube<&mut Node>> {
         match *self.node.as_mut() {
-            Node::Branch(ref mut nodes, _) => {
+            Node::Branch(ref mut branch) => {
                 let root = self.root;
                 self.partition
                     .at_index(index)
-                    .map(move |partition| Cube::new(&mut nodes[index], root, partition))
+                    .map(move |partition| Cube::new(&mut branch.nodes[index], root, partition))
             }
             _ => None,
         }
@@ -384,8 +413,8 @@ impl<'a, N> Cube<'a, N>
             depth = depth - 1;
             let mut taken = node.take().unwrap();
             let _ = taken.subdivide();
-            if let Node::Branch(ref mut nodes, _) = *taken {
-                node = Some(&mut nodes[space::index_at_point(point, depth)]);
+            if let Node::Branch(ref mut branch) = *taken {
+                node = Some(&mut branch.nodes[space::index_at_point(point, depth)]);
             }
         }
         Cube::new(node.take().unwrap(),
@@ -475,8 +504,8 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cube) = self.0.pop() {
             match *cube.node.as_ref() {
-                Node::Branch(ref nodes, _) => {
-                    for (index, node) in nodes.iter().enumerate() {
+                Node::Branch(ref branch) => {
+                    for (index, node) in branch.nodes.iter().enumerate() {
                         self.0.push(Cube::new(node,
                                               cube.root,
                                               cube.partition().at_index(index).unwrap()));
@@ -493,7 +522,7 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
 }
 
 impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
-    type Item = OrphanCube<'a, &'a mut LeafNode, &'a mut BranchNode>;
+    type Item = OrphanCube<'a, &'a mut LeafPayload, &'a mut BranchPayload>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cube) = self.0.pop() {
@@ -571,8 +600,8 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
 }
 
 pub struct OrphanCube<'a, L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     node: OrphanNode<L, B>,
     root: &'a Partition,
@@ -580,8 +609,8 @@ pub struct OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> OrphanCube<'a, L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     fn new(node: OrphanNode<L, B>, root: &'a Partition, partition: Partition) -> Self {
         OrphanCube {
@@ -593,8 +622,8 @@ impl<'a, L, B> OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     type Target = OrphanNode<L, B>;
 
@@ -604,8 +633,8 @@ impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
-    where L: AsRef<LeafNode> + AsMut<LeafNode>,
-          B: AsRef<BranchNode> + AsMut<BranchNode>
+    where L: AsRef<LeafPayload> + AsMut<LeafPayload>,
+          B: AsRef<BranchPayload> + AsMut<BranchPayload>
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.node
@@ -613,8 +642,8 @@ impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> Spatial for OrphanCube<'a, L, B>
-    where L: AsRef<LeafNode>,
-          B: AsRef<BranchNode>
+    where L: AsRef<LeafPayload>,
+          B: AsRef<BranchPayload>
 {
     fn partition(&self) -> &Partition {
         &self.partition
