@@ -134,6 +134,20 @@ impl LeafNode {
     }
 }
 
+impl ops::Deref for LeafNode {
+    type Target = LeafPayload;
+
+    fn deref(&self) -> &Self::Target {
+        &self.payload
+    }
+}
+
+impl ops::DerefMut for LeafNode {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.payload
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct LeafPayload {
     pub geometry: Geometry,
@@ -185,6 +199,20 @@ impl Clone for BranchNode {
                                   self.nodes[5].clone(),
                                   self.nodes[6].clone(),
                                   self.nodes[7].clone()]))
+    }
+}
+
+impl ops::Deref for BranchNode {
+    type Target = BranchPayload;
+
+    fn deref(&self) -> &Self::Target {
+        &self.payload
+    }
+}
+
+impl ops::DerefMut for BranchNode {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.payload
     }
 }
 
