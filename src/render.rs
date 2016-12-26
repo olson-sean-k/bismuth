@@ -59,8 +59,18 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
 {
     let mut points = Vec::new();
     let mut indeces = Vec::new();
-    for (n, cube) in cube.iter().filter(|cube| cube.is_leaf()).enumerate() {
-        if let Node::Leaf(ref leaf) = *cube {
+    // TODO: Is there a way to do this with `filter_map` and `enumerate`? Using
+    //       `filter_map` causes lifetime errors, it seems.
+    let mut n = 0;
+    for cube in cube.iter() {
+        if let Some(leaf) = cube.try_as_leaf().and_then(|leaf| {
+            if leaf.payload.geometry.is_empty() {
+                None
+            }
+            else {
+                Some(leaf)
+            }
+        }) {
             let width = cube.partition().width();
             let origin: FVector3 = cube.partition().origin().to_vector().into_space();
             let units = leaf.payload.geometry.points();
@@ -70,13 +80,16 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
             //       elaborate colors). Reversing the `Vec` seems to help, but
             //       this may still be broken, and using `rev` shouldn't be
             //       required of clients in any case.
-            points.extend(units.iter().rev()
+            points.extend(units.iter()
+                .rev()
                 .map(|point| (point * cube::exp(width) as FScalar) + origin)
                 .map(|point| RawVertex::from(Vertex::new(point, color))));
-            indeces.extend(leaf.payload.geometry
+            indeces.extend(leaf.payload
+                .geometry
                 .indeces()
                 .iter()
                 .map(|index| ((units.len() * n) as Index + *index)));
+            n = n + 1;
         }
     }
     factory.create_vertex_buffer_with_slice(points.as_slice(), indeces.as_slice())

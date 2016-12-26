@@ -98,6 +98,10 @@ impl Geometry {
         &mut self.0[axis as usize]
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.iter().any(|axis| axis.iter().all(|edge| edge.length() == 0))
+    }
+
     pub fn points(&self) -> Vec<FPoint3> {
         UNIT_CUBE_POINTS.iter()
             .map(|unit| {

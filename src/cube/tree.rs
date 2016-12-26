@@ -34,6 +34,34 @@ impl Node {
         }
     }
 
+    pub fn try_as_leaf(&self) -> Option<&LeafNode> {
+        match *self {
+            Node::Leaf(ref leaf) => Some(leaf),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_leaf_mut(&mut self) -> Option<&mut LeafNode> {
+        match *self {
+            Node::Leaf(ref mut leaf) => Some(leaf),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_branch(&self) -> Option<&BranchNode> {
+        match *self {
+            Node::Branch(ref branch) => Some(branch),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_branch_mut(&mut self) -> Option<&mut BranchNode> {
+        match *self {
+            Node::Branch(ref mut branch) => Some(branch),
+            _ => None,
+        }
+    }
+
     fn to_orphan<'a>(&'a self) -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(&leaf.payload), None),
