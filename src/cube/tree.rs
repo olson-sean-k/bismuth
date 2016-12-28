@@ -147,6 +147,39 @@ impl<L, B> OrphanNode<L, B>
             _ => false,
         }
     }
+
+    pub fn try_as_leaf(&self) -> Option<&LeafPayload> {
+        match *self {
+            OrphanNode::Leaf(ref leaf) => Some(leaf.as_ref()),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_branch(&self) -> Option<&BranchPayload> {
+        match *self {
+            OrphanNode::Branch(ref branch) => Some(branch.as_ref()),
+            _ => None,
+        }
+    }
+}
+
+impl<L, B> OrphanNode<L, B>
+    where L: AsRef<LeafPayload> + AsMut<LeafPayload>,
+          B: AsRef<BranchPayload> + AsMut<BranchPayload>
+{
+    pub fn try_as_leaf_mut(&mut self) -> Option<&mut LeafPayload> {
+        match *self {
+            OrphanNode::Leaf(ref mut leaf) => Some(leaf.as_mut()),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_branch_mut(&mut self) -> Option<&mut BranchPayload> {
+        match *self {
+            OrphanNode::Branch(ref mut branch) => Some(branch.as_mut()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -204,15 +237,15 @@ impl AsMut<LeafPayload> for LeafPayload {
 }
 
 pub struct BranchNode {
-    nodes: NodeLink,
     pub payload: BranchPayload,
+    nodes: NodeLink,
 }
 
 impl BranchNode {
     fn new(nodes: NodeLink) -> Self {
         BranchNode {
-            nodes: nodes,
             payload: BranchPayload::new(),
+            nodes: nodes,
         }
     }
 }
