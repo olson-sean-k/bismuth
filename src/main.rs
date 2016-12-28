@@ -5,25 +5,25 @@ extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate num;
 
-use bismuth::{cube, edit, render};
+use bismuth::cube::{Axis, MAX_WIDTH, Root};
+use bismuth::edit::Selection;
+use bismuth::render;
 use bismuth::prelude::*;
 use gfx::{format, Device};
 use gfx::traits::FactoryExt;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
-fn new_root() -> cube::Root {
-    let width = cube::MAX_WIDTH;
-    let cursor = edit::Selection::at_point(&UPoint3::new(0, 0, 0), width - 3)
+fn new_root() -> Root {
+    let width = MAX_WIDTH;
+    let cursor = Selection::at_point(&UPoint3::new(0, 0, 0), width - 3)
         .span(&UVector3::new(7, 1, 7))
         .to_cursor();
-    let mut root = cube::Root::new(width);
-    root.to_cube_mut().subdivide_to_cursor(&cursor);
-    let _ = root.to_cube_mut().at_point_mut(&UPoint3::new(0, 0, 0), width - 2).join();
-    for mut cube in root.to_cube_mut().iter_cursor_mut(&cursor) {
+    let mut root = Root::new(width);
+    for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
             if let Some(leaf) = cube.try_as_leaf_mut() {
-                for axis in cube::Axis::range() {
+                for axis in Axis::range() {
                     for edge in leaf.geometry.edges_mut(axis.into()) {
                         edge.set_front(2);
                         edge.set_back(14);
