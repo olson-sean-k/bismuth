@@ -5,11 +5,14 @@ extern crate lazy_static;
 extern crate nalgebra;
 extern crate rand;
 
+//use genmesh::generators;
 use nalgebra::ToHomogeneous;
+use std::convert::AsRef;
 
 use cube;
-use cube::{Cube, Node, Spatial};
+use cube::{Cube, Node, Spatial, UNIT_CUBE_INDECES};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
+use super::OptionExt;
 
 pub type Index = u32;
 
@@ -37,7 +40,7 @@ impl From<Vertex> for RawVertex {
     }
 }
 
-struct Vertex {
+pub struct Vertex {
     pub position: FPoint3,
     pub color: FVector4,
 }
@@ -51,48 +54,63 @@ impl Vertex {
     }
 }
 
+pub struct MeshBuffer {
+    pub vertices: Vec<RawVertex>,
+    pub indeces: Vec<Index>,
+}
+
+impl MeshBuffer {
+    pub fn new() -> Self {
+        MeshBuffer {
+            vertices: vec![],
+            indeces: vec![],
+        }
+    }
+
+    pub fn extend(&mut self, buffer: &Self) {
+        let offset = self.vertices.len();
+        self.vertices.extend(buffer.vertices.iter());
+        self.indeces.extend(buffer.indeces
+            .iter()
+            .map(|index| index + offset as Index));
+    }
+}
+
+pub trait Mesh {
+    fn mesh_buffer(&self) -> MeshBuffer;
+}
+
+impl<'a, N> Mesh for Cube<'a, N>
+    where N: AsRef<Node>
+{
+    fn mesh_buffer(&self) -> MeshBuffer {
+        let mut buffer = MeshBuffer::new();
+        if let Some(leaf) = self.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
+            let width = self.partition().width();
+            let origin: FPoint3 = (*self.partition().origin()).into_space();
+            let color = random_color();
+            buffer.vertices.extend(leaf.geometry
+                .points() // TODO: Use genmesh.
+                .iter()
+                .map(|unit| (unit * cube::exp(width) as FScalar) + origin.to_vector())
+                .map(|point| RawVertex::from(Vertex::new(point, color))));
+            buffer.indeces.extend(UNIT_CUBE_INDECES.iter());
+        }
+        buffer
+    }
+}
+
 pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
                                      factory: &mut F)
                                      -> (gfx::handle::Buffer<R, RawVertex>, gfx::Slice<R>)
     where R: gfx::Resources,
           F: gfx::traits::FactoryExt<R>
 {
-    let mut points = Vec::new();
-    let mut indeces = Vec::new();
-    // TODO: Is there a way to do this with `filter_map` and `enumerate`? Using
-    //       `filter_map` causes lifetime errors, it seems.
-    let mut n = 0;
-    for cube in cube.iter() {
-        if let Some(leaf) = cube.try_as_leaf().and_then(|leaf| {
-            if leaf.payload.geometry.is_empty() {
-                None
-            }
-            else {
-                Some(leaf)
-            }
-        }) {
-            let width = cube.partition().width();
-            let origin: FVector3 = cube.partition().origin().to_vector().into_space();
-            let units = leaf.payload.geometry.points();
-            let color = random_color();
-            // TODO: The ordering of the points must agree with the indeces.
-            //       This seems to be broken (and can be seen when using more
-            //       elaborate colors). Reversing the `Vec` seems to help, but
-            //       this may still be broken, and using `rev` shouldn't be
-            //       required of clients in any case.
-            points.extend(units.iter()
-                .rev()
-                .map(|point| (point * cube::exp(width) as FScalar) + origin)
-                .map(|point| RawVertex::from(Vertex::new(point, color))));
-            indeces.extend(leaf.payload
-                .geometry
-                .indeces()
-                .iter()
-                .map(|index| ((units.len() * n) as Index + *index)));
-            n = n + 1;
-        }
+    let mut buffer = MeshBuffer::new();
+    for cube in cube.iter().filter(|cube| cube.is_leaf()) {
+        buffer.extend(&cube.mesh_buffer());
     }
-    factory.create_vertex_buffer_with_slice(points.as_slice(), indeces.as_slice())
+    factory.create_vertex_buffer_with_slice(buffer.vertices.as_slice(), buffer.indeces.as_slice())
 }
 
 pub fn projection_from_window(window: &glutin::Window) -> FMatrix4 {

@@ -9,8 +9,9 @@ pub type Offset = u8;
 pub const MIN_EDGE_OFFSET: Offset = 0;
 pub const MAX_EDGE_OFFSET: Offset = 0x0F;
 
+// TODO: Replace with mesh generation and the rendering module.
 lazy_static! {
-    static ref UNIT_CUBE_POINTS: [UPoint3; 8] = [
+    pub static ref UNIT_CUBE_POINTS: [UPoint3; 8] = [
         // Back.
         UPoint3::new(0, 0, 1), // 0
         UPoint3::new(1, 0, 1), // 1
@@ -23,7 +24,7 @@ lazy_static! {
         UPoint3::new(0, 0, 0), // 7
     ];
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    static ref UNIT_CUBE_INDECES: [Index; 36] = [
+    pub static ref UNIT_CUBE_INDECES: [Index; 36] = [
         0, 1, 2, 2, 3, 0,
         4, 5, 6, 6, 7, 4,
         6, 5, 2, 2, 1, 6,
@@ -102,6 +103,7 @@ impl Geometry {
         self.0.iter().any(|axis| axis.iter().all(|edge| edge.length() == 0))
     }
 
+    // TODO: Replace with mesh generation and the rendering module.
     pub fn points(&self) -> Vec<FPoint3> {
         UNIT_CUBE_POINTS.iter()
             .map(|unit| {
@@ -119,12 +121,9 @@ impl Geometry {
             })
             .collect()
     }
-
-    pub fn indeces(&self) -> &[Index; 36] {
-        &UNIT_CUBE_INDECES
-    }
 }
 
+// TODO: Replace with mesh generation and the rendering module.
 fn index_at_axis(axis: usize, unit: &UPoint3) -> usize {
     let p = if axis == 0 { 1 } else { 0 };
     let q = if axis == 2 { 1 } else { 2 };
