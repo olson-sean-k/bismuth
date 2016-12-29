@@ -106,7 +106,7 @@ impl Geometry {
         UNIT_CUBE_POINTS.iter()
             .map(|unit| {
                 let mut point = FPoint3::from_space(*unit);
-                for axis in 0..3 {
+                for axis in Axis::range() {
                     let edge = &self.0[axis][index_at_axis(axis, unit)];
                     point[axis] += if unit[axis] == 0 {
                         edge.front_unit_transform()
