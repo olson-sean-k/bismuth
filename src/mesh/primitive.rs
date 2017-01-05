@@ -22,8 +22,12 @@ pub trait Map<T, U>: Sized {
     fn map_points<F>(self, f: F) -> MapPoint<Self, T, U, F> where F: FnMut(T) -> U;
 }
 
-pub trait Triangulate<T>: Sized {
-    fn triangulate(self) -> TriangulatePolygon<Self, T>;
+pub trait DecomposePrimitive<T>: Sized {
+    fn points(self) -> Pointilate<Self, T>;
+}
+
+pub trait DecomposePolygon<T>: Sized {
+    fn triangulate(self) -> Triangulate<Self, T>;
 }
 
 impl<I, T, U, P, Q> Map<T, U> for I
@@ -69,32 +73,74 @@ impl<I, T, U, F, P, Q> Iterator for MapPoint<I, T, U, F>
     }
 }
 
-impl<I, T, P> Triangulate<T> for I
+impl<I, T, P> DecomposePrimitive<T> for I
     where I: Iterator<Item = P>,
-          P: Polygonal<T>
+          P: Primitive<T>
 {
-    fn triangulate(self) -> TriangulatePolygon<Self, T> {
-        TriangulatePolygon::new(self)
+    fn points(self) -> Pointilate<Self, T> {
+        Pointilate::new(self)
     }
 }
 
-pub struct TriangulatePolygon<I, T> {
+pub struct Pointilate<I, T> {
     primitives: I,
-    triangles: VecDeque<Triangle<T>>,
-    phantom_t: PhantomData<T>,
+    points: VecDeque<T>,
 }
 
-impl<I, T> TriangulatePolygon<I, T> {
+impl<I, T> Pointilate<I, T> {
     fn new(primitives: I) -> Self {
-        TriangulatePolygon {
+        Pointilate {
             primitives: primitives,
-            triangles: VecDeque::new(),
-            phantom_t: PhantomData,
+            points: VecDeque::new(),
         }
     }
 }
 
-impl<I, T, P> Iterator for TriangulatePolygon<I, T>
+impl<I, T, P> Iterator for Pointilate<I, T>
+    where I: Iterator<Item = P>,
+          P: Primitive<T>
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(point) = self.points.pop_front() {
+                return Some(point);
+            }
+            if let Some(primitive) = self.primitives.next() {
+                primitive.into_points(|point| self.points.push_back(point))
+            }
+            else {
+                return None;
+            }
+        }
+    }
+}
+
+impl<I, T, P> DecomposePolygon<T> for I
+    where I: Iterator<Item = P>,
+          P: Polygonal<T>
+{
+    fn triangulate(self) -> Triangulate<Self, T> {
+        Triangulate::new(self)
+    }
+}
+
+pub struct Triangulate<I, T> {
+    polygons: I,
+    triangles: VecDeque<Triangle<T>>,
+}
+
+impl<I, T> Triangulate<I, T> {
+    fn new(polygons: I) -> Self {
+        Triangulate {
+            polygons: polygons,
+            triangles: VecDeque::new(),
+        }
+    }
+}
+
+impl<I, T, P> Iterator for Triangulate<I, T>
     where I: Iterator<Item = P>,
           P: Polygonal<T>
 {
@@ -105,8 +151,8 @@ impl<I, T, P> Iterator for TriangulatePolygon<I, T>
             if let Some(triangle) = self.triangles.pop_front() {
                 return Some(triangle);
             }
-            if let Some(primitive) = self.primitives.next() {
-                primitive.into_triangles(|triangle| self.triangles.push_back(triangle))
+            if let Some(polygon) = self.polygons.next() {
+                polygon.into_triangles(|triangle| self.triangles.push_back(triangle))
             }
             else {
                 return None;

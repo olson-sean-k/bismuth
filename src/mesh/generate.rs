@@ -4,20 +4,20 @@ use std::ops;
 pub trait Conjoint<T>: Sized {
     fn conjoint_point(&self, index: usize) -> T;
     fn conjoint_point_count(&self) -> usize;
-    fn conjoint_points<'a>(&'a self) -> ConjointPoint<'a, T, Self> {
-        ConjointPoint::new(self, 0..self.conjoint_point_count())
+    fn conjoint_points<'a>(&'a self) -> ConjoinPoint<'a, Self, T> {
+        ConjoinPoint::new(self, 0..self.conjoint_point_count())
     }
 }
 
-pub struct ConjointPoint<'a, T, S: 'a> {
+pub struct ConjoinPoint<'a, S: 'a, T> {
     shape: &'a S,
     points: ops::Range<usize>,
     phantom_t: PhantomData<T>,
 }
 
-impl<'a, T, S> ConjointPoint<'a, T, S> {
+impl<'a, S, T> ConjoinPoint<'a, S, T> {
     fn new(shape: &'a S, points: ops::Range<usize>) -> Self {
-        ConjointPoint {
+        ConjoinPoint {
             shape: shape,
             points: points,
             phantom_t: PhantomData,
@@ -25,7 +25,7 @@ impl<'a, T, S> ConjointPoint<'a, T, S> {
     }
 }
 
-impl<'a, T, S> Iterator for ConjointPoint<'a, T, S>
+impl<'a, S, T> Iterator for ConjoinPoint<'a, S, T>
     where S: Conjoint<T>
 {
     type Item = T;
@@ -38,18 +38,18 @@ impl<'a, T, S> Iterator for ConjointPoint<'a, T, S>
 pub trait Indexed<P>: Sized {
     fn indexed_polygon(&self, index: usize) -> P;
     fn indexed_polygon_count(&self) -> usize;
-    fn indexed_polygons<'a>(&'a self) -> IndexPolygon<'a, P, Self> {
+    fn indexed_polygons<'a>(&'a self) -> IndexPolygon<'a, Self, P> {
         IndexPolygon::new(self, 0..self.indexed_polygon_count())
     }
 }
 
-pub struct IndexPolygon<'a, P, S: 'a> {
+pub struct IndexPolygon<'a, S: 'a, P> {
     shape: &'a S,
     polygons: ops::Range<usize>,
     phantom_p: PhantomData<P>,
 }
 
-impl<'a, P, S> IndexPolygon<'a, P, S> {
+impl<'a, S, P> IndexPolygon<'a, S, P> {
     fn new(shape: &'a S, polygons: ops::Range<usize>) -> Self {
         IndexPolygon {
             shape: shape,
@@ -59,7 +59,7 @@ impl<'a, P, S> IndexPolygon<'a, P, S> {
     }
 }
 
-impl<'a, P, S> Iterator for IndexPolygon<'a, P, S>
+impl<'a, S, P> Iterator for IndexPolygon<'a, S, P>
     where S: Indexed<P>
 {
     type Item = P;
