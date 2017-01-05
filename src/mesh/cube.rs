@@ -64,21 +64,21 @@ pub struct FCube<T>
 impl<T> FCube<T>
     where T: Float
 {
-    pub fn with_unit_radius() -> Self {
+    fn new(low: T, high: T) -> Self {
         FCube {
             faces: 0..6,
-            low: -T::one(),
-            high: T::one(),
+            low: low,
+            high: high,
         }
+    }
+
+    pub fn with_unit_radius() -> Self {
+        FCube::new(-T::one(), T::one())
     }
 
     pub fn with_unit_width() -> Self {
         let half = T::one() / (T::one() + T::one());
-        FCube {
-            faces: 0..6,
-            low: -half,
-            high: half,
-        }
+        FCube::new(-half, half)
     }
 }
 
@@ -113,20 +113,20 @@ pub struct UCube<T>
 impl<T> UCube<T>
     where T: Copy + Unsigned
 {
-    pub fn with_unit_radius() -> Self {
+    fn new(low: T, high: T) -> Self {
         UCube {
             faces: 0..6,
-            low: T::zero(),
-            high: T::one() + T::one(),
+            low: low,
+            high: high,
         }
     }
 
+    pub fn with_unit_radius() -> Self {
+        UCube::new(T::zero(), T::one() + T::one())
+    }
+
     pub fn with_unit_width() -> Self {
-        UCube {
-            faces: 0..6,
-            low: T::zero(),
-            high: T::one(),
-        }
+        UCube::new(T::zero(), T::one())
     }
 }
 
