@@ -10,49 +10,49 @@ pub trait Polygonal<T>: Primitive<T> {
     fn into_triangles<F>(self, f: F) where F: FnMut(Triangle<T>);
 }
 
-pub trait MapInto<T, U> {
+pub trait MapPrimitiveInto<T, U> {
     type Output;
 
     fn map_points_into<F>(self, f: F) -> Self::Output where F: FnMut(T) -> U;
 }
 
-pub trait Map<T, U>: Sized {
+pub trait MapPrimitive<T, U>: Sized {
     type Output;
 
-    fn map_points<F>(self, f: F) -> MapPoint<Self, T, U, F> where F: FnMut(T) -> U;
+    fn map_points<F>(self, f: F) -> Map<Self, T, U, F> where F: FnMut(T) -> U;
 }
 
 pub trait DecomposePrimitive<T>: Sized {
-    fn points(self) -> Pointilate<Self, T>;
+    fn points(self) -> PointIter<Self, T>;
 }
 
 pub trait DecomposePolygon<T>: Sized {
-    fn triangulate(self) -> Triangulate<Self, T>;
+    fn triangulate(self) -> TriangleIter<Self, T>;
 }
 
-impl<I, T, U, P, Q> Map<T, U> for I
+impl<I, T, U, P, Q> MapPrimitive<T, U> for I
     where I: Iterator<Item = P>,
-          P: MapInto<T, U, Output = Q>
+          P: MapPrimitiveInto<T, U, Output = Q>
 {
     type Output = Q;
 
-    fn map_points<F>(self, f: F) -> MapPoint<Self, T, U, F>
+    fn map_points<F>(self, f: F) -> Map<Self, T, U, F>
         where F: FnMut(T) -> U
     {
-        MapPoint::new(self, f)
+        Map::new(self, f)
     }
 }
 
-pub struct MapPoint<I, T, U, F> {
+pub struct Map<I, T, U, F> {
     primitives: I,
     f: F,
     phantom_t: PhantomData<T>,
     phantom_u: PhantomData<U>,
 }
 
-impl<I, T, U, F> MapPoint<I, T, U, F> {
+impl<I, T, U, F> Map<I, T, U, F> {
     fn new(primitives: I, f: F) -> Self {
-        MapPoint {
+        Map {
             primitives: primitives,
             f: f,
             phantom_t: PhantomData,
@@ -61,10 +61,10 @@ impl<I, T, U, F> MapPoint<I, T, U, F> {
     }
 }
 
-impl<I, T, U, F, P, Q> Iterator for MapPoint<I, T, U, F>
+impl<I, T, U, F, P, Q> Iterator for Map<I, T, U, F>
     where I: Iterator<Item = P>,
           F: FnMut(T) -> U,
-          P: MapInto<T, U, Output = Q>
+          P: MapPrimitiveInto<T, U, Output = Q>
 {
     type Item = Q;
 
@@ -77,26 +77,26 @@ impl<I, T, P> DecomposePrimitive<T> for I
     where I: Iterator<Item = P>,
           P: Primitive<T>
 {
-    fn points(self) -> Pointilate<Self, T> {
-        Pointilate::new(self)
+    fn points(self) -> PointIter<Self, T> {
+        PointIter::new(self)
     }
 }
 
-pub struct Pointilate<I, T> {
+pub struct PointIter<I, T> {
     primitives: I,
     points: VecDeque<T>,
 }
 
-impl<I, T> Pointilate<I, T> {
+impl<I, T> PointIter<I, T> {
     fn new(primitives: I) -> Self {
-        Pointilate {
+        PointIter {
             primitives: primitives,
             points: VecDeque::new(),
         }
     }
 }
 
-impl<I, T, P> Iterator for Pointilate<I, T>
+impl<I, T, P> Iterator for PointIter<I, T>
     where I: Iterator<Item = P>,
           P: Primitive<T>
 {
@@ -121,26 +121,26 @@ impl<I, T, P> DecomposePolygon<T> for I
     where I: Iterator<Item = P>,
           P: Polygonal<T>
 {
-    fn triangulate(self) -> Triangulate<Self, T> {
-        Triangulate::new(self)
+    fn triangulate(self) -> TriangleIter<Self, T> {
+        TriangleIter::new(self)
     }
 }
 
-pub struct Triangulate<I, T> {
+pub struct TriangleIter<I, T> {
     polygons: I,
     triangles: VecDeque<Triangle<T>>,
 }
 
-impl<I, T> Triangulate<I, T> {
+impl<I, T> TriangleIter<I, T> {
     fn new(polygons: I) -> Self {
-        Triangulate {
+        TriangleIter {
             polygons: polygons,
             triangles: VecDeque::new(),
         }
     }
 }
 
-impl<I, T, P> Iterator for Triangulate<I, T>
+impl<I, T, P> Iterator for TriangleIter<I, T>
     where I: Iterator<Item = P>,
           P: Polygonal<T>
 {
@@ -172,7 +172,7 @@ impl<T> Line<T> {
     }
 }
 
-impl<T, U> MapInto<T, U> for Line<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Line<T> {
     type Output = Line<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output
@@ -211,7 +211,7 @@ impl<T> Triangle<T> {
     }
 }
 
-impl<T, U> MapInto<T, U> for Triangle<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Triangle<T> {
     type Output = Triangle<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output
@@ -272,7 +272,7 @@ impl<T> Quad<T> {
     }
 }
 
-impl<T, U> MapInto<T, U> for Quad<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Quad<T> {
     type Output = Quad<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output

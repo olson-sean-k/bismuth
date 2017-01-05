@@ -3,10 +3,8 @@ use num::{Float, Unsigned};
 use std::ops::Range;
 
 use super::generate::{Conjoint, Indexed};
-use super::primitive::{MapInto, Quad};
+use super::primitive::{MapPrimitiveInto, Quad};
 
-// TODO: Is there some way to hide these details? Soon, making this trait
-//       non-`pub` will cause a compiler error.
 pub trait Cube: Iterator + Sized {
     type Point;
 
