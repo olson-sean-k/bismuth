@@ -6,8 +6,8 @@ use super::space::Axis;
 
 pub type Offset = u8;
 
-pub const MIN_EDGE_OFFSET: Offset = 0;
-pub const MAX_EDGE_OFFSET: Offset = 0x0F;
+pub const MIN_OFFSET: Offset = 0;
+pub const MAX_OFFSET: Offset = 0x0F;
 
 // TODO: Replace with mesh generation and the rendering module.
 lazy_static! {
@@ -39,21 +39,21 @@ pub struct Edge(u8);
 
 impl Edge {
     fn full() -> Self {
-        Edge(MAX_EDGE_OFFSET)
+        Edge(MAX_OFFSET)
     }
 
     fn converged(offset: Offset) -> Self {
-        let offset = nalgebra::clamp(offset, MIN_EDGE_OFFSET, MAX_EDGE_OFFSET);
+        let offset = nalgebra::clamp(offset, MIN_OFFSET, MAX_OFFSET);
         Edge((offset << 4) | offset)
     }
 
     pub fn set_front(&mut self, offset: Offset) {
-        let offset = nalgebra::clamp(offset, MIN_EDGE_OFFSET, self.back());
+        let offset = nalgebra::clamp(offset, MIN_OFFSET, self.back());
         self.0 = (offset << 4) | self.back();
     }
 
     pub fn set_back(&mut self, offset: Offset) {
-        let offset = nalgebra::clamp(offset, self.front(), MAX_EDGE_OFFSET);
+        let offset = nalgebra::clamp(offset, self.front(), MAX_OFFSET);
         self.0 = (self.front() << 4) | offset;
     }
 
@@ -70,12 +70,12 @@ impl Edge {
     }
 
     fn front_unit_transform(&self) -> f32 {
-        ((self.front() - MIN_EDGE_OFFSET) as f32) / ((MAX_EDGE_OFFSET - MIN_EDGE_OFFSET) as f32)
+        ((self.front() - MIN_OFFSET) as f32) / ((MAX_OFFSET - MIN_OFFSET) as f32)
     }
 
     fn back_unit_transform(&self) -> f32 {
-        let range = MAX_EDGE_OFFSET - MIN_EDGE_OFFSET;
-        -((range - (self.back() - MIN_EDGE_OFFSET)) as f32) / (range as f32)
+        let range = MAX_OFFSET - MIN_OFFSET;
+        -((range - (self.back() - MIN_OFFSET)) as f32) / (range as f32)
     }
 }
 
