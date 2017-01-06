@@ -12,8 +12,7 @@ use edit::Cursor;
 use math::{Clamp, UPoint3};
 use resource::ResourceId;
 use super::geometry::Geometry;
-use super::space;
-use super::space::{LogWidth, MAX_WIDTH, MIN_WIDTH, Partition, Spatial};
+use super::space::{self, LogWidth, MAX_WIDTH, MIN_WIDTH, Partition, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
 

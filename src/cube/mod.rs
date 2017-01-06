@@ -15,9 +15,18 @@ mod geometry;
 mod space;
 mod tree;
 
-pub use self::geometry::*;
-pub use self::space::*;
-pub use self::tree::*;
+use self::tree::{Cube, OrphanCube};
+
+pub use self::geometry::{Edge, Geometry, MAX_EDGE_OFFSET, MIN_EDGE_OFFSET, Offset,
+                         UNIT_CUBE_INDECES};
+pub use self::space::{exp, AABB, Axis, Direction, MAX_WIDTH, MIN_WIDTH, LogWidth, Orientation,
+                      Partition, Spatial};
+pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
+
+pub type CubeRef<'a> = Cube<'a, &'a Node>;
+pub type CubeMut<'a> = Cube<'a, &'a mut Node>;
+pub type OrphanCubeRef<'a> = OrphanCube<'a, &'a LeafPayload, &'a BranchPayload>;
+pub type OrphanCubeMut<'a> = OrphanCube<'a, &'a mut LeafPayload, &'a mut BranchPayload>;
 
 #[cfg(test)]
 mod tests {

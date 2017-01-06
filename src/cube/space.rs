@@ -2,7 +2,7 @@ extern crate nalgebra;
 extern crate num;
 
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
-use std::ops;
+use std::ops::Range;
 
 use math::{Clamp, Mask, UPoint3, UScalar, UVector3};
 
@@ -25,7 +25,7 @@ pub enum Axis {
 }
 
 impl Axis {
-    pub fn range() -> ops::Range<usize> {
+    pub fn range() -> Range<usize> {
         (Axis::X as usize)..(Axis::Z as usize + 1)
     }
 }

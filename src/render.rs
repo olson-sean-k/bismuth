@@ -9,8 +9,7 @@ extern crate rand;
 use nalgebra::ToHomogeneous;
 use std::convert::AsRef;
 
-use cube;
-use cube::{Cube, Node, Spatial, UNIT_CUBE_INDECES};
+use cube::{self, CubeRef, Spatial, UNIT_CUBE_INDECES};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
 use super::OptionExt;
 
@@ -80,9 +79,7 @@ pub trait Mesh {
     fn mesh_buffer(&self) -> MeshBuffer;
 }
 
-impl<'a, N> Mesh for Cube<'a, N>
-    where N: AsRef<Node>
-{
+impl<'a> Mesh for CubeRef<'a> {
     fn mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         if let Some(leaf) = self.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
@@ -100,7 +97,7 @@ impl<'a, N> Mesh for Cube<'a, N>
     }
 }
 
-pub fn vertex_buffer_from_cube<R, F>(cube: &Cube<&Node>,
+pub fn vertex_buffer_from_cube<R, F>(cube: &CubeRef,
                                      factory: &mut F)
                                      -> (gfx::handle::Buffer<R, RawVertex>, gfx::Slice<R>)
     where R: gfx::Resources,
