@@ -87,11 +87,12 @@ impl<'a> Mesh for CubeRef<'a> {
             let width = cube::exp(self.partition().width()) as FScalar;
             let color = random_color();
 
-            buffer.vertices.extend(UCube::with_unit_width().conjoint_points()
+            let cube = UCube::with_unit_width();
+            buffer.vertices.extend(cube.conjoint_points()
                 .map(|point| leaf.geometry.map_unit_cube_point(&point))
                 .map(|point| (point * width) + origin)
                 .map(|point| RawVertex::from(Vertex::new(point, color))));
-            buffer.indeces.extend(UCube::with_unit_width().indexed_polygons()
+            buffer.indeces.extend(cube.indexed_polygons()
                 .triangulate()
                 .points()
                 .map(|index| index as Index));
