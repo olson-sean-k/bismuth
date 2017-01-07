@@ -17,7 +17,7 @@ mod tree;
 
 use self::tree::{Cube, OrphanCube};
 
-pub use self::geometry::{Edge, Geometry, MAX_OFFSET, MIN_OFFSET, Offset, UNIT_CUBE_INDECES};
+pub use self::geometry::{Edge, Geometry, MAX_OFFSET, MIN_OFFSET, Offset};
 pub use self::space::{exp, AABB, Axis, Direction, MAX_WIDTH, MIN_WIDTH, LogWidth, Orientation,
                       Partition, Spatial};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};

@@ -5,12 +5,12 @@ extern crate lazy_static;
 extern crate nalgebra;
 extern crate rand;
 
-//use genmesh::generators;
 use nalgebra::ToHomogeneous;
 use std::convert::AsRef;
 
-use cube::{self, CubeRef, Spatial, UNIT_CUBE_INDECES};
+use cube::{self, CubeRef, Spatial};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
+use mesh::{Conjoint, DecomposePolygon, DecomposePrimitive, Indexed, UCube};
 use super::OptionExt;
 
 pub type Index = u32;
@@ -83,15 +83,18 @@ impl<'a> Mesh for CubeRef<'a> {
     fn mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         if let Some(leaf) = self.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
-            let width = self.partition().width();
-            let origin: FPoint3 = (*self.partition().origin()).into_space();
+            let origin: FVector3 = self.partition().origin().to_vector().into_space();
+            let width = cube::exp(self.partition().width()) as FScalar;
             let color = random_color();
-            buffer.vertices.extend(leaf.geometry
-                .points() // TODO: Use genmesh.
-                .iter()
-                .map(|unit| (unit * cube::exp(width) as FScalar) + origin.to_vector())
+
+            buffer.vertices.extend(UCube::with_unit_width().conjoint_points()
+                .map(|point| leaf.geometry.map_unit_cube_point(&point))
+                .map(|point| (point * width) + origin)
                 .map(|point| RawVertex::from(Vertex::new(point, color))));
-            buffer.indeces.extend(UNIT_CUBE_INDECES.iter());
+            buffer.indeces.extend(UCube::with_unit_width().indexed_polygons()
+                .triangulate()
+                .points()
+                .map(|index| index as Index));
         }
         buffer
     }
