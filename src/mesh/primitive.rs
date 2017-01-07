@@ -314,8 +314,8 @@ impl<T> Polygonal<T> for Quad<T>
         where F: FnMut(Triangle<T>)
     {
         let Quad { a, b, c, d } = self;
-        f(Triangle::new(a, b.clone(), c.clone()));
-        f(Triangle::new(c, b, d));
+        f(Triangle::new(a.clone(), b, c.clone()));
+        f(Triangle::new(c, d, a));
     }
 }
 
