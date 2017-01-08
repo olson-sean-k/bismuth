@@ -12,13 +12,12 @@ pub trait ClampRange {
     fn min_value() -> Self::Output;
 }
 
-#[derive(Clone, Copy)]
 pub struct Clamped<T, R>(T, PhantomData<R>)
-    where T: Num + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>;
 
 impl<T, R> Clamped<T, R>
-    where T: Num + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     pub fn new(value: T) -> Self {
@@ -34,8 +33,21 @@ impl<T, R> Clamped<T, R>
     }
 }
 
+impl<T, R> Clone for Clamped<T, R>
+    where T: Copy + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    fn clone(&self) -> Self {
+        Clamped(self.0, PhantomData)
+    }
+}
+
+impl<T, R> Copy for Clamped<T, R>
+    where T: Copy + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T> {}
+
 impl<T, R> From<T> for Clamped<T, R>
-    where T: Num + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     fn from(value: T) -> Self {
@@ -44,11 +56,11 @@ impl<T, R> From<T> for Clamped<T, R>
 }
 
 impl<T, R> cmp::Eq for Clamped<T, R>
-    where T: cmp::Eq + Num + cmp::PartialOrd,
+    where T: Copy + cmp::Eq + Num + cmp::PartialOrd,
           R: ClampRange<Output = T> {}
 
 impl<T, R> cmp::Ord for Clamped<T, R>
-    where T: Num + cmp::Ord + cmp::PartialOrd,
+    where T: Copy + Num + cmp::Ord + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
@@ -57,7 +69,7 @@ impl<T, R> cmp::Ord for Clamped<T, R>
 }
 
 impl<T, R> cmp::PartialEq for Clamped<T, R>
-    where T: Num + cmp::PartialEq + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialEq + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -66,7 +78,7 @@ impl<T, R> cmp::PartialEq for Clamped<T, R>
 }
 
 impl<T, R> cmp::PartialOrd for Clamped<T, R>
-    where T: Num + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
@@ -75,7 +87,7 @@ impl<T, R> cmp::PartialOrd for Clamped<T, R>
 }
 
 impl<T, R> ops::Add for Clamped<T, R>
-    where T: ops::Add<Output = T> + Num + cmp::PartialOrd,
+    where T: ops::Add<Output = T> + Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Output = Self;
@@ -86,7 +98,7 @@ impl<T, R> ops::Add for Clamped<T, R>
 }
 
 impl<T, R> ops::Deref for Clamped<T, R>
-    where T: Num + cmp::PartialOrd,
+    where T: Copy + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Target = T;
@@ -97,7 +109,7 @@ impl<T, R> ops::Deref for Clamped<T, R>
 }
 
 impl<T, R> ops::Div for Clamped<T, R>
-    where T: ops::Div<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Div<Output = T> + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Output = Self;
@@ -108,7 +120,7 @@ impl<T, R> ops::Div for Clamped<T, R>
 }
 
 impl<T, R> ops::Mul for Clamped<T, R>
-    where T: ops::Mul<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Mul<Output = T> + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Output = Self;
@@ -119,7 +131,7 @@ impl<T, R> ops::Mul for Clamped<T, R>
 }
 
 impl<T, R> ops::Neg for Clamped<T, R>
-    where T: ops::Neg<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Neg<Output = T> + Num + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Output = Self;
@@ -130,7 +142,7 @@ impl<T, R> ops::Neg for Clamped<T, R>
 }
 
 impl<T, R> ops::Sub for Clamped<T, R>
-    where T: ops::Sub<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + Num + ops::Sub<Output = T> + cmp::PartialOrd,
           R: ClampRange<Output = T>
 {
     type Output = Self;
