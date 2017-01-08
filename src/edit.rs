@@ -6,46 +6,6 @@ use cube::{AABB, LogWidth, Partition, Spatial};
 use math::{UPoint3, UVector3};
 use num::{One, Zero};
 
-pub struct Selection {
-    cursor: Cursor,
-}
-
-impl Selection {
-    pub fn at_cube<C: Spatial>(cube: &C) -> Self {
-        Selection {
-            cursor: Cursor::new(cube.partition().origin(),
-                                cube.partition().width(),
-                                &UVector3::zero()),
-        }
-    }
-
-    pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
-        let partition = Partition::at_point(point, width);
-        Selection { cursor: Cursor::new(partition.origin(), partition.width(), &UVector3::zero()) }
-    }
-
-    pub fn at_cursor(cursor: &Cursor) -> Self {
-        Selection { cursor: cursor.clone() }
-    }
-
-    pub fn span(&mut self, span: &UVector3) -> &mut Self {
-        self.cursor.span = span.clone();
-        self
-    }
-
-    pub fn span_to_point(&mut self, point: &UPoint3) -> &mut Self {
-        unimplemented!()
-    }
-
-    pub fn to_cursor(&self) -> Cursor {
-        self.cursor.clone()
-    }
-
-    pub fn into_cursor(self) -> Cursor {
-        self.cursor
-    }
-}
-
 #[derive(Clone)]
 pub struct Cursor {
     origin: UPoint3,
@@ -60,6 +20,35 @@ impl Cursor {
             width: width,
             span: span.clone(),
         }
+    }
+
+    pub fn at_cube<C: Spatial>(cube: &C) -> Self {
+        Cursor::new(cube.partition().origin(), cube.partition().width(), &UVector3::zero())
+    }
+
+    pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
+        let partition = Partition::at_point(point, width);
+        Cursor::new(partition.origin(), width, &UVector3::zero())
+    }
+
+    pub fn span_from_point(point: &UPoint3, span: &UVector3, width: LogWidth) -> Self {
+        let partition = Partition::at_point(point, width);
+        Cursor::new(partition.origin(), width, span)
+    }
+
+    pub fn span_from_point_to_point(start: &UPoint3, end: &UPoint3, width: LogWidth) -> Self {
+        let (start, end) = {
+            (Partition::at_point(&UPoint3::new(nalgebra::min(start.x, end.x),
+                                               nalgebra::min(start.y, end.y),
+                                               nalgebra::min(start.z, end.z)),
+                                 width),
+             Partition::at_point(&UPoint3::new(nalgebra::max(start.x, end.x),
+                                               nalgebra::max(start.y, end.y),
+                                               nalgebra::max(start.z, end.z)),
+                                 width))
+        };
+        let span = (end.origin().to_vector() - start.origin().to_vector()) / cube::exp(width);
+        Cursor::new(start.origin(), width, &span)
     }
 
     pub fn origin(&self) -> &UPoint3 {

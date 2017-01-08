@@ -6,7 +6,7 @@ extern crate glutin;
 extern crate num;
 
 use bismuth::cube::{Axis, MAX_WIDTH, Root};
-use bismuth::edit::Selection;
+use bismuth::edit::Cursor;
 use bismuth::render;
 use bismuth::prelude::*;
 use gfx::{format, Device};
@@ -16,9 +16,9 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> Root {
     let width = MAX_WIDTH;
-    let cursor = Selection::at_point(&UPoint3::new(0, 0, 0), width - 3)
-        .span(&UVector3::new(7, 1, 7))
-        .to_cursor();
+    let cursor = Cursor::span_from_point(&UPoint3::new(0, 0, 0),
+                                         &UVector3::new(7, 1, 7),
+                                         width - 3);
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
