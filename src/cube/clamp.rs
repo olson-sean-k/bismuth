@@ -5,7 +5,7 @@ use std::convert::From;
 use std::marker::PhantomData;
 use std::ops;
 
-pub trait ClampRange {
+pub trait ClampedRange {
     type Output;
 
     fn max_value() -> Self::Output;
@@ -14,11 +14,11 @@ pub trait ClampRange {
 
 pub struct Clamped<T, R>(T, PhantomData<R>)
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>;
+          R: ClampedRange<Output = T>;
 
 impl<T, R> Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     pub fn new(value: T) -> Self {
         Clamped(nalgebra::clamp(value, R::min_value(), R::max_value()), PhantomData)
@@ -35,7 +35,7 @@ impl<T, R> Clamped<T, R>
 
 impl<T, R> Clone for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     fn clone(&self) -> Self {
         Clamped(self.0, PhantomData)
@@ -44,11 +44,11 @@ impl<T, R> Clone for Clamped<T, R>
 
 impl<T, R> Copy for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T> {}
+          R: ClampedRange<Output = T> {}
 
 impl<T, R> From<T> for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     fn from(value: T) -> Self {
         Self::new(value)
@@ -57,11 +57,11 @@ impl<T, R> From<T> for Clamped<T, R>
 
 impl<T, R> cmp::Eq for Clamped<T, R>
     where T: Copy + cmp::Eq + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T> {}
+          R: ClampedRange<Output = T> {}
 
 impl<T, R> cmp::Ord for Clamped<T, R>
     where T: Copy + Num + cmp::Ord + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.0.cmp(&other.0)
@@ -70,7 +70,7 @@ impl<T, R> cmp::Ord for Clamped<T, R>
 
 impl<T, R> cmp::PartialEq for Clamped<T, R>
     where T: Copy + Num + cmp::PartialEq + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     fn eq(&self, other: &Self) -> bool {
         self.0.eq(&other.0)
@@ -79,7 +79,7 @@ impl<T, R> cmp::PartialEq for Clamped<T, R>
 
 impl<T, R> cmp::PartialOrd for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         self.0.partial_cmp(&other.0)
@@ -88,7 +88,7 @@ impl<T, R> cmp::PartialOrd for Clamped<T, R>
 
 impl<T, R> ops::Add for Clamped<T, R>
     where T: ops::Add<Output = T> + Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Output = Self;
 
@@ -99,7 +99,7 @@ impl<T, R> ops::Add for Clamped<T, R>
 
 impl<T, R> ops::Deref for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Target = T;
 
@@ -110,7 +110,7 @@ impl<T, R> ops::Deref for Clamped<T, R>
 
 impl<T, R> ops::Div for Clamped<T, R>
     where T: Copy + ops::Div<Output = T> + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Output = Self;
 
@@ -121,7 +121,7 @@ impl<T, R> ops::Div for Clamped<T, R>
 
 impl<T, R> ops::Mul for Clamped<T, R>
     where T: Copy + ops::Mul<Output = T> + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Output = Self;
 
@@ -132,7 +132,7 @@ impl<T, R> ops::Mul for Clamped<T, R>
 
 impl<T, R> ops::Neg for Clamped<T, R>
     where T: Copy + ops::Neg<Output = T> + Num + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Output = Self;
 
@@ -143,7 +143,7 @@ impl<T, R> ops::Neg for Clamped<T, R>
 
 impl<T, R> ops::Sub for Clamped<T, R>
     where T: Copy + Num + ops::Sub<Output = T> + cmp::PartialOrd,
-          R: ClampRange<Output = T>
+          R: ClampedRange<Output = T>
 {
     type Output = Self;
 
