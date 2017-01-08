@@ -1,0 +1,141 @@
+use nalgebra;
+use num::Num;
+use std::cmp;
+use std::convert::From;
+use std::marker::PhantomData;
+use std::ops;
+
+pub trait ClampRange {
+    type Output;
+
+    fn max_value() -> Self::Output;
+    fn min_value() -> Self::Output;
+}
+
+#[derive(Clone, Copy)]
+pub struct Clamped<T, R>(T, PhantomData<R>)
+    where T: Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>;
+
+impl<T, R> Clamped<T, R>
+    where T: Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    pub fn new(value: T) -> Self {
+        Clamped(nalgebra::clamp(value, R::min_value(), R::max_value()), PhantomData)
+    }
+
+    pub fn max_value() -> Self {
+        Clamped(R::max_value(), PhantomData)
+    }
+
+    pub fn min_value() -> Self {
+        Clamped(R::min_value(), PhantomData)
+    }
+}
+
+impl<T, R> From<T> for Clamped<T, R>
+    where T: Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}
+
+impl<T, R> cmp::Eq for Clamped<T, R>
+    where T: cmp::Eq + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T> {}
+
+impl<T, R> cmp::Ord for Clamped<T, R>
+    where T: Num + cmp::Ord + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl<T, R> cmp::PartialEq for Clamped<T, R>
+    where T: Num + cmp::PartialEq + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
+impl<T, R> cmp::PartialOrd for Clamped<T, R>
+    where T: Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl<T, R> ops::Add for Clamped<T, R>
+    where T: ops::Add<Output = T> + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self::new(self.0.add(other.0))
+    }
+}
+
+impl<T, R> ops::Deref for Clamped<T, R>
+    where T: Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T, R> ops::Div for Clamped<T, R>
+    where T: ops::Div<Output = T> + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Output = Self;
+
+    fn div(self, other: Self) -> Self::Output {
+        Self::new(self.0.div(other.0))
+    }
+}
+
+impl<T, R> ops::Mul for Clamped<T, R>
+    where T: ops::Mul<Output = T> + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self::Output {
+        Self::new(self.0.mul(other.0))
+    }
+}
+
+impl<T, R> ops::Neg for Clamped<T, R>
+    where T: ops::Neg<Output = T> + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self::new(self.0.neg())
+    }
+}
+
+impl<T, R> ops::Sub for Clamped<T, R>
+    where T: ops::Sub<Output = T> + Num + cmp::PartialOrd,
+          R: ClampRange<Output = T>
+{
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::new(self.0.sub(other.0))
+    }
+}

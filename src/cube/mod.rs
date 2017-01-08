@@ -11,6 +11,7 @@
 //! Leaf cubes provide geometric data that represents the shape and layout of
 //! the game world.
 
+mod clamp;
 mod geometry;
 mod space;
 mod tree;
