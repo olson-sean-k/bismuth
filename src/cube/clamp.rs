@@ -5,6 +5,8 @@ use std::convert::From;
 use std::marker::PhantomData;
 use std::ops;
 
+use math::Clamp;
+
 pub trait ClampedRange<T> {
     fn max_value() -> T;
     fn min_value() -> T;
@@ -32,6 +34,15 @@ impl<T, R> Clamped<T, R>
 
     pub fn unclamped(&self) -> T {
         self.0
+    }
+}
+
+impl<T, R> Clamp<Clamped<T, R>> for Clamped<T, R>
+    where T: Copy + Num + cmp::PartialOrd,
+          R: ClampedRange<T>
+{
+    fn clamp(&self, min: Self, max: Self) -> Self {
+        nalgebra::clamp(*self, min, max)
     }
 }
 
