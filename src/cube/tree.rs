@@ -12,7 +12,7 @@ use edit::Cursor;
 use math::{Clamp, UPoint3};
 use resource::ResourceId;
 use super::geometry::Geometry;
-use super::space::{self, LogWidth, MAX_WIDTH, MIN_WIDTH, Partition, Spatial};
+use super::space::{self, LogWidth, Partition, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
 
@@ -373,8 +373,8 @@ impl<'a, N> Cube<'a, N>
         let mut node = self.node.as_ref();
         let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (space::exp(self.root.width())) - 1);
-        let width = width.clamp(MIN_WIDTH, depth);
+        let point = point.clamp(0, self.root.width().exp() - 1);
+        let width = width.clamp(LogWidth::min_value(), depth);
 
         while width < depth {
             match *node {
@@ -446,8 +446,8 @@ impl<'a, N> Cube<'a, N>
         let mut node: Option<&mut Node> = Some(self.node.as_mut());
         let mut depth = self.partition.width();
 
-        let point = point.clamp(0, (space::exp(self.root.width())) - 1);
-        let width = width.clamp(MIN_WIDTH, depth);
+        let point = point.clamp(0, self.root.width().exp() - 1);
+        let width = width.clamp(LogWidth::min_value(), depth);
 
         while width < depth {
             let taken = node.take().unwrap();
@@ -493,11 +493,10 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn subdivide_to_point(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
-        let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         let cube = self.at_point_mut(point, width);
         let mut depth = cube.partition.width();
         let mut node: Option<&mut Node> = Some(cube.node.as_mut());
-        while depth > width {
+        while width < depth {
             depth = depth - 1;
             let mut taken = node.take().unwrap();
             let _ = taken.subdivide();
@@ -580,7 +579,7 @@ impl<'a, N> Spatial for Cube<'a, N>
     }
 
     fn depth(&self) -> u8 {
-        self.root.width() - self.partition.width()
+        self.root.width().to_inner() - self.partition.width().to_inner()
     }
 }
 
@@ -738,7 +737,7 @@ impl<'a, L, B> Spatial for OrphanCube<'a, L, B>
     }
 
     fn depth(&self) -> u8 {
-        self.root.width() - self.partition.width()
+        self.root.width().to_inner() - self.partition.width().to_inner()
     }
 }
 

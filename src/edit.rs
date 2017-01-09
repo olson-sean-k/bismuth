@@ -1,7 +1,6 @@
 extern crate nalgebra;
 extern crate num;
 
-use cube;
 use cube::{AABB, LogWidth, Partition, Spatial};
 use math::{UPoint3, UVector3};
 use num::{One, Zero};
@@ -47,7 +46,7 @@ impl Cursor {
                                                nalgebra::max(start.z, end.z)),
                                  width))
         };
-        let span = (end.origin().to_vector() - start.origin().to_vector()) / cube::exp(width);
+        let span = (end.origin().to_vector() - start.origin().to_vector()) / width.exp();
         Cursor::new(start.origin(), width, &span)
     }
 
@@ -64,7 +63,7 @@ impl Cursor {
     }
 
     pub fn extent(&self) -> UVector3 {
-        ((self.span + UVector3::one()) * cube::exp(self.width)) - UVector3::one()
+        ((self.span + UVector3::one()) * self.width.exp()) - UVector3::one()
     }
 
     pub fn aabb(&self) -> AABB {

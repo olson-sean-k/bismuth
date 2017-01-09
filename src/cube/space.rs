@@ -4,16 +4,26 @@ extern crate num;
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
-use math::{Clamp, Mask, UPoint3, UScalar, UVector3};
+use clamp::{Clamped, ClampedRange};
+use math::{Mask, UPoint3, UScalar, UVector3};
 
-pub type LogWidth = u8; // TODO: https://github.com/rust-lang/rfcs/issues/671
+pub struct LogWidthRange;
 
-pub const MAX_WIDTH: LogWidth = 31;
-pub const MIN_WIDTH: LogWidth = 4;
+impl ClampedRange<u8> for LogWidthRange {
+    fn max_value() -> u8 {
+        31
+    }
 
-impl Clamp<LogWidth> for LogWidth {
-    fn clamp(&self, min: LogWidth, max: LogWidth) -> Self {
-        nalgebra::clamp(*self, min, max)
+    fn min_value() -> u8 {
+        4
+    }
+}
+
+pub type LogWidth = Clamped<u8, LogWidthRange>;
+
+impl LogWidth {
+    pub fn exp(&self) -> UScalar {
+        UScalar::one() << self.to_inner()
     }
 }
 
@@ -108,11 +118,10 @@ pub struct Partition {
 
 impl Partition {
     /// Constructs a `Partition` at the given point in space with the given
-    /// width. The width is clamped to [`MIN_WIDTH`, `MAX_WIDTH`].
+    /// width.
     pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
-        let width = width.clamp(MIN_WIDTH, MAX_WIDTH);
         Partition {
-            origin: point.mask(!UScalar::zero() << width),
+            origin: point.mask(!UScalar::zero() << *width),
             width: width,
         }
     }
@@ -149,12 +158,12 @@ impl Partition {
 
     /// Gets the midpoint of the `Partition`.
     pub fn midpoint(&self) -> UPoint3 {
-        let m = exp(self.width - 1);
+        let m = (self.width - 1).exp();
         self.origin + UVector3::new(m, m, m)
     }
 
     pub fn extent(&self) -> UVector3 {
-        (UVector3::one() * exp(self.width)) - UVector3::one()
+        (UVector3::one() * self.width.exp()) - UVector3::one()
     }
 
     pub fn aabb(&self) -> AABB {
@@ -163,7 +172,7 @@ impl Partition {
 
     /// Returns `true` if the `Partition` has the minimum possible width.
     pub fn is_min_width(&self) -> bool {
-        self.width == MIN_WIDTH
+        self.width == LogWidth::min_value()
     }
 }
 
@@ -177,12 +186,9 @@ pub trait Spatial {
     }
 }
 
-pub fn exp(width: LogWidth) -> UScalar {
-    UScalar::one() << width
-}
-
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
+    let width = width.to_inner();
     ((((point.x >> width) & UScalar::one()) << 0) |
      (((point.y >> width) & UScalar::one()) << 1) |
      (((point.z >> width) & UScalar::one()) << 2)) as usize
@@ -191,7 +197,7 @@ pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
 pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
     assert!(index < 8);
     let index = index as UScalar;
-    let width = exp(width);
+    let width = width.exp();
     UVector3::new(((index >> 0) & UScalar::one()) * width,
                   ((index >> 1) & UScalar::one()) * width,
                   ((index >> 2) & UScalar::one()) * width)

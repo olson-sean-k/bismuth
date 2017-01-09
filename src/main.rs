@@ -5,7 +5,7 @@ extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate num;
 
-use bismuth::cube::{Axis, MAX_WIDTH, Root};
+use bismuth::cube::{Axis, LogWidth, Offset, Root};
 use bismuth::edit::Cursor;
 use bismuth::render;
 use bismuth::prelude::*;
@@ -15,7 +15,7 @@ use gfx::traits::FactoryExt;
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> Root {
-    let width = MAX_WIDTH;
+    let width = LogWidth::max_value();
     let cursor = Cursor::span_from_point(&UPoint3::new(0, 0, 0),
                                          &UVector3::new(7, 1, 7),
                                          width - 3);
@@ -25,8 +25,8 @@ fn new_root() -> Root {
             if let Some(leaf) = cube.try_as_leaf_mut() {
                 for axis in Axis::range() {
                     for edge in leaf.geometry.edges_mut(axis.into()) {
-                        edge.set_front(2);
-                        edge.set_back(14);
+                        edge.set_front(Offset::from(2));
+                        edge.set_back(Offset::from(14));
                     }
                 }
             }

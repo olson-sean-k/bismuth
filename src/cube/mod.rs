@@ -11,16 +11,14 @@
 //! Leaf cubes provide geometric data that represents the shape and layout of
 //! the game world.
 
-mod clamp;
 mod geometry;
 mod space;
 mod tree;
 
 use self::tree::{Cube, OrphanCube};
 
-pub use self::geometry::{Edge, Geometry, MAX_OFFSET, MIN_OFFSET, Offset};
-pub use self::space::{exp, AABB, Axis, Direction, MAX_WIDTH, MIN_WIDTH, LogWidth, Orientation,
-                      Partition, Spatial};
+pub use self::geometry::{Edge, Geometry, Offset};
+pub use self::space::{AABB, Axis, Direction, LogWidth, Orientation, Partition, Spatial};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
 
 pub type CubeRef<'a> = Cube<'a, &'a Node>;

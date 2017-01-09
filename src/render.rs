@@ -8,7 +8,7 @@ extern crate rand;
 use nalgebra::ToHomogeneous;
 use std::convert::AsRef;
 
-use cube::{self, CubeRef, Spatial};
+use cube::{CubeRef, Spatial};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
 use mesh::{Conjoint, DecomposePolygon, DecomposePrimitive, Indexed, UCube};
 use super::OptionExt;
@@ -84,7 +84,7 @@ impl<'a> Mesh for CubeRef<'a> {
         let mut buffer = MeshBuffer::new();
         if let Some(leaf) = self.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().to_vector().into_space();
-            let width = cube::exp(self.partition().width()) as FScalar;
+            let width = self.partition().width().exp() as FScalar;
             let color = random_color();
 
             let cube = UCube::with_unit_width();

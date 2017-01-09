@@ -8,6 +8,7 @@ extern crate nalgebra;
 extern crate num;
 extern crate rand;
 
+pub mod clamp;
 pub mod cube;
 pub mod edit;
 pub mod math;

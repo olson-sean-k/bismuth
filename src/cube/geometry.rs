@@ -1,42 +1,52 @@
 extern crate nalgebra;
 
-use math::{FPoint3, FromSpace, UPoint3};
+use clamp::{Clamped, ClampedRange};
+use math::{Clamp, FPoint3, FromSpace, UPoint3};
 use super::space::Axis;
 
-pub type Offset = u8;
+pub struct OffsetRange;
 
-pub const MIN_OFFSET: Offset = 0;
-pub const MAX_OFFSET: Offset = 0x0F;
+impl ClampedRange<u8> for OffsetRange {
+    fn max_value() -> u8 {
+        0x0F
+    }
+
+    fn min_value() -> u8 {
+        0x00
+    }
+}
+
+pub type Offset = Clamped<u8, OffsetRange>;
 
 #[derive(Copy, Clone)]
 pub struct Edge(u8);
 
 impl Edge {
     fn full() -> Self {
-        Edge(MAX_OFFSET)
+        Edge(Offset::max_inner_value())
     }
 
     fn converged(offset: Offset) -> Self {
-        let offset = nalgebra::clamp(offset, MIN_OFFSET, MAX_OFFSET);
+        let offset = offset.to_inner();
         Edge((offset << 4) | offset)
     }
 
     pub fn set_front(&mut self, offset: Offset) {
-        let offset = nalgebra::clamp(offset, MIN_OFFSET, self.back());
-        self.0 = (offset << 4) | self.back();
+        let offset = offset.clamp(Offset::min_value(), self.back()).to_inner();
+        self.0 = (offset << 4) | self.back().to_inner();
     }
 
     pub fn set_back(&mut self, offset: Offset) {
-        let offset = nalgebra::clamp(offset, self.front(), MAX_OFFSET);
-        self.0 = (self.front() << 4) | offset;
+        let offset = offset.clamp(self.front(), Offset::max_value()).to_inner();
+        self.0 = (self.front().to_inner() << 4) | offset;
     }
 
     pub fn front(&self) -> Offset {
-        (self.0 & 0xF0) >> 4
+        Offset::from((self.0 & 0xF0) >> 4)
     }
 
     pub fn back(&self) -> Offset {
-        self.0 & 0x0F
+        Offset::from(self.0 & 0x0F)
     }
 
     pub fn length(&self) -> Offset {
@@ -44,12 +54,13 @@ impl Edge {
     }
 
     fn front_unit_transform(&self) -> f32 {
-        ((self.front() - MIN_OFFSET) as f32) / ((MAX_OFFSET - MIN_OFFSET) as f32)
+        let min = Offset::min_inner_value();
+        ((self.front().to_inner() - min) as f32) / ((Offset::max_inner_value() - min) as f32)
     }
 
     fn back_unit_transform(&self) -> f32 {
-        let range = MAX_OFFSET - MIN_OFFSET;
-        -((range - (self.back() - MIN_OFFSET)) as f32) / (range as f32)
+        let len = Offset::max_inner_value() - Offset::min_inner_value();
+        -((len - (self.back().to_inner() - Offset::min_inner_value())) as f32) / (len as f32)
     }
 }
 
@@ -62,7 +73,7 @@ impl Geometry {
     }
 
     pub fn empty() -> Self {
-        Geometry([[Edge::converged(0); 4]; 3])
+        Geometry([[Edge::converged(Offset::from(0)); 4]; 3])
     }
 
     pub fn edges(&self, axis: Axis) -> &[Edge; 4] {
