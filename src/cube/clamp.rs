@@ -90,12 +90,30 @@ impl<T, R> cmp::PartialEq for Clamped<T, R>
     }
 }
 
+impl<T, R> cmp::PartialEq<T> for Clamped<T, R>
+    where T: Copy + Num + cmp::PartialEq + cmp::PartialOrd,
+          R: ClampedRange<T>
+{
+    fn eq(&self, other: &T) -> bool {
+        self.0.eq(other)
+    }
+}
+
 impl<T, R> cmp::PartialOrd for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
           R: ClampedRange<T>
 {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         self.0.partial_cmp(&other.0)
+    }
+}
+
+impl<T, R> cmp::PartialOrd<T> for Clamped<T, R>
+    where T: Copy + Num + cmp::PartialOrd,
+          R: ClampedRange<T>
+{
+    fn partial_cmp(&self, other: &T) -> Option<cmp::Ordering> {
+        self.0.partial_cmp(other)
     }
 }
 
