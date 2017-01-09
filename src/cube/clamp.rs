@@ -32,7 +32,7 @@ impl<T, R> Clamped<T, R>
         Clamped(R::min_value(), PhantomData)
     }
 
-    pub fn unclamped(&self) -> T {
+    pub fn to_inner(&self) -> T {
         self.0
     }
 }
