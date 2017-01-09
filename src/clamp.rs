@@ -28,8 +28,16 @@ impl<T, R> Clamped<T, R>
         Clamped(R::max_value(), PhantomData)
     }
 
+    pub fn max_inner_value() -> T {
+        R::max_value()
+    }
+
     pub fn min_value() -> Self {
         Clamped(R::min_value(), PhantomData)
+    }
+
+    pub fn min_inner_value() -> T {
+        R::min_value()
     }
 
     pub fn to_inner(&self) -> T {
