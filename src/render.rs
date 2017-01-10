@@ -1,11 +1,7 @@
-extern crate gfx;
-extern crate gfx_window_glutin;
-extern crate glutin;
-extern crate lazy_static;
-extern crate nalgebra;
-extern crate rand;
-
-use nalgebra::ToHomogeneous;
+use gfx;
+use glutin;
+use nalgebra::{Isometry3, PerspectiveMatrix3, ToHomogeneous};
+use rand;
 use std::convert::AsRef;
 
 use cube::{CubeRef, Spatial};
@@ -119,15 +115,15 @@ pub fn projection_from_window(window: &glutin::Window) -> FMatrix4 {
         let (width, height) = window.get_inner_size_pixels().unwrap();
         width as f32 / height as f32
     };
-    nalgebra::PerspectiveMatrix3::new(aspect, 1.0, -1.0, 1.0).to_matrix()
+    PerspectiveMatrix3::new(aspect, 1.0, -1.0, 1.0).to_matrix()
 }
 
 pub fn look_at_cube<C>(cube: &C, from: &FPoint3) -> FMatrix4
     where C: Spatial
 {
-    nalgebra::Isometry3::look_at_rh(from,
-                                    &cube.partition().midpoint().into_space(),
-                                    &FVector3::new(0.0, 0.0, 1.0))
+    Isometry3::look_at_rh(from,
+                          &cube.partition().midpoint().into_space(),
+                          &FVector3::new(0.0, 0.0, 1.0))
         .to_homogeneous()
 }
 

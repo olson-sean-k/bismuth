@@ -1,5 +1,3 @@
-extern crate nalgebra;
-
 use clamp::{Clamped, ClampedRange};
 use math::{Clamp, FPoint3, FromSpace, UPoint3};
 use super::space::Axis;

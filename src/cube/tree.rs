@@ -1,6 +1,3 @@
-extern crate nalgebra;
-extern crate num;
-
 use nalgebra::Origin;
 use std::convert::{AsMut, AsRef};
 use std::error;
