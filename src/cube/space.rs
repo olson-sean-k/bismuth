@@ -121,7 +121,7 @@ impl Partition {
     /// width.
     pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
         Partition {
-            origin: point.mask(!UScalar::zero() << *width),
+            origin: point.mask(!UScalar::zero() << width.to_inner()),
             width: width,
         }
     }
