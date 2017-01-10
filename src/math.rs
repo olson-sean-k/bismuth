@@ -1,5 +1,4 @@
-extern crate nalgebra;
-
+use nalgebra;
 use std::ops;
 
 pub type UScalar = u32;
@@ -41,6 +40,14 @@ pub trait Mask<T>
     fn mask(&self, value: T) -> Self;
 }
 
+pub trait UpperBound {
+    fn upper_bound(&self, other: &Self) -> Self;
+}
+
+pub trait LowerBound {
+    fn lower_bound(&self, other: &Self) -> Self;
+}
+
 impl<T, U> FromSpace<nalgebra::Point3<U>> for nalgebra::Point3<T>
     where T: nalgebra::Cast<U> + Copy,
           U: Copy
@@ -60,8 +67,7 @@ impl<T, U> FromSpace<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
 }
 
 impl<T> Clamp<T> for nalgebra::Point3<T>
-    where T: Copy,
-          T: PartialOrd
+    where T: Copy + PartialOrd
 {
     fn clamp(&self, min: T, max: T) -> Self {
         nalgebra::Point3::new(nalgebra::clamp(self.x, min, max),
@@ -71,11 +77,30 @@ impl<T> Clamp<T> for nalgebra::Point3<T>
 }
 
 impl<T> Mask<T> for nalgebra::Point3<T>
-    where T: Copy,
-          T: ops::BitAnd<Output = T>
+    where T: Copy + ops::BitAnd<Output = T>
 {
     fn mask(&self, value: T) -> Self {
         nalgebra::Point3::new(self.x & value, self.y & value, self.z & value)
+    }
+}
+
+impl<T> UpperBound for nalgebra::Point3<T>
+    where T: Copy + Ord
+{
+    fn upper_bound(&self, other: &Self) -> Self {
+        nalgebra::Point3::new(nalgebra::max(self.x, other.x),
+                              nalgebra::max(self.y, other.y),
+                              nalgebra::max(self.y, other.y))
+    }
+}
+
+impl<T> LowerBound for nalgebra::Point3<T>
+    where T: Copy + Ord
+{
+    fn lower_bound(&self, other: &Self) -> Self {
+        nalgebra::Point3::new(nalgebra::min(self.x, other.x),
+                              nalgebra::min(self.y, other.y),
+                              nalgebra::min(self.y, other.y))
     }
 }
 

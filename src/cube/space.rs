@@ -1,11 +1,8 @@
-extern crate nalgebra;
-extern crate num;
-
 use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{Mask, UPoint3, UScalar, UVector3};
+use math::{LowerBound, Mask, UPoint3, UpperBound, UScalar, UVector3};
 
 pub struct LogWidthRange;
 
@@ -95,6 +92,12 @@ impl AABB {
         }
     }
 
+    pub fn union(&self, other: &Self) -> Self {
+        let start = self.origin.lower_bound(&other.origin);
+        let end = self.endpoint().upper_bound(&other.endpoint());
+        AABB::new(start, end - start)
+    }
+
     pub fn intersects(&self, other: &Self) -> bool {
         for axis in Axis::range() {
             if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
@@ -105,6 +108,10 @@ impl AABB {
             }
         }
         true
+    }
+
+    pub fn endpoint(&self) -> UPoint3 {
+        self.origin + self.extent
     }
 }
 
