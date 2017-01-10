@@ -4,7 +4,6 @@ extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate nalgebra;
-extern crate num;
 
 use bismuth::cube::{Axis, LogWidth, Offset, Root};
 use bismuth::edit::Cursor;
@@ -18,7 +17,7 @@ const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> Root {
     let width = LogWidth::max_value();
-    let cursor = Cursor::at_point_with_span(&UPoint3::origin(), &UVector3::new(7, 1, 7), width - 3);
+    let cursor = Cursor::span_from_point(&UPoint3::origin(), &UVector3::new(7, 1, 7), width - 3);
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
