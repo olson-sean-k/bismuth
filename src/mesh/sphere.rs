@@ -77,20 +77,19 @@ impl<T> Indexed<Polygon<usize>> for UVSphere<T>
     fn indexed_polygon(&self, index: usize) -> Polygon<usize> {
         let u = index % self.nu;
         let v = index / self.nu;
+
+        let lower = self.indexed_point(u, v);
+        let upper = self.indexed_point(u + 1, v + 1);
         if v == 0 {
-            Polygon::Triangle(Triangle::new(self.indexed_point(u, v),
-                                            self.indexed_point(u, v + 1),
-                                            self.indexed_point(u + 1, v + 1)))
+            Polygon::Triangle(Triangle::new(lower, self.indexed_point(u, v + 1), upper))
         }
         else if v == self.nv - 1 {
-            Polygon::Triangle(Triangle::new(self.indexed_point(u + 1, v + 1),
-                                            self.indexed_point(u + 1, v),
-                                            self.indexed_point(u, v)))
+            Polygon::Triangle(Triangle::new(upper, self.indexed_point(u + 1, v), lower))
         }
         else {
-            Polygon::Quad(Quad::new(self.indexed_point(u, v),
+            Polygon::Quad(Quad::new(lower,
                                     self.indexed_point(u, v + 1),
-                                    self.indexed_point(u + 1, v + 1),
+                                    upper,
                                     self.indexed_point(u + 1, v)))
         }
     }
@@ -123,21 +122,22 @@ impl<T> Iterator for UVSphere<T>
         self.vs.peek().map(|v| {
             let v = *v;
 
-            // Generate the points at the current meridian and parallel.
-            let a = point(u, v, nu, nv);
-            let b = point(u, v + 1, nu, nv);
-            let c = point(u + 1, v + 1, nu, nv);
-            let d = point(u + 1, v, nu, nv);
-
-            // Emit triangles at the poles, otherwise quads.
+            // Generate the points at the current meridian and parallel. The
+            // upper and lower bounds of (u, v) are always used, so Generate
+            // them in advance. Emit triangles at the poles, otherwise quads.
+            let lower = point(u, v, nu, nv);
+            let upper = point(u + 1, v + 1, nu, nv);
             if v == 0 {
-                Polygon::Triangle(Triangle::new(a, b, c))
+                Polygon::Triangle(Triangle::new(lower, point(u, v + 1, nu, nv), upper))
             }
             else if v == nv - 1 {
-                Polygon::Triangle(Triangle::new(c, d, a))
+                Polygon::Triangle(Triangle::new(upper, point(u + 1, v, nu, nv), lower))
             }
             else {
-                Polygon::Quad(Quad::new(a, b, c, d))
+                Polygon::Quad(Quad::new(lower,
+                                        point(u, v + 1, nu, nv),
+                                        upper,
+                                        point(u + 1, v, nu, nv)))
             }
         })
     }
