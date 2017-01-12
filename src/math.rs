@@ -1,4 +1,5 @@
 use nalgebra;
+use std::cmp;
 use std::ops;
 
 pub type UScalar = u32;
@@ -88,9 +89,9 @@ impl<T> UpperBound for nalgebra::Point3<T>
     where T: Copy + Ord
 {
     fn upper_bound(&self, other: &Self) -> Self {
-        nalgebra::Point3::new(nalgebra::max(self.x, other.x),
-                              nalgebra::max(self.y, other.y),
-                              nalgebra::max(self.y, other.y))
+        nalgebra::Point3::new(cmp::max(self.x, other.x),
+                              cmp::max(self.y, other.y),
+                              cmp::max(self.y, other.y))
     }
 }
 
@@ -98,9 +99,9 @@ impl<T> LowerBound for nalgebra::Point3<T>
     where T: Copy + Ord
 {
     fn lower_bound(&self, other: &Self) -> Self {
-        nalgebra::Point3::new(nalgebra::min(self.x, other.x),
-                              nalgebra::min(self.y, other.y),
-                              nalgebra::min(self.y, other.y))
+        nalgebra::Point3::new(cmp::min(self.x, other.x),
+                              cmp::min(self.y, other.y),
+                              cmp::min(self.y, other.y))
     }
 }
 

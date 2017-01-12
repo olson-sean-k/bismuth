@@ -1,6 +1,7 @@
-use nalgebra::{self, Point3};
+use nalgebra::Point3;
 use num::Float;
 use num::traits::FloatConst;
+use std::cmp;
 use std::iter::Peekable;
 use std::ops::Range;
 use std::marker::PhantomData;
@@ -22,8 +23,8 @@ impl<T> UVSphere<T>
     where T: Float + FloatConst
 {
     pub fn with_unit_radius(nu: usize, nv: usize) -> Self {
-        let nu = nalgebra::max(3, nu);
-        let nv = nalgebra::max(3, nv);
+        let nu = cmp::max(3, nu);
+        let nv = cmp::max(3, nv);
         UVSphere {
             nu: nu,
             nv: nv,

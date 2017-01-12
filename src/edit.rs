@@ -1,5 +1,5 @@
-use nalgebra;
 use num::{One, Zero};
+use std::cmp;
 
 use cube::{AABB, LogWidth, Partition, Spatial};
 use math::{LowerBound, UPoint3, UpperBound, UVector3};
@@ -55,7 +55,7 @@ impl Cursor {
         where S: Spatial,
               E: Spatial
     {
-        let width = nalgebra::min(start.partition().width(), end.partition().width());
+        let width = cmp::min(start.partition().width(), end.partition().width());
         let aabb = start.aabb().union(&end.aabb());
         Cursor::span_points(&aabb.origin, &aabb.endpoint(), width)
     }
