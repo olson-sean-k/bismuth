@@ -326,6 +326,74 @@ impl Spatial for Root {
     }
 }
 
+struct Traversal<'a, 'b, N>
+    where N: 'b + AsRef<Node>,
+          'b: 'a
+{
+    cubes: &'a mut Vec<Cube<'b, N>>,
+    cube: Cube<'b, N>,
+}
+
+impl<'a, 'b, N> Traversal<'a, 'b, N>
+    where N: 'b + AsRef<Node>,
+          'b: 'a
+{
+    fn new(cubes: &'a mut Vec<Cube<'b, N>>, cube: Cube<'b, N>) -> Self {
+        Traversal {
+            cubes: cubes,
+            cube: cube,
+        }
+    }
+
+    pub fn peek(&self) -> &Cube<'b, N> {
+        &self.cube
+    }
+
+    pub fn abort(self) -> Cube<'b, N> {
+        self.cubes.clear();
+        self.cube
+    }
+
+    pub fn take(self) -> Cube<'b, N> {
+        self.cube
+    }
+}
+
+impl<'a, 'b, N> Traversal<'a, 'b, N>
+    where N: 'b + AsRef<Node> + AsMut<Node>,
+          'b: 'a
+{
+    pub fn peek_mut(&mut self) -> &mut Cube<'b, N> {
+        &mut self.cube
+    }
+}
+
+impl<'a, 'b, 'c> Traversal<'a, 'b, &'c Node> {
+    pub fn push(self) -> Cube<'b, &'c Node> {
+        let (_, nodes) = self.cube.node.as_ref().to_orphan();
+        if let Some(nodes) = nodes {
+            for (index, node) in nodes.iter().enumerate() {
+                self.cubes.push(
+                    Cube::new(node, self.cube.root, self.cube.partition.at_index(index).unwrap()));
+            }
+        }
+        self.cube
+    }
+}
+
+impl<'a, 'b, 'c> Traversal<'a, 'b, &'c mut Node> {
+    pub fn push(self) -> OrphanCube<'b, &'c mut LeafPayload, &'c mut BranchPayload> {
+        let (orphan, nodes) = self.cube.node.as_mut().to_orphan_mut();
+        if let Some(nodes) = nodes {
+            for (index, node) in nodes.iter_mut().enumerate() {
+                self.cubes.push(
+                    Cube::new(node, self.cube.root, self.cube.partition.at_index(index).unwrap()));
+            }
+        }
+        OrphanCube::new(orphan, self.cube.root, self.cube.partition)
+    }
+}
+
 #[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
@@ -351,18 +419,14 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn walk<F, R>(&self, f: &F)
-        where F: Fn(&Cube<&Node>) -> R
+    pub fn walk<F>(&self, f: F)
+        where F: Fn(&Cube<&Node>)
     {
         let mut cubes = vec![self.to_value()];
         while let Some(cube) = cubes.pop() {
-            f(&cube);
-            let (_, nodes) = cube.node.as_ref().to_orphan();
-            if let Some(nodes) = nodes {
-                for (index, node) in nodes.iter().enumerate() {
-                    cubes.push(Cube::new(node, cube.root, cube.partition.at_index(index).unwrap()));
-                }
-            }
+            let traversal = Traversal::new(&mut cubes, cube);
+            f(traversal.peek());
+            traversal.push();
         }
     }
 
@@ -372,28 +436,24 @@ impl<'a, N> Cube<'a, N>
 
         let point = point.clamp(0, self.root.width().exp() - 1);
         let width = width.clamp(LogWidth::min_value(), depth);
-
         while width < depth {
-            match *node {
-                Node::Branch(ref branch) => {
-                    depth = depth - 1;
-                    node = &branch.nodes[space::index_at_point(&point, depth)]
-                }
-                _ => break,
+            if let Some(branch) = node.try_as_branch() {
+                depth = depth - 1;
+                node = &branch.nodes[space::index_at_point(&point, depth)]
+            }
+            else {
+                break;
             }
         }
         Cube::new(node, self.root, Partition::at_point(&point, depth))
     }
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
-        match *self.node.as_ref() {
-            Node::Branch(ref branch) => {
-                self.partition
-                    .at_index(index)
-                    .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
-            }
-            _ => None,
-        }
+        self.node.as_ref().try_as_branch().map_or(None, |branch| {
+            self.partition
+                .at_index(index)
+                .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
+        })
     }
 
     fn to_value(&self) -> Cube<&Node> {
@@ -424,44 +484,21 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn walk_mut<F, R>(&mut self, f: &F)
-        where F: Fn(&mut Cube<&mut Node>) -> R
+    pub fn walk_mut<F>(&mut self, f: F)
+        where F: Fn(&mut Cube<&mut Node>)
     {
+        // This is distinct from iterators, because `f` is given cubes, not
+        // orphans, which have no links.
         let mut cubes = vec![self.to_value_mut()];
-        while let Some(mut cube) = cubes.pop() {
-            f(&mut cube);
-            let (_, nodes) = cube.node.as_mut().to_orphan_mut();
-            if let Some(nodes) = nodes {
-                for (index, node) in nodes.iter_mut().enumerate() {
-                    cubes.push(Cube::new(node, cube.root, cube.partition.at_index(index).unwrap()));
-                }
-            }
+        while let Some(cube) = cubes.pop() {
+            let mut traversal = Traversal::new(&mut cubes, cube);
+            f(traversal.peek_mut());
+            traversal.push();
         }
     }
 
     pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
-        let mut node: Option<&mut Node> = Some(self.node.as_mut());
-        let mut depth = self.partition.width();
-
-        let point = point.clamp(0, self.root.width().exp() - 1);
-        let width = width.clamp(LogWidth::min_value(), depth);
-
-        while width < depth {
-            let taken = node.take().unwrap();
-            match *taken {
-                Node::Branch(ref mut branch) => {
-                    depth = depth - 1;
-                    node = Some(&mut branch.nodes[space::index_at_point(&point, depth)]);
-                }
-                _ => {
-                    node = Some(taken);
-                    break;
-                }
-            }
-        }
-        Cube::new(node.take().unwrap(),
-                  self.root,
-                  Partition::at_point(&point, depth))
+        self.map_to_point(point, width, |_| {})
     }
 
     pub fn at_index_mut(&mut self, index: usize) -> Option<Cube<&mut Node>> {
@@ -490,44 +527,54 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn subdivide_to_point(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
-        let cube = self.at_point_mut(point, width);
-        let mut depth = cube.partition.width();
-        let mut node: Option<&mut Node> = Some(cube.node.as_mut());
+        self.map_to_point(point, width, |node| {
+            let _ = node.subdivide();
+        })
+    }
+
+    pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
+        let mut cubes_at_cursor = vec![];
+        let mut cubes = vec![self.to_value_mut()];
+        while let Some(cube) = cubes.pop() {
+            let mut traversal = Traversal::new(&mut cubes, cube);
+            if traversal.peek().aabb().intersects(&cursor.aabb()) {
+                if traversal.peek().partition.width() == cursor.width() {
+                    cubes_at_cursor.push(traversal.take());
+                }
+                else if traversal.peek().partition.width() > cursor.width() {
+                    let _ = traversal.peek_mut().node.as_mut().subdivide();
+                    traversal.push();
+                }
+            }
+        }
+        cubes_at_cursor
+    }
+
+    fn map_to_point<F>(&mut self, point: &UPoint3, width: LogWidth, f: F) -> Cube<&mut Node>
+        where F: Fn(&mut Node)
+    {
+        let mut node: Option<&mut Node> = Some(self.node.as_mut());
+        let mut depth = self.partition.width();
+
+        let point = point.clamp(0, self.root.width().exp() - 1);
+        let width = width.clamp(LogWidth::min_value(), depth);
         while width < depth {
-            depth = depth - 1;
-            let mut taken = node.take().unwrap();
-            let _ = taken.subdivide();
-            if let Node::Branch(ref mut branch) = *taken {
-                node = Some(&mut branch.nodes[space::index_at_point(point, depth)]);
+            let taken = node.take().unwrap();
+            f(taken);
+            match *taken {
+                Node::Branch(ref mut branch) => {
+                    depth = depth - 1;
+                    node = Some(&mut branch.nodes[space::index_at_point(&point, depth)]);
+                }
+                _ => {
+                    node = Some(taken);
+                    break;
+                }
             }
         }
         Cube::new(node.take().unwrap(),
                   self.root,
-                  Partition::at_point(point, depth))
-    }
-
-    pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
-        let mut cubes = vec![];
-        let mut traversal = vec![self.to_value_mut()];
-        while let Some(cube) = traversal.pop() {
-            if cube.aabb().intersects(&cursor.aabb()) {
-                if cube.partition.width() == cursor.width() {
-                    cubes.push(cube);
-                }
-                else if cube.partition.width() > cursor.width() {
-                    let _ = cube.node.as_mut().subdivide();
-                    let (_, nodes) = cube.node.as_mut().to_orphan_mut();
-                    if let Some(nodes) = nodes {
-                        for (index, node) in nodes.iter_mut().enumerate() {
-                            traversal.push(Cube::new(node,
-                                                     cube.root,
-                                                     cube.partition.at_index(index).unwrap()));
-                        }
-                    }
-                }
-            }
-        }
-        cubes
+                  Partition::at_point(&point, depth))
     }
 
     fn to_value_mut(&mut self) -> Cube<&mut Node> {
@@ -587,17 +634,7 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cube) = self.0.pop() {
-            match *cube.node.as_ref() {
-                Node::Branch(ref branch) => {
-                    for (index, node) in branch.nodes.iter().enumerate() {
-                        self.0.push(Cube::new(node,
-                                              cube.root,
-                                              cube.partition().at_index(index).unwrap()));
-                    }
-                }
-                _ => {}
-            }
-            Some(cube)
+            Some(Traversal::new(&mut self.0, cube).push())
         }
         else {
             None
@@ -610,15 +647,7 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(cube) = self.0.pop() {
-            let (orphan, nodes) = cube.node.as_mut().to_orphan_mut();
-            if let Some(nodes) = nodes {
-                for (index, node) in nodes.iter_mut().enumerate() {
-                    self.0.push(Cube::new(node,
-                                          cube.root,
-                                          cube.partition.at_index(index).unwrap()));
-                }
-            }
-            Some(OrphanCube::new(orphan, cube.root, cube.partition))
+            Some(Traversal::new(&mut self.0, cube).push())
         }
         else {
             None
@@ -638,19 +667,13 @@ impl<'a> Iterator for CursorIter<'a, &'a Node> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(cube) = self.cubes.pop() {
-            if cube.aabb().intersects(&self.cursor.aabb()) {
-                if cube.partition.width() == self.cursor.width() || cube.node.as_ref().is_leaf() {
-                    return Some(cube);
+            let traversal = Traversal::new(&mut self.cubes, cube);
+            if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
+                if traversal.peek().partition.width() == self.cursor.width() {
+                    return Some(traversal.take());
                 }
-                else if cube.partition.width() > self.cursor.width() {
-                    let (_, nodes) = cube.node.as_ref().to_orphan();
-                    if let Some(nodes) = nodes {
-                        for (index, node) in nodes.iter().enumerate() {
-                            self.cubes.push(Cube::new(node,
-                                                      cube.root,
-                                                      cube.partition.at_index(index).unwrap()));
-                        }
-                    }
+                else if traversal.peek().partition.width() > self.cursor.width() {
+                    traversal.push();
                 }
             }
         }
@@ -663,19 +686,13 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(cube) = self.cubes.pop() {
-            if cube.aabb().intersects(&self.cursor.aabb()) {
-                if cube.partition.width() == self.cursor.width() || cube.node.as_ref().is_leaf() {
-                    return Some(cube);
+            let traversal = Traversal::new(&mut self.cubes, cube);
+            if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
+                if traversal.peek().partition.width() == self.cursor.width() {
+                    return Some(traversal.take());
                 }
-                else if cube.partition.width() > self.cursor.width() {
-                    let (_, nodes) = cube.node.as_mut().to_orphan_mut();
-                    if let Some(nodes) = nodes {
-                        for (index, node) in nodes.iter_mut().enumerate() {
-                            self.cubes.push(Cube::new(node,
-                                                      cube.root,
-                                                      cube.partition.at_index(index).unwrap()));
-                        }
-                    }
+                else if traversal.peek().partition.width() > self.cursor.width() {
+                    traversal.push();
                 }
             }
         }
