@@ -162,8 +162,8 @@ impl<I, T, P> Iterator for TriangleIter<I, T>
 }
 
 pub struct Line<T> {
-    a: T,
-    b: T,
+    pub a: T,
+    pub b: T,
 }
 
 impl<T> Line<T> {
@@ -200,9 +200,9 @@ impl<T> Primitive<T> for Line<T> {
 }
 
 pub struct Triangle<T> {
-    a: T,
-    b: T,
-    c: T,
+    pub a: T,
+    pub b: T,
+    pub c: T,
 }
 
 impl<T> Triangle<T> {
@@ -255,10 +255,10 @@ impl<T> Polygonal<T> for Triangle<T>
 }
 
 pub struct Quad<T> {
-    a: T,
-    b: T,
-    c: T,
-    d: T,
+    pub a: T,
+    pub b: T,
+    pub c: T,
+    pub d: T,
 }
 
 impl<T> Quad<T> {
