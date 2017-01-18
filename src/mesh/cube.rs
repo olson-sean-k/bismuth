@@ -16,12 +16,12 @@ pub trait Cube: Iterator + Sized {
 
     fn indexed_face(&self, index: usize) -> Quad<usize> {
         match index {
-            0 => Quad::new(0, 1, 3, 2),
+            0 => Quad::new(5, 7, 3, 1),
             1 => Quad::new(6, 7, 5, 4),
-            2 => Quad::new(4, 5, 1, 0),
-            3 => Quad::new(3, 7, 6, 2),
-            4 => Quad::new(0, 2, 6, 4),
-            5 => Quad::new(5, 7, 3, 1),
+            2 => Quad::new(3, 7, 6, 2),
+            3 => Quad::new(0, 1, 3, 2),
+            4 => Quad::new(4, 5, 1, 0),
+            5 => Quad::new(0, 2, 6, 4),
             _ => panic!(),
         }
     }
