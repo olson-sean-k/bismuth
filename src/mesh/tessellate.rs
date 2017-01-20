@@ -12,8 +12,7 @@ impl<T> Interpolate for (T, T, T)
     where T: Copy + Num
 {
     fn interpolate(&self, other: &Self) -> Self {
-        let two = T::one() + T::one();
-        ((self.0 + other.0) / two, (self.1 + other.1) / two, (self.2 + other.2) / two)
+        (interpolate(self.0, other.0), interpolate(self.1, other.1), interpolate(self.2, other.2))
     }
 }
 
@@ -21,9 +20,16 @@ impl<T> Interpolate for Point3<T>
     where T: Copy + Num
 {
     fn interpolate(&self, other: &Self) -> Self {
-        let two = T::one() + T::one();
-        Point3::new((self.x + other.x) / two, (self.y + other.y) / two, (self.z + other.z) / two)
+        Point3::new(interpolate(self.x, other.x),
+                    interpolate(self.y, other.y),
+                    interpolate(self.z, other.z))
     }
+}
+
+fn interpolate<T>(a: T, b: T) -> T
+    where T: Copy + Num
+{
+    (a + b) / (T::one() + T::one())
 }
 
 pub trait PolygonalExt<T>: Polygonal<T>
