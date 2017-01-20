@@ -1,36 +1,11 @@
-use nalgebra::Point3;
-use num::Num;
 use std::collections::VecDeque;
 
+use math::{self, FScalar};
 use super::primitive::{Polygon, Polygonal, Triangle, Quad};
 
-pub trait Interpolate {
-    fn interpolate(&self, other: &Self) -> Self;
-}
+pub trait Interpolate: math::Interpolate<FScalar> {}
 
-impl<T> Interpolate for (T, T, T)
-    where T: Copy + Num
-{
-    fn interpolate(&self, other: &Self) -> Self {
-        (interpolate(self.0, other.0), interpolate(self.1, other.1), interpolate(self.2, other.2))
-    }
-}
-
-impl<T> Interpolate for Point3<T>
-    where T: Copy + Num
-{
-    fn interpolate(&self, other: &Self) -> Self {
-        Point3::new(interpolate(self.x, other.x),
-                    interpolate(self.y, other.y),
-                    interpolate(self.z, other.z))
-    }
-}
-
-fn interpolate<T>(a: T, b: T) -> T
-    where T: Copy + Num
-{
-    (a + b) / (T::one() + T::one())
-}
+impl<T> Interpolate for T where T: math::Interpolate<FScalar> {}
 
 pub trait PolygonalExt<T>: Polygonal<T>
     where T: Clone + Interpolate
@@ -50,9 +25,9 @@ impl<T> PolygonalExt<T> for Triangle<T>
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
-        for triangle in recursive_map(n, self, |triangle| {
+        for triangle in remap_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
-            let ac = a.interpolate(&c);
+            let ac = a.lerp(&c, 0.5);
             vec![Triangle::new(b.clone(), ac.clone(), a),
                  Triangle::new(c, ac, b)]
         }) {
@@ -67,13 +42,13 @@ impl<T> PolygonalExt<T> for Quad<T>
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
-        for quad in recursive_map(n, self, |quad| {
+        for quad in remap_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
-            let ab = a.interpolate(&b);
-            let bc = b.interpolate(&c);
-            let cd = c.interpolate(&d);
-            let da = d.interpolate(&a);
-            let ac = a.interpolate(&c); // Diagonal.
+            let ab = a.lerp(&b, 0.5);
+            let bc = b.lerp(&c, 0.5);
+            let cd = c.lerp(&d, 0.5);
+            let da = d.lerp(&a, 0.5);
+            let ac = a.lerp(&c, 0.5); // Diagonal.
             vec![Quad::new(a, ab.clone(), ac.clone(), da.clone()),
                  Quad::new(ab, b, bc.clone(), ac.clone()),
                  Quad::new(ac.clone(), bc, c, cd.clone()),
@@ -91,7 +66,7 @@ impl<T> QuadExt<T> for Quad<T>
         where F: FnMut(Triangle<T>)
     {
         let Quad { a, b, c, d } = self;
-        let ac = a.interpolate(&c); // Diagonal.
+        let ac = a.lerp(&c, 0.5); // Diagonal.
         f(Triangle::new(a.clone(), b.clone(), ac.clone()));
         f(Triangle::new(b, c.clone(), ac.clone()));
         f(Triangle::new(c, d.clone(), ac.clone()));
@@ -211,17 +186,17 @@ impl<I, T> Iterator for TetrahedronIter<I, T>
     }
 }
 
-fn recursive_map<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
+fn remap_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
     where P: Polygonal<T>,
           F: Fn(P) -> Vec<P>
 {
-        let mut queued = vec![];
-        let mut transformed = vec![polygon];
-        for _ in 0..n {
-            queued.extend(transformed.drain(..));
-            while let Some(polygon) = queued.pop() {
-                transformed.extend(f(polygon));
-            }
+    let mut queued = vec![];
+    let mut transformed = vec![polygon];
+    for _ in 0..n {
+        queued.extend(transformed.drain(..));
+        while let Some(polygon) = queued.pop() {
+            transformed.extend(f(polygon));
         }
-        transformed
+    }
+    transformed
 }

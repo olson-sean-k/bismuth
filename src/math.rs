@@ -1,4 +1,5 @@
 use nalgebra;
+use num::{Float, Num};
 use std::cmp;
 use std::ops;
 
@@ -15,38 +16,6 @@ pub type FMatrix4 = nalgebra::Matrix4<FScalar>;
 
 pub trait FromSpace<T> {
     fn from_space(value: T) -> Self;
-}
-
-pub trait IntoSpace<T> {
-    fn into_space(self) -> T;
-}
-
-impl<T, U> IntoSpace<U> for T
-    where U: FromSpace<T>
-{
-    fn into_space(self) -> U {
-        U::from_space(self)
-    }
-}
-
-pub trait Clamp<T>
-    where T: PartialOrd
-{
-    fn clamp(&self, min: T, max: T) -> Self;
-}
-
-pub trait Mask<T>
-    where T: ops::BitAnd<Output = T>
-{
-    fn mask(&self, value: T) -> Self;
-}
-
-pub trait UpperBound {
-    fn upper_bound(&self, other: &Self) -> Self;
-}
-
-pub trait LowerBound {
-    fn lower_bound(&self, other: &Self) -> Self;
 }
 
 impl<T, U> FromSpace<nalgebra::Point3<U>> for nalgebra::Point3<T>
@@ -67,6 +36,24 @@ impl<T, U> FromSpace<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
     }
 }
 
+pub trait IntoSpace<T> {
+    fn into_space(self) -> T;
+}
+
+impl<T, U> IntoSpace<U> for T
+    where U: FromSpace<T>
+{
+    fn into_space(self) -> U {
+        U::from_space(self)
+    }
+}
+
+pub trait Clamp<T>
+    where T: PartialOrd
+{
+    fn clamp(&self, min: T, max: T) -> Self;
+}
+
 impl<T> Clamp<T> for nalgebra::Point3<T>
     where T: Copy + PartialOrd
 {
@@ -77,12 +64,22 @@ impl<T> Clamp<T> for nalgebra::Point3<T>
     }
 }
 
+pub trait Mask<T>
+    where T: ops::BitAnd<Output = T>
+{
+    fn mask(&self, value: T) -> Self;
+}
+
 impl<T> Mask<T> for nalgebra::Point3<T>
     where T: Copy + ops::BitAnd<Output = T>
 {
     fn mask(&self, value: T) -> Self {
         nalgebra::Point3::new(self.x & value, self.y & value, self.z & value)
     }
+}
+
+pub trait UpperBound {
+    fn upper_bound(&self, other: &Self) -> Self;
 }
 
 impl<T> UpperBound for nalgebra::Point3<T>
@@ -95,6 +92,10 @@ impl<T> UpperBound for nalgebra::Point3<T>
     }
 }
 
+pub trait LowerBound {
+    fn lower_bound(&self, other: &Self) -> Self;
+}
+
 impl<T> LowerBound for nalgebra::Point3<T>
     where T: Copy + Ord
 {
@@ -103,6 +104,42 @@ impl<T> LowerBound for nalgebra::Point3<T>
                               cmp::min(self.y, other.y),
                               cmp::min(self.y, other.y))
     }
+}
+
+pub trait Interpolate<F> {
+    fn lerp(&self, other: &Self, f: F) -> Self;
+}
+
+impl<T, F> Interpolate<F> for (T, T, T)
+    where T: nalgebra::Cast<F> + Copy + Num,
+          F: nalgebra::Cast<T> + Float
+{
+    fn lerp(&self, other: &Self, f: F) -> Self {
+        (lerp(self.0, other.0, f), lerp(self.1, other.1, f), lerp(self.2, other.2, f))
+    }
+}
+
+impl<T, F> Interpolate<F> for nalgebra::Point3<T>
+    where T: nalgebra::Cast<F> + Copy + Num,
+          F: nalgebra::Cast<T> + Float
+{
+    fn lerp(&self, other: &Self, f: F) -> Self {
+        nalgebra::Point3::new(lerp(self.x, other.x, f),
+                              lerp(self.y, other.y, f),
+                              lerp(self.z, other.z, f))
+    }
+}
+
+pub fn lerp<T, F>(a: T, b: T, f: F) -> T
+    where T: nalgebra::Cast<F> + Copy + Num,
+          F: nalgebra::Cast<T> + Float
+{
+    use nalgebra::{cast, clamp};
+
+    let f = clamp(f, F::zero(), F::one());
+    let af = cast::<T, F>(a) * (F::one() - f);
+    let bf = cast::<T, F>(b) * f;
+    cast::<F, T>(af + bf)
 }
 
 #[cfg(test)]
