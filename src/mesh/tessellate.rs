@@ -4,49 +4,49 @@ use std::collections::VecDeque;
 
 use super::primitive::{Polygon, Polygonal, Triangle, Quad};
 
-pub trait Midpoint {
-    fn midpoint(&self, other: &Self) -> Self;
+pub trait Interpolate {
+    fn interpolate(&self, other: &Self) -> Self;
 }
 
-impl<T> Midpoint for (T, T, T)
+impl<T> Interpolate for (T, T, T)
     where T: Copy + Num
 {
-    fn midpoint(&self, other: &Self) -> Self {
+    fn interpolate(&self, other: &Self) -> Self {
         let two = T::one() + T::one();
         ((self.0 + other.0) / two, (self.1 + other.1) / two, (self.2 + other.2) / two)
     }
 }
 
-impl<T> Midpoint for Point3<T>
+impl<T> Interpolate for Point3<T>
     where T: Copy + Num
 {
-    fn midpoint(&self, other: &Self) -> Self {
+    fn interpolate(&self, other: &Self) -> Self {
         let two = T::one() + T::one();
         Point3::new((self.x + other.x) / two, (self.y + other.y) / two, (self.z + other.z) / two)
     }
 }
 
 pub trait PolygonalExt<T>: Polygonal<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_subdivisions<F>(self, n: usize, f: F) where F: FnMut(Polygon<T>);
 }
 
 pub trait QuadExt<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_tetrahedrons<F>(self, f: F) where F: FnMut(Triangle<T>);
 }
 
 impl<T> PolygonalExt<T> for Triangle<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
         for triangle in recursive_map(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
-            let ac = a.midpoint(&c);
+            let ac = a.interpolate(&c);
             vec![Triangle::new(b.clone(), ac.clone(), a),
                  Triangle::new(c, ac, b)]
         }) {
@@ -56,18 +56,18 @@ impl<T> PolygonalExt<T> for Triangle<T>
 }
 
 impl<T> PolygonalExt<T> for Quad<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
         for quad in recursive_map(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
-            let ab = a.midpoint(&b);
-            let bc = b.midpoint(&c);
-            let cd = c.midpoint(&d);
-            let da = d.midpoint(&a);
-            let ac = a.midpoint(&c); // Diagonal.
+            let ab = a.interpolate(&b);
+            let bc = b.interpolate(&c);
+            let cd = c.interpolate(&d);
+            let da = d.interpolate(&a);
+            let ac = a.interpolate(&c); // Diagonal.
             vec![Quad::new(a, ab.clone(), ac.clone(), da.clone()),
                  Quad::new(ab, b, bc.clone(), ac.clone()),
                  Quad::new(ac.clone(), bc, c, cd.clone()),
@@ -79,13 +79,13 @@ impl<T> PolygonalExt<T> for Quad<T>
 }
 
 impl<T> QuadExt<T> for Quad<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_tetrahedrons<F>(self, mut f: F)
         where F: FnMut(Triangle<T>)
     {
         let Quad { a, b, c, d } = self;
-        let ac = a.midpoint(&c); // Diagonal.
+        let ac = a.interpolate(&c); // Diagonal.
         f(Triangle::new(a.clone(), b.clone(), ac.clone()));
         f(Triangle::new(b, c.clone(), ac.clone()));
         f(Triangle::new(c, d.clone(), ac.clone()));
@@ -94,7 +94,7 @@ impl<T> QuadExt<T> for Quad<T>
 }
 
 impl<T> PolygonalExt<T> for Polygon<T>
-    where T: Clone + Midpoint
+    where T: Clone + Interpolate
 {
     fn into_subdivisions<F>(self, n: usize, f: F)
         where F: FnMut(Polygon<T>)
@@ -112,7 +112,7 @@ pub trait TessellatePolygon<T>: Sized {
 
 impl<I, T, P> TessellatePolygon<T> for I
     where I: Iterator<Item = P>,
-          T: Clone + Midpoint,
+          T: Clone + Interpolate,
           P: PolygonalExt<T>
 {
     fn subdivide(self, n: usize) -> SubdivisionIter<Self, T> {
@@ -138,7 +138,7 @@ impl<I, T> SubdivisionIter<I, T> {
 
 impl<I, T, P> Iterator for SubdivisionIter<I, T>
     where I: Iterator<Item = P>,
-          T: Clone + Midpoint,
+          T: Clone + Interpolate,
           P: PolygonalExt<T>
 {
     type Item = Polygon<T>;
@@ -186,7 +186,7 @@ impl<I, T> TetrahedronIter<I, T> {
 
 impl<I, T> Iterator for TetrahedronIter<I, T>
     where I: Iterator<Item = Quad<T>>,
-          T: Clone + Midpoint
+          T: Clone + Interpolate
 {
     type Item = Triangle<T>;
 
