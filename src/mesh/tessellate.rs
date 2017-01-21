@@ -25,7 +25,7 @@ impl<T> PolygonalExt<T> for Triangle<T>
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
-        for triangle in remap_polygon(n, self, |triangle| {
+        for triangle in n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
             let ac = a.lerp(&c, 0.5);
             vec![Triangle::new(b.clone(), ac.clone(), a),
@@ -42,7 +42,7 @@ impl<T> PolygonalExt<T> for Quad<T>
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {
-        for quad in remap_polygon(n, self, |quad| {
+        for quad in n_map_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
             let ab = a.lerp(&b, 0.5);
             let bc = b.lerp(&c, 0.5);
@@ -186,7 +186,7 @@ impl<I, T> Iterator for TetrahedronIter<I, T>
     }
 }
 
-fn remap_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
+fn n_map_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
     where P: Polygonal<T>,
           F: Fn(P) -> Vec<P>
 {
