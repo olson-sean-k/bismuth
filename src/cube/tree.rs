@@ -419,7 +419,7 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn walk<F>(&self, f: F)
+    pub fn for_each<F>(&self, f: F)
         where F: Fn(&Cube<&Node>)
     {
         let mut cubes = vec![self.to_value()];
@@ -484,11 +484,11 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn walk_mut<F>(&mut self, f: F)
+    pub fn for_each_mut<F>(&mut self, f: F)
         where F: Fn(&mut Cube<&mut Node>)
     {
-        // This is distinct from iterators, because `f` is given cubes, not
-        // orphans, which have no links.
+        // This is distinct from iterators, because `f` is given mutable cubes
+        // instead of orphans (which have no links).
         let mut cubes = vec![self.to_value_mut()];
         while let Some(cube) = cubes.pop() {
             let mut traversal = Traversal::new(&mut cubes, cube);
