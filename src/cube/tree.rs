@@ -508,7 +508,7 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
-        self.map_to_point(point, width, |_| {})
+        self.for_nodes_to_point(point, width, |_| {})
     }
 
     pub fn at_index_mut(&mut self, index: usize) -> Option<Cube<&mut Node>> {
@@ -537,7 +537,7 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn subdivide_to_point(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
-        self.map_to_point(point, width, |node| {
+        self.for_nodes_to_point(point, width, |node| {
             let _ = node.subdivide();
         })
     }
@@ -558,7 +558,7 @@ impl<'a, N> Cube<'a, N>
         cubes
     }
 
-    fn map_to_point<F>(&mut self, point: &UPoint3, width: LogWidth, f: F) -> Cube<&mut Node>
+    fn for_nodes_to_point<F>(&mut self, point: &UPoint3, width: LogWidth, f: F) -> Cube<&mut Node>
         where F: Fn(&mut Node)
     {
         let mut node: Option<&mut Node> = Some(self.node.as_mut());
