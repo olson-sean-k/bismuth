@@ -394,6 +394,20 @@ impl<'a, 'b, 'c> Traversal<'a, 'b, &'c mut Node> {
     }
 }
 
+macro_rules! traverse {
+    (cube => $c:expr, | $t:ident | $f:block) => {{
+        let mut cubes = vec![$c];
+        traverse!(stack => cubes, |$t| $f)
+    }};
+    (stack => $s:expr, | $t:ident | $f:block) => {{
+        #[allow(unused_mut)]
+        while let Some(cube) = $s.pop() {
+            let mut $t = Traversal::new(&mut $s, cube);
+            $f
+        }
+    }};
+}
+
 #[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
@@ -422,12 +436,10 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each<F>(&self, f: F)
         where F: Fn(&Cube<&Node>)
     {
-        let mut cubes = vec![self.to_value()];
-        while let Some(cube) = cubes.pop() {
-            let traversal = Traversal::new(&mut cubes, cube);
+        traverse!(cube => self.to_value(), |traversal| {
             f(traversal.peek());
             traversal.push();
-        }
+        });
     }
 
     pub fn at_point(&self, point: &UPoint3, width: LogWidth) -> Cube<&Node> {
@@ -489,12 +501,10 @@ impl<'a, N> Cube<'a, N>
     {
         // This is distinct from iterators, because `f` is given mutable cubes
         // instead of orphans (which have no links).
-        let mut cubes = vec![self.to_value_mut()];
-        while let Some(cube) = cubes.pop() {
-            let mut traversal = Traversal::new(&mut cubes, cube);
+        traverse!(cube => self.to_value_mut(), |traversal| {
             f(traversal.peek_mut());
             traversal.push();
-        }
+        });
     }
 
     pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
@@ -533,21 +543,19 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
-        let mut cubes_at_cursor = vec![];
-        let mut cubes = vec![self.to_value_mut()];
-        while let Some(cube) = cubes.pop() {
-            let mut traversal = Traversal::new(&mut cubes, cube);
+        let mut cubes = vec![];
+        traverse!(cube => self.to_value_mut(), |traversal| {
             if traversal.peek().aabb().intersects(&cursor.aabb()) {
                 if traversal.peek().partition.width() == cursor.width() {
-                    cubes_at_cursor.push(traversal.take());
+                    cubes.push(traversal.take());
                 }
                 else if traversal.peek().partition.width() > cursor.width() {
                     let _ = traversal.peek_mut().node.as_mut().subdivide();
                     traversal.push();
                 }
             }
-        }
-        cubes_at_cursor
+        });
+        cubes
     }
 
     fn map_to_point<F>(&mut self, point: &UPoint3, width: LogWidth, f: F) -> Cube<&mut Node>
@@ -633,12 +641,10 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cube) = self.0.pop() {
-            Some(Traversal::new(&mut self.0, cube).push())
-        }
-        else {
-            None
-        }
+        traverse!(stack => self.0, |traversal| {
+            return Some(traversal.push());
+        });
+        None
     }
 }
 
@@ -646,12 +652,10 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
     type Item = OrphanCube<'a, &'a mut LeafPayload, &'a mut BranchPayload>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(cube) = self.0.pop() {
-            Some(Traversal::new(&mut self.0, cube).push())
-        }
-        else {
-            None
-        }
+        traverse!(stack => self.0, |traversal| {
+            return Some(traversal.push());
+        });
+        None
     }
 }
 
@@ -666,8 +670,7 @@ impl<'a> Iterator for CursorIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(cube) = self.cubes.pop() {
-            let traversal = Traversal::new(&mut self.cubes, cube);
+        traverse!(stack => self.cubes, |traversal| {
             if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
                 if traversal.peek().partition.width() == self.cursor.width() {
                     return Some(traversal.take());
@@ -676,7 +679,7 @@ impl<'a> Iterator for CursorIter<'a, &'a Node> {
                     traversal.push();
                 }
             }
-        }
+        });
         None
     }
 }
@@ -685,8 +688,7 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
     type Item = Cube<'a, &'a mut Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(cube) = self.cubes.pop() {
-            let traversal = Traversal::new(&mut self.cubes, cube);
+        traverse!(stack => self.cubes, |traversal| {
             if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
                 if traversal.peek().partition.width() == self.cursor.width() {
                     return Some(traversal.take());
@@ -695,7 +697,7 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
                     traversal.push();
                 }
             }
-        }
+        });
         None
     }
 }
