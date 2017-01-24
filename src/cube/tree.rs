@@ -58,7 +58,8 @@ impl Node {
         }
     }
 
-    fn to_orphan<'a>(&'a self) -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
+    fn to_orphan<'a>(&'a self)
+                     -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(&leaf.payload), None),
             Node::Branch(ref branch) => (OrphanNode::Branch(&branch.payload), Some(&branch.nodes)),
@@ -185,9 +186,7 @@ pub struct LeafNode {
 
 impl LeafNode {
     fn new() -> Self {
-        LeafNode {
-            payload: LeafPayload::new(),
-        }
+        LeafNode { payload: LeafPayload::new() }
     }
 }
 
@@ -326,19 +325,40 @@ impl Spatial for Root {
     }
 }
 
-struct Traversal<'a, 'b, N>
+trait TraversalBuffer<'a, N>
+    where N: AsRef<Node>
+{
+    fn pop(&mut self) -> Option<Cube<'a, N>>;
+    fn push(&mut self, cube: Cube<'a, N>);
+}
+
+impl<'a, N> TraversalBuffer<'a, N> for Vec<Cube<'a, N>>
+    where N: AsRef<Node>
+{
+    fn pop(&mut self) -> Option<Cube<'a, N>> {
+        self.pop()
+    }
+
+    fn push(&mut self, cube: Cube<'a, N>) {
+        self.push(cube);
+    }
+}
+
+struct Traversal<'a, 'b, N, B>
     where N: 'b + AsRef<Node>,
+          B: 'b + TraversalBuffer<'b, N>,
           'b: 'a
 {
-    cubes: &'a mut Vec<Cube<'b, N>>,
+    cubes: &'a mut B,
     cube: Cube<'b, N>,
 }
 
-impl<'a, 'b, N> Traversal<'a, 'b, N>
+impl<'a, 'b, N, B> Traversal<'a, 'b, N, B>
     where N: 'b + AsRef<Node>,
+          B: 'b + TraversalBuffer<'b, N>,
           'b: 'a
 {
-    fn new(cubes: &'a mut Vec<Cube<'b, N>>, cube: Cube<'b, N>) -> Self {
+    fn new(cubes: &'a mut B, cube: Cube<'b, N>) -> Self {
         Traversal {
             cubes: cubes,
             cube: cube,
@@ -349,18 +369,14 @@ impl<'a, 'b, N> Traversal<'a, 'b, N>
         &self.cube
     }
 
-    pub fn abort(self) -> Cube<'b, N> {
-        self.cubes.clear();
-        self.cube
-    }
-
     pub fn take(self) -> Cube<'b, N> {
         self.cube
     }
 }
 
-impl<'a, 'b, N> Traversal<'a, 'b, N>
+impl<'a, 'b, N, B> Traversal<'a, 'b, N, B>
     where N: 'b + AsRef<Node> + AsMut<Node>,
+          B: 'b + TraversalBuffer<'b, N>,
           'b: 'a
 {
     pub fn peek_mut(&mut self) -> &mut Cube<'b, N> {
@@ -368,26 +384,32 @@ impl<'a, 'b, N> Traversal<'a, 'b, N>
     }
 }
 
-impl<'a, 'b, 'c> Traversal<'a, 'b, &'c Node> {
+impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c Node, B>
+    where B: 'b + TraversalBuffer<'b, &'c Node>
+{
     pub fn push(self) -> Cube<'b, &'c Node> {
         let (_, nodes) = self.cube.node.as_ref().to_orphan();
         if let Some(nodes) = nodes {
             for (index, node) in nodes.iter().enumerate() {
-                self.cubes.push(
-                    Cube::new(node, self.cube.root, self.cube.partition.at_index(index).unwrap()));
+                self.cubes.push(Cube::new(node,
+                                          self.cube.root,
+                                          self.cube.partition.at_index(index).unwrap()));
             }
         }
         self.cube
     }
 }
 
-impl<'a, 'b, 'c> Traversal<'a, 'b, &'c mut Node> {
+impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c mut Node, B>
+    where B: 'b + TraversalBuffer<'b, &'c mut Node>
+{
     pub fn push(self) -> OrphanCube<'b, &'c mut LeafPayload, &'c mut BranchPayload> {
         let (orphan, nodes) = self.cube.node.as_mut().to_orphan_mut();
         if let Some(nodes) = nodes {
             for (index, node) in nodes.iter_mut().enumerate() {
-                self.cubes.push(
-                    Cube::new(node, self.cube.root, self.cube.partition.at_index(index).unwrap()));
+                self.cubes.push(Cube::new(node,
+                                          self.cube.root,
+                                          self.cube.partition.at_index(index).unwrap()));
             }
         }
         OrphanCube::new(orphan, self.cube.root, self.cube.partition)
