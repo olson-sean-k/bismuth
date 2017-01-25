@@ -1,11 +1,12 @@
 //! This module provides an oct-tree of `Cube`s, which are the basic building
-//! blocks of **Bismuth**. The tree is internally comprised of `Node`s.
-//! `BranchNode`s contain links to sub-trees and `LeafNode`s contain geometric
-//! data associated with their respective spatial partition. However, `Node`s do
-//! not contain any spatial data (origin, partition, etc.); instead, this is
-//! calculated during traversals by `Cube`, which acts as a recursive view over
-//! the `Node`s in the tree and provides the primary interface for interacting
-//! with trees.
+//! blocks of **Bismuth**.
+//!
+//! The tree is internally comprised of `Node`s. `BranchNode`s contain links to
+//! sub-trees and `LeafNode`s contain geometric data associated with their
+//! respective spatial partition. However, `Node`s do not contain any spatial
+//! data (origin, partition, etc.); instead, this is calculated during
+//! traversals by `Cube`, which acts as a recursive view over the `Node`s in the
+//! tree and provides the primary interface for interacting with trees.
 //!
 //! Leaf `Cube`s provide the geometric and spatial data that together represent
 //! the shape and layout of the game world.
