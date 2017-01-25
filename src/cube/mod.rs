@@ -29,10 +29,14 @@
 //! Subdividing and iterating over the cubes in a tree:
 //!
 //! ```
+//! use bismuth::cube::{LogWidth, Root, Spatial};
+//!
 //! let mut root = Root::new(LogWidth::max_value());
 //! let _ = root.to_cube_mut().subdivide();
 //! for cube in root.to_cube().iter() {
-//!     println!("origin: {}; width: {}", cube.partition().origin(), cube.partition().width());
+//!     println!("origin: {}; width: {}",
+//!              cube.partition().origin(),
+//!              cube.partition().width().to_inner());
 //! }
 //! ```
 
