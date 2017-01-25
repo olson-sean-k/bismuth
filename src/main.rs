@@ -5,8 +5,7 @@ extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate nalgebra;
 
-use bismuth::cube::{Axis, LogWidth, Offset, Root};
-use bismuth::edit::Cursor;
+use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root};
 use bismuth::render;
 use bismuth::prelude::*;
 use gfx::{format, Device};

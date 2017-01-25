@@ -5,9 +5,9 @@ use std::error::Error;
 use std::fmt;
 use std::ops;
 
-use edit::Cursor;
 use math::{Clamp, UPoint3};
 use resource::ResourceId;
+use super::edit::Cursor;
 use super::geometry::Geometry;
 use super::space::{self, LogWidth, Partition, Spatial};
 

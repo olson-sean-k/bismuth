@@ -10,7 +10,6 @@ extern crate rand;
 
 pub mod clamp;
 pub mod cube;
-pub mod edit;
 pub mod math;
 pub mod mesh;
 pub mod render;

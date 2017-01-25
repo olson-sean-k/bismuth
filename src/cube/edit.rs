@@ -1,8 +1,8 @@
 use num::{One, Zero};
 use std::cmp;
 
-use cube::{AABB, LogWidth, Partition, Spatial};
 use math::{LowerBound, UPoint3, UpperBound, UVector3};
+use super::space::{AABB, LogWidth, Partition, Spatial};
 
 #[derive(Clone)]
 pub struct Cursor {

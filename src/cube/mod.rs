@@ -36,12 +36,14 @@
 //! }
 //! ```
 
+mod edit;
 mod geometry;
 mod space;
 mod tree;
 
 use self::tree::{Cube, OrphanCube};
 
+pub use self::edit::Cursor;
 pub use self::geometry::{Edge, Geometry, Offset};
 pub use self::space::{AABB, Axis, Direction, LogWidth, Orientation, Partition, Spatial};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
