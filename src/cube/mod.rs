@@ -1,15 +1,40 @@
-//! This module provides an oct-tree of cubes, which are the basic building
-//! blocks of Bismuth. A cube provides the following basic components:
+//! This module provides an oct-tree of `Cube`s, which are the basic building
+//! blocks of **Bismuth**. The tree is internally comprised of `Node`s.
+//! `BranchNode`s contain links to sub-trees and `LeafNode`s contain geometric
+//! data associated with their respective spatial partition. However, `Node`s do
+//! not contain any spatial data (origin, partition, etc.); instead, this is
+//! calculated during traversals by `Cube`, which acts as a recursive view over
+//! the `Node`s in the tree and provides the primary interface for interacting
+//! with trees.
 //!
-//!   1. Node data, which varies between branches and leaves.
-//!   2. Node links, which refer to other nodes in the oct-tree.
-//!   3. A spatial partition. This is calculated during traversals.
+//! Leaf `Cube`s provide the geometric and spatial data that together represent
+//! the shape and layout of the game world.
 //!
-//! Cubes bind this information together and act as a "recursive tree", where
-//! any cube can be used to traverse its sub-tree of cubes.
+//! `Cube`s reference `Node`s in the tree, and abstract over the mutability of
+//! those references. This module exposes the `CubeRef` and `CubeMut` type
+//! definitions for immutable and mutable `Cube`s, respectively.
 //!
-//! Leaf cubes provide geometric data that represents the shape and layout of
-//! the game world.
+//! Because `Cube`s reference `Node`s and `Node`s may reference other `Node`s
+//! in a tree, orphan types are provided that only expose payloads and no links.
+//! This is useful when collecting `Cube`s, because otherwise the references
+//! into the rest of the tree would lead to aliasing. `OrphanCubeRef` and
+//! `OrphanCubeMut` are the orphan analogues of `CubeRef` and `CubeMut`,
+//! respectively. Orphans of course do not support indexing or traversal.
+//!
+//! `Root` can be used to create a new tree, and owns the root `Node`. `Root`s
+//! expose `Cube`s to manipulate the tree.
+//!
+//! # Examples
+//!
+//! Subdividing and iterating over the cubes in a tree:
+//!
+//! ```
+//! let mut root = Root::new(LogWidth::max_value());
+//! let _ = root.to_cube_mut().subdivide();
+//! for cube in root.to_cube().iter() {
+//!     println!("origin: {}; width: {}", cube.partition().origin(), cube.partition().width());
+//! }
+//! ```
 
 mod geometry;
 mod space;
