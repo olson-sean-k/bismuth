@@ -419,9 +419,9 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c mut Node, B>
 macro_rules! traverse {
     (cube => $c:expr, | $t:ident | $f:block) => {{
         let mut cubes = vec![$c];
-        traverse!(stack => cubes, |$t| $f)
+        traverse!(buffer => cubes, |$t| $f)
     }};
-    (stack => $s:expr, | $t:ident | $f:block) => {{
+    (buffer => $s:expr, | $t:ident | $f:block) => {{
         #[allow(unused_mut)]
         while let Some(cube) = $s.pop() {
             let mut $t = Traversal::new(&mut $s, cube);
@@ -663,7 +663,7 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        traverse!(stack => self.0, |traversal| {
+        traverse!(buffer => self.0, |traversal| {
             return Some(traversal.push());
         });
         None
@@ -674,7 +674,7 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
     type Item = OrphanCube<'a, &'a mut LeafPayload, &'a mut BranchPayload>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        traverse!(stack => self.0, |traversal| {
+        traverse!(buffer => self.0, |traversal| {
             return Some(traversal.push());
         });
         None
@@ -692,7 +692,7 @@ impl<'a> Iterator for CursorIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        traverse!(stack => self.cubes, |traversal| {
+        traverse!(buffer => self.cubes, |traversal| {
             if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
                 if traversal.peek().partition.width() == self.cursor.width() {
                     return Some(traversal.take());
@@ -710,7 +710,7 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
     type Item = Cube<'a, &'a mut Node>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        traverse!(stack => self.cubes, |traversal| {
+        traverse!(buffer => self.cubes, |traversal| {
             if traversal.peek().aabb().intersects(&self.cursor.aabb()) {
                 if traversal.peek().partition.width() == self.cursor.width() {
                     return Some(traversal.take());
