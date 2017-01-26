@@ -628,22 +628,35 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn finalize(&mut self) {
-        let mut previous = self.depth();
-        let mut parents: Vec<OrphanCube<_, _>> = vec![];
+        self.for_each_path_mut(|path| {
+            let is_leaf = path.last().map_or(false, |cube| cube.is_leaf());
+            if !is_leaf {
+                for cube in path.iter_mut() {
+                    cube.hint_mut().size += 1;
+                }
+            }
+        });
+    }
+
+    fn for_each_path_mut<F>(&mut self, f: F)
+        where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
+    {
+        let mut previous_depth = self.depth();
+        let mut path: Vec<OrphanCube<_, _>> = vec![];
         traverse!(cube => self.to_value_mut(), |traversal| {
-            let current = traversal.peek().depth();
-            if previous > current {
-                for _ in 0..(previous - current) {
-                    parents.pop();
+            let is_leaf = traversal.peek().is_leaf();
+            let depth = traversal.peek().depth();
+            if previous_depth > depth {
+                for _ in 0..(previous_depth - depth) {
+                    path.pop();
                 }
             }
-            if !traversal.peek().is_leaf() {
-                parents.push(traversal.push());
-                for parent in parents.iter_mut() {
-                    parent.hint_mut().size += 1;
-                }
+            path.push(traversal.push());
+            f(path.as_mut_slice());
+            if is_leaf {
+                path.pop();
             }
-            previous = current;
+            previous_depth = depth;
         });
     }
 
