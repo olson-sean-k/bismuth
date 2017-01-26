@@ -58,6 +58,20 @@ impl Node {
         }
     }
 
+    fn hint(&self) -> &Hint {
+        match *self {
+            Node::Leaf(ref leaf) => &leaf.hint,
+            Node::Branch(ref branch) => &branch.hint,
+        }
+    }
+
+    fn hint_mut(&mut self) -> &mut Hint {
+        match *self {
+            Node::Leaf(ref mut leaf) => &mut leaf.hint,
+            Node::Branch(ref mut branch) => &mut branch.hint,
+        }
+    }
+
     fn to_orphan<'a>(&'a self)
                      -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
         match *self {
@@ -158,6 +172,13 @@ impl<L, B> OrphanNode<L, B>
             _ => None,
         }
     }
+
+    fn hint(&self) -> &Hint {
+        match *self {
+            OrphanNode::Leaf(ref leaf) => &leaf.as_ref().hint,
+            OrphanNode::Branch(ref branch) => &branch.as_ref().hint,
+        }
+    }
 }
 
 impl<L, B> OrphanNode<L, B>
@@ -175,6 +196,13 @@ impl<L, B> OrphanNode<L, B>
         match *self {
             OrphanNode::Branch(ref mut branch) => Some(branch.as_mut()),
             _ => None,
+        }
+    }
+
+    fn hint_mut(&mut self) -> &mut Hint {
+        match *self {
+            OrphanNode::Leaf(ref mut leaf) => &mut leaf.as_mut().hint,
+            OrphanNode::Branch(ref mut branch) => &mut branch.as_mut().hint,
         }
     }
 }
@@ -208,6 +236,7 @@ impl ops::DerefMut for LeafNode {
 pub struct LeafPayload {
     pub geometry: Geometry,
     pub material: ResourceId,
+    hint: Hint,
 }
 
 impl LeafPayload {
@@ -215,6 +244,7 @@ impl LeafPayload {
         LeafPayload {
             geometry: Geometry::full(),
             material: 0,
+            hint: Hint::new(),
         }
     }
 }
@@ -273,11 +303,15 @@ impl ops::DerefMut for BranchNode {
 }
 
 #[derive(Clone, Copy)]
-pub struct BranchPayload {}
+pub struct BranchPayload {
+    hint: Hint,
+}
 
 impl BranchPayload {
     fn new() -> Self {
-        BranchPayload {}
+        BranchPayload {
+            hint: Hint::new(),
+        }
     }
 }
 
@@ -290,6 +324,19 @@ impl AsRef<BranchPayload> for BranchPayload {
 impl AsMut<BranchPayload> for BranchPayload {
     fn as_mut(&mut self) -> &mut Self {
         self
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Hint {
+    pub size: usize,
+}
+
+impl Hint {
+    fn new() -> Self {
+        Hint {
+            size: 0,
+        }
     }
 }
 
@@ -580,6 +627,26 @@ impl<'a, N> Cube<'a, N>
         cubes
     }
 
+    pub fn finalize(&mut self) {
+        let mut previous = self.depth();
+        let mut parents: Vec<OrphanCube<&mut LeafPayload, &mut BranchPayload>> = vec![];
+        traverse!(cube => self.to_value_mut(), |traversal| {
+            let current = traversal.peek().depth();
+            if previous > current {
+                for _ in 0..(previous - current) {
+                    parents.pop();
+                }
+            }
+            if !traversal.peek().is_leaf() {
+                parents.push(traversal.push());
+                for parent in parents.iter_mut() {
+                    parent.hint_mut().size += 1;
+                }
+            }
+            previous = current;
+        });
+    }
+
     fn for_nodes_to_point<F>(&mut self, point: &UPoint3, width: LogWidth, f: F) -> Cube<&mut Node>
         where F: Fn(&mut Node)
     {
@@ -667,6 +734,15 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
             return Some(traversal.push());
         });
         None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if let Some(cube) = self.0.last() {
+            (1 + (8 * cube.hint().size), None)
+        }
+        else {
+            (0, None)
+        }
     }
 }
 
