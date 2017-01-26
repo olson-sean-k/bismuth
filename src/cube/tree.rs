@@ -629,7 +629,7 @@ impl<'a, N> Cube<'a, N>
 
     pub fn finalize(&mut self) {
         let mut previous = self.depth();
-        let mut parents: Vec<OrphanCube<&mut LeafPayload, &mut BranchPayload>> = vec![];
+        let mut parents: Vec<OrphanCube<_, _>> = vec![];
         traverse!(cube => self.to_value_mut(), |traversal| {
             let current = traversal.peek().depth();
             if previous > current {
