@@ -309,9 +309,7 @@ pub struct BranchPayload {
 
 impl BranchPayload {
     fn new() -> Self {
-        BranchPayload {
-            hint: Hint::new(),
-        }
+        BranchPayload { hint: Hint::new() }
     }
 }
 
@@ -334,9 +332,7 @@ struct Hint {
 
 impl Hint {
     fn new() -> Self {
-        Hint {
-            size: 0,
-        }
+        Hint { size: 0 }
     }
 }
 
