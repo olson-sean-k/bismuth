@@ -643,22 +643,22 @@ impl<'a, N> Cube<'a, N>
     fn for_each_path_mut<F>(&mut self, f: F)
         where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
-        let mut previous_depth = self.depth();
+        let mut depth = self.depth();
         let mut path = vec![];
         traverse!(cube => self.to_value_mut(), |traversal| {
-            let is_leaf = traversal.peek().is_leaf();
-            let depth = traversal.peek().depth();
-            if previous_depth > depth {
-                for _ in 0..(previous_depth - depth) {
+            if depth > traversal.peek().depth() {
+                for _ in 0..(depth - traversal.peek().depth()) {
                     path.pop();
                 }
             }
+            depth = traversal.peek().depth();
+
+            let pop = traversal.peek().is_leaf();
             path.push(traversal.push());
             f(path.as_mut_slice());
-            if is_leaf {
+            if pop {
                 path.pop();
             }
-            previous_depth = depth;
         });
     }
 
