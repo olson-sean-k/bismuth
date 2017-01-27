@@ -629,14 +629,12 @@ impl<'a, N> Cube<'a, N>
 
     pub fn finalize(&mut self) {
         self.for_each_path_mut(|path| {
-            let is_leaf = if let Some(cube) = path.last_mut() {
+            if let Some((cube, path)) = path.split_last_mut() {
                 cube.hint_mut().size = 0;
-                cube.is_leaf()
-            }
-            else { false };
-            if !is_leaf {
-                for cube in path.iter_mut() {
-                    cube.hint_mut().size += 1;
+                if !cube.is_leaf() {
+                    for cube in path.iter_mut() {
+                        cube.hint_mut().size += 1;
+                    }
                 }
             }
         });
@@ -646,7 +644,7 @@ impl<'a, N> Cube<'a, N>
         where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
         let mut previous_depth = self.depth();
-        let mut path: Vec<OrphanCube<_, _>> = vec![];
+        let mut path = vec![];
         traverse!(cube => self.to_value_mut(), |traversal| {
             let is_leaf = traversal.peek().is_leaf();
             let depth = traversal.peek().depth();
