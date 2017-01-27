@@ -626,11 +626,11 @@ impl<'a, N> Cube<'a, N>
     pub fn finalize(&mut self) {
         self.for_each_path_mut(|path| {
             if let Some((cube, path)) = path.split_last_mut() {
-                cube.hint_mut().size = 0;
-                if !cube.is_leaf() {
+                cube.hint_mut().size = if cube.is_leaf() { 0 } else {
                     for cube in path.iter_mut() {
                         cube.hint_mut().size += 1;
                     }
+                    1
                 }
             }
         });
