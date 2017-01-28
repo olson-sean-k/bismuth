@@ -786,6 +786,15 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
         });
         None
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if let Some(cube) = self.0.last() {
+            (1 + (8 * cube.hint().size), None)
+        }
+        else {
+            (0, None)
+        }
+    }
 }
 
 pub struct CursorIter<'a, N>
