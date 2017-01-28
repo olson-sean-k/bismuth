@@ -507,6 +507,28 @@ impl<'a, N> Cube<'a, N>
         });
     }
 
+    pub fn for_each_path<F>(&mut self, f: F)
+        where F: Fn(&mut [Cube<&Node>])
+    {
+        let mut depth = self.depth();
+        let mut path = vec![];
+        traverse!(cube => self.to_value(), |traversal| {
+            if depth > traversal.peek().depth() {
+                for _ in 0..(depth - traversal.peek().depth()) {
+                    path.pop();
+                }
+            }
+            depth = traversal.peek().depth();
+
+            let pop = traversal.peek().is_leaf();
+            path.push(traversal.push());
+            f(path.as_mut_slice());
+            if pop {
+                path.pop();
+            }
+        });
+    }
+
     pub fn at_point(&self, point: &UPoint3, width: LogWidth) -> Cube<&Node> {
         let mut node = self.node.as_ref();
         let mut depth = self.partition.width();
@@ -564,11 +586,31 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each_mut<F>(&mut self, f: F)
         where F: Fn(&mut Cube<&mut Node>)
     {
-        // This is distinct from iterators, because `f` is given mutable cubes
-        // instead of orphans (which have no links).
         traverse!(cube => self.to_value_mut(), |traversal| {
             f(traversal.peek_mut());
             traversal.push();
+        });
+    }
+
+    pub fn for_each_path_mut<F>(&mut self, f: F)
+        where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
+    {
+        let mut depth = self.depth();
+        let mut path = vec![];
+        traverse!(cube => self.to_value_mut(), |traversal| {
+            if depth > traversal.peek().depth() {
+                for _ in 0..(depth - traversal.peek().depth()) {
+                    path.pop();
+                }
+            }
+            depth = traversal.peek().depth();
+
+            let pop = traversal.peek().is_leaf();
+            path.push(traversal.push());
+            f(path.as_mut_slice());
+            if pop {
+                path.pop();
+            }
         });
     }
 
@@ -632,28 +674,6 @@ impl<'a, N> Cube<'a, N>
                     }
                     1
                 }
-            }
-        });
-    }
-
-    fn for_each_path_mut<F>(&mut self, f: F)
-        where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
-    {
-        let mut depth = self.depth();
-        let mut path = vec![];
-        traverse!(cube => self.to_value_mut(), |traversal| {
-            if depth > traversal.peek().depth() {
-                for _ in 0..(depth - traversal.peek().depth()) {
-                    path.pop();
-                }
-            }
-            depth = traversal.peek().depth();
-
-            let pop = traversal.peek().is_leaf();
-            path.push(traversal.push());
-            f(path.as_mut_slice());
-            if pop {
-                path.pop();
             }
         });
     }
