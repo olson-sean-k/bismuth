@@ -473,6 +473,31 @@ macro_rules! traverse {
     }};
 }
 
+macro_rules! thread {
+    (cube => $c:expr, | $p:ident | $f:block) => {{
+        let mut depth = $c.depth();
+        let mut path = vec![];
+        traverse!(cube => $c, |traversal| {
+            if depth > traversal.peek().depth() {
+                for _ in 0..(depth - traversal.peek().depth()) {
+                    path.pop();
+                }
+            }
+            depth = traversal.peek().depth();
+
+            let pop = traversal.peek().is_leaf();
+            path.push(traversal.push());
+            {
+                let mut $p = path.as_mut_slice();
+                $f
+            }
+            if pop {
+                path.pop();
+            }
+        });
+    }};
+}
+
 #[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
@@ -510,22 +535,8 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each_path<F>(&mut self, f: F)
         where F: Fn(&mut [Cube<&Node>])
     {
-        let mut depth = self.depth();
-        let mut path = vec![];
-        traverse!(cube => self.to_value(), |traversal| {
-            if depth > traversal.peek().depth() {
-                for _ in 0..(depth - traversal.peek().depth()) {
-                    path.pop();
-                }
-            }
-            depth = traversal.peek().depth();
-
-            let pop = traversal.peek().is_leaf();
-            path.push(traversal.push());
-            f(path.as_mut_slice());
-            if pop {
-                path.pop();
-            }
+        thread!(cube => self.to_value(), |path| {
+            f(path);
         });
     }
 
@@ -595,22 +606,8 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each_path_mut<F>(&mut self, f: F)
         where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
-        let mut depth = self.depth();
-        let mut path = vec![];
-        traverse!(cube => self.to_value_mut(), |traversal| {
-            if depth > traversal.peek().depth() {
-                for _ in 0..(depth - traversal.peek().depth()) {
-                    path.pop();
-                }
-            }
-            depth = traversal.peek().depth();
-
-            let pop = traversal.peek().is_leaf();
-            path.push(traversal.push());
-            f(path.as_mut_slice());
-            if pop {
-                path.pop();
-            }
+        thread!(cube => self.to_value_mut(), |path| {
+            f(path);
         });
     }
 
