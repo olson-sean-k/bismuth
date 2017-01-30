@@ -324,6 +324,19 @@ pub enum Polygon<T> {
     Quad(Quad<T>),
 }
 
+impl<T, U> MapPrimitiveInto<T, U> for Polygon<T> {
+    type Output = Polygon<U>;
+
+    fn map_points_into<F>(self, mut f: F) -> Self::Output
+        where F: FnMut(T) -> U
+    {
+        match self {
+            Polygon::Triangle(triangle) => Polygon::Triangle(triangle.map_points_into(f)),
+            Polygon::Quad(quad) => Polygon::Quad(quad.map_points_into(f)),
+        }
+    }
+}
+
 impl<T> Primitive<T> for Polygon<T>
     where T: Clone
 {
