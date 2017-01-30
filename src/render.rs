@@ -1,11 +1,9 @@
 use gfx;
-use glutin;
-use nalgebra::{Isometry3, PerspectiveMatrix3, ToHomogeneous};
 use rand;
 use std::convert::AsRef;
 
 use cube::{CubeRef, Spatial};
-use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
+use math::{IntoSpace, FPoint3, FScalar, FVector3, FVector4};
 use mesh::{DecomposePolygon, DecomposePrimitive, Triangle, UCube};
 use super::OptionExt;
 
@@ -115,23 +113,6 @@ pub fn vertex_buffer_from_cube<R, F>(cube: &CubeRef,
         buffer.extend(&cube.mesh_buffer());
     }
     factory.create_vertex_buffer_with_slice(buffer.vertices.as_slice(), buffer.indeces.as_slice())
-}
-
-pub fn projection_from_window(window: &glutin::Window) -> FMatrix4 {
-    let aspect = {
-        let (width, height) = window.get_inner_size_pixels().unwrap();
-        width as f32 / height as f32
-    };
-    PerspectiveMatrix3::new(aspect, 1.0, -1.0, 1.0).to_matrix()
-}
-
-pub fn look_at_cube<C>(cube: &C, from: &FPoint3) -> FMatrix4
-    where C: Spatial
-{
-    Isometry3::look_at_rh(from,
-                          &cube.partition().midpoint().into_space(),
-                          &FVector3::new(0.0, 0.0, 1.0))
-        .to_homogeneous()
 }
 
 fn random_color() -> FVector4 {

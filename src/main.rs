@@ -5,6 +5,7 @@ extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate nalgebra;
 
+use bismuth::camera::Camera;
 use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root};
 use bismuth::render;
 use bismuth::prelude::*;
@@ -49,10 +50,11 @@ fn main() {
     let root = new_root();
     let transform = {
         let midpoint: FPoint3 = root.partition().midpoint().into_space();
-        let camera = FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0);
-        let view = render::look_at_cube(&root, &camera);
-        let projection = render::projection_from_window(&window);
-        projection * view
+        let mut camera =
+            Camera::new(&window,
+                        &FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0));
+        camera.look_at(&midpoint);
+        camera.transform()
     };
     let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&root.to_cube(), &mut factory);
     let data = render::pipeline::Data {
