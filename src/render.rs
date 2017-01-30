@@ -6,7 +6,7 @@ use std::convert::AsRef;
 
 use cube::{CubeRef, Spatial};
 use math::{IntoSpace, FMatrix4, FPoint3, FScalar, FVector3, FVector4};
-use mesh::{Conjoint, DecomposePolygon, DecomposePrimitive, Indexed, UCube};
+use mesh::{DecomposePolygon, DecomposePrimitive, Triangle, UCube};
 use super::OptionExt;
 
 pub type Index = u32;
@@ -81,17 +81,24 @@ impl<'a> Mesh for CubeRef<'a> {
         if let Some(leaf) = self.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().to_vector().into_space();
             let width = self.partition().width().exp() as FScalar;
-            let color = random_color();
 
-            let cube = UCube::with_unit_width();
-            buffer.vertices.extend(cube.conjoint_points()
-                .map(|point| leaf.geometry.map_unit_cube_point(&point))
-                .map(|point| (point * width) + origin)
-                .map(|point| RawVertex::from(Vertex::new(point, color))));
-            buffer.indeces.extend(cube.indexed_polygons()
+            buffer.vertices.extend(UCube::with_unit_width()
+                .triangulate()
+                .map(|triangle| {
+                    let color = random_color();
+                    Triangle::new((triangle.a, color), (triangle.b, color), (triangle.c, color))
+                })
+                .points()
+                .map(|(point, color)| {
+                    (leaf.geometry.map_unit_cube_point(&point), color)
+                })
+                .map(|(point, color)| ((point * width) + origin, color))
+                .map(|(point, color)| RawVertex::from(Vertex::new(point, color))));
+            buffer.indeces.extend(UCube::with_unit_width()
                 .triangulate()
                 .points()
-                .map(|index| index as Index));
+                .enumerate()
+                .map(|(index, _)| index as Index));
         }
         buffer
     }
