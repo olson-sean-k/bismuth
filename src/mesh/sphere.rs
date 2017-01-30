@@ -9,6 +9,7 @@ use std::marker::PhantomData;
 use super::generate::{Conjoint, Indexed};
 use super::primitive::{Polygon, Triangle, Quad};
 
+#[derive(Clone)]
 pub struct UVSphere<T>
     where T: Float + FloatConst
 {

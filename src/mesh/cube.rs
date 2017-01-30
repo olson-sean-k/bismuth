@@ -51,6 +51,7 @@ impl<T, C> Conjoint<T> for C
     }
 }
 
+#[derive(Clone)]
 pub struct FCube<T>
     where T: Float
 {
@@ -100,6 +101,7 @@ impl<T> Iterator for FCube<T>
     }
 }
 
+#[derive(Clone)]
 pub struct UCube<T>
     where T: Copy + Unsigned
 {
