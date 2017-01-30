@@ -327,7 +327,7 @@ pub enum Polygon<T> {
 impl<T, U> MapPrimitiveInto<T, U> for Polygon<T> {
     type Output = Polygon<U>;
 
-    fn map_points_into<F>(self, mut f: F) -> Self::Output
+    fn map_points_into<F>(self, f: F) -> Self::Output
         where F: FnMut(T) -> U
     {
         match self {
