@@ -25,7 +25,7 @@ impl<T> UVSphere<T>
 {
     pub fn with_unit_radius(nu: usize, nv: usize) -> Self {
         let nu = cmp::max(3, nu);
-        let nv = cmp::max(3, nv);
+        let nv = cmp::max(2, nv);
         UVSphere {
             nu: nu,
             nv: nv,
