@@ -4,7 +4,7 @@ use std::convert::AsRef;
 
 use cube::{CubeRef, Spatial};
 use math::{IntoSpace, FPoint3, FScalar, FVector3, FVector4};
-use mesh::{DecomposePolygon, DecomposePrimitive, Triangle, UCube};
+use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Triangle, UCube};
 use super::OptionExt;
 
 pub type Index = u32;
@@ -24,12 +24,18 @@ gfx_vertex_struct!{
     }
 }
 
+impl RawVertex {
+    fn new(position: &FPoint3, color: &FVector4) -> Self {
+        RawVertex {
+            position: *position.as_ref(),
+            color: *color.as_ref(),
+        }
+    }
+}
+
 impl From<Vertex> for RawVertex {
     fn from(vertex: Vertex) -> Self {
-        RawVertex {
-            position: *vertex.position.as_ref(),
-            color: *vertex.color.as_ref(),
-        }
+        RawVertex::new(&vertex.position, &vertex.color)
     }
 }
 
@@ -81,17 +87,16 @@ impl<'a> Mesh for CubeRef<'a> {
             let width = self.partition().width().exp() as FScalar;
 
             buffer.vertices.extend(UCube::with_unit_width()
+                .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
+                .map_points(|point| (point * width) + origin)
                 .triangulate()
                 .map(|triangle| {
                     let color = random_color();
-                    Triangle::new((triangle.a, color), (triangle.b, color), (triangle.c, color))
+                    Triangle::new(RawVertex::new(&triangle.a, &color),
+                                  RawVertex::new(&triangle.b, &color),
+                                  RawVertex::new(&triangle.c, &color))
                 })
-                .points()
-                .map(|(point, color)| {
-                    (leaf.geometry.map_unit_cube_point(&point), color)
-                })
-                .map(|(point, color)| ((point * width) + origin, color))
-                .map(|(point, color)| RawVertex::from(Vertex::new(point, color))));
+                .points());
             buffer.indeces.extend(UCube::with_unit_width()
                 .triangulate()
                 .points()
