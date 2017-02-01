@@ -25,6 +25,10 @@
 //! `Root` can be used to create a new tree, and owns the root `Node`. `Root`s
 //! expose `Cube`s to manipulate the tree.
 //!
+//! In the abstract, "cube" refers to the amalgamation of all the types used to
+//! represent elements in a tree, which together form the complete notion of a
+//! cube.
+//!
 //! # Examples
 //!
 //! Subdividing and iterating over the cubes in a tree:

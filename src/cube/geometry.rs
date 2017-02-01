@@ -2,6 +2,7 @@ use clamp::{Clamped, ClampedRange};
 use math::{Clamp, FPoint3, FromSpace, UPoint3};
 use super::space::Axis;
 
+/// Defines the bounds for `Offset` values.
 pub struct OffsetRange;
 
 impl ClampedRange<u8> for OffsetRange {
@@ -14,39 +15,64 @@ impl ClampedRange<u8> for OffsetRange {
     }
 }
 
+/// Edge offset.
+///
+/// This is the deformation of an `Edge` in a particular direction as an
+/// absolute coordinate. It is used to define the endpoints of an `Edge`.
+///
+/// `Offset` is clamped to the open range `[0, 15]`. This is the same range that
+/// the endpoints of an `Edge` are allowed to span.
 pub type Offset = Clamped<u8, OffsetRange>;
 
+/// Edge of a cube's `Geometry`.
+///
+/// `Edge`s define the endpoints of a cube's points along a particular axis as
+/// front and back. For each axis, there are four edges describing the
+/// coordinates of all eight points along that axis. The front and back of an
+/// `Edge` are described by an `Offset` and affect opposing faces of a cube.
+///
+/// The front and back of an `Edge` cannot cross, but may intersect. These
+/// values are packed into the upper and lower 4-bit halves of an `u8`.
 #[derive(Copy, Clone)]
 pub struct Edge(u8);
 
 impl Edge {
+    /// Constructs a new `Edge` that spans the full width (no deformation).
     fn full() -> Self {
         Edge(Offset::max_inner_value())
     }
 
+    /// Constructs a new `Edge` that converges at a given `Offset`.
     fn converged(offset: Offset) -> Self {
         let offset = offset.to_inner();
         Edge((offset << 4) | offset)
     }
 
+    /// Sets the offset of the front of the `Edge`. If the front would cross the
+    /// back, it will be clamped such that it intersects the back.
     pub fn set_front(&mut self, offset: Offset) {
         let offset = offset.clamp(Offset::min_value(), self.back()).to_inner();
         self.0 = (offset << 4) | self.back().to_inner();
     }
 
+    /// Sets the `Offset` of the back of the `Edge`. If the back would cross the
+    /// front, it will be clamped such that it intersects the front.
     pub fn set_back(&mut self, offset: Offset) {
         let offset = offset.clamp(self.front(), Offset::max_value()).to_inner();
         self.0 = (self.front().to_inner() << 4) | offset;
     }
 
+    /// Gets the `Offset` of the front of the `Edge`.
     pub fn front(&self) -> Offset {
         Offset::from((self.0 & 0xF0) >> 4)
     }
 
+    /// Gets the `Offset` of the back of the `Edge`.
     pub fn back(&self) -> Offset {
         Offset::from(self.0 & 0x0F)
     }
 
+    /// Gets the length of the `Edge`.
     pub fn length(&self) -> Offset {
         self.back() - self.front()
     }
@@ -101,6 +127,8 @@ impl Geometry {
     }
 }
 
+/// Gets the index of an `Edge` in a face (a collection of four `Edge`s along a
+/// particular axis).
 fn index_at_axis(axis: usize, unit: &UPoint3) -> usize {
     let p = if axis == 0 { 1 } else { 0 };
     let q = if axis == 2 { 1 } else { 2 };

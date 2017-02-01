@@ -4,6 +4,7 @@ use std::ops::Range;
 use clamp::{Clamped, ClampedRange};
 use math::{LowerBound, Mask, UPoint3, UpperBound, UScalar, UVector3};
 
+/// Defines the bounds for `LogWidth` values.
 pub struct LogWidthRange;
 
 impl ClampedRange<u8> for LogWidthRange {
@@ -16,14 +17,28 @@ impl ClampedRange<u8> for LogWidthRange {
     }
 }
 
+/// Logarithmic width. Most uses of the term "width" refer to `LogWidth`.
+///
+/// This is the base-2 logarithmic width of a space in a tree, such that a width
+/// `x` exponentiates as `2ˣ`. Exponentiation is performed as a simple bit
+/// shift.
+///
+/// Being logarithmic, if a cube has a width `x`, then its immediate
+/// subdivisions have a width `x - 1` and its parent a width `x + 1`.
+///
+/// `LogWidth` is clamped to the open range `[4, 31]`.
 pub type LogWidth = Clamped<u8, LogWidthRange>;
 
 impl LogWidth {
+    /// Exponentiates a `LogWidth` into a `UScalar`.
     pub fn exp(&self) -> UScalar {
         UScalar::one() << self.to_inner()
     }
 }
 
+/// An axis in the tree space.
+///
+/// Defines and orders the axes in the tree space.
 #[derive(Clone, Copy)]
 pub enum Axis {
     X = 0,
@@ -32,6 +47,7 @@ pub enum Axis {
 }
 
 impl Axis {
+    /// Gets a `Range` over axes as `usize`s.
     pub fn range() -> Range<usize> {
         (Axis::X as usize)..(Axis::Z as usize + 1)
     }
@@ -48,11 +64,17 @@ impl From<usize> for Axis {
     }
 }
 
+/// A direction along an `Axis`.
 pub enum Direction {
     Positive,
     Negative,
 }
 
+/// An orientation in the tree space.
+///
+/// This is akin to choosing a face of a cube in a tree and orienting that face
+/// based on the axis and direction in which it deforms. For example, `Left` is
+/// a face along the `X` axis that deforms in the `Positive` direction.
 pub enum Orientation {
     Left,
     Right,
@@ -63,6 +85,7 @@ pub enum Orientation {
 }
 
 impl Orientation {
+    /// Gets the `Axis` associated with the `Orientation`.
     pub fn axis(&self) -> Axis {
         match *self {
             Orientation::Left | Orientation::Right => Axis::X,
@@ -71,6 +94,7 @@ impl Orientation {
         }
     }
 
+    /// Gets the `Direction` associated with the `Orientation`.
     pub fn direction(&self) -> Direction {
         match *self {
             Orientation::Left | Orientation::Top | Orientation::Front => Direction::Positive,
@@ -79,12 +103,17 @@ impl Orientation {
     }
 }
 
+/// Axis-aligned bounding box.
+///
+/// `AABB`s are represented as an origin and extent.
 pub struct AABB {
     pub origin: UPoint3,
     pub extent: UVector3,
 }
 
 impl AABB {
+    /// Constructs a new `AABB` at the given point in space with the given
+    /// extent.
     pub fn new(origin: UPoint3, extent: UVector3) -> Self {
         AABB {
             origin: origin,
@@ -92,12 +121,17 @@ impl AABB {
         }
     }
 
+    /// Constructs the union of two `AABB`s.
+    ///
+    /// The union is the cuboid formed from the lower and upper bounds of the
+    /// `AABB`s.
     pub fn union(&self, other: &Self) -> Self {
         let start = self.origin.lower_bound(&other.origin);
         let end = self.endpoint().upper_bound(&other.endpoint());
         AABB::new(start, end - start)
     }
 
+    /// Determines if two `AABB`s intersect.
     pub fn intersects(&self, other: &Self) -> bool {
         for axis in Axis::range() {
             if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
@@ -110,13 +144,16 @@ impl AABB {
         true
     }
 
+    /// Gets the absolute endpoint of the `AABB`.
     pub fn endpoint(&self) -> UPoint3 {
         self.origin + self.extent
     }
 }
 
-/// A cubic spatial partition in the `UScalar` space. `Partition`s are
-/// represented as an origin and a width.
+/// A cubic spatial partition. `Partition`s are represented as an origin and a
+/// width.
+///
+/// `Partition`s are associated with every `Cube` in a tree.
 #[derive(Clone, Copy)]
 pub struct Partition {
     origin: UPoint3,
@@ -124,7 +161,7 @@ pub struct Partition {
 }
 
 impl Partition {
-    /// Constructs a `Partition` at the given point in space with the given
+    /// Constructs a new `Partition` at the given point in space with the given
     /// width.
     pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
         Partition {
@@ -173,6 +210,7 @@ impl Partition {
         (UVector3::one() * self.width.exp()) - UVector3::one()
     }
 
+    /// Gets the `AABB` of the `Partition`.
     pub fn aabb(&self) -> AABB {
         AABB::new(self.origin, self.extent())
     }
@@ -183,16 +221,21 @@ impl Partition {
     }
 }
 
+/// A spatial (cubic) element in a tree.
 pub trait Spatial {
+    /// Gets the `Partition` of the `Spatial`.
     fn partition(&self) -> &Partition;
 
+    /// Gets the depth of the `Spatial` in the tree.
     fn depth(&self) -> u8;
 
+    /// Gets the `AABB` of the `Spatial`.
     fn aabb(&self) -> AABB {
         self.partition().aabb()
     }
 }
 
+/// Gets the subdivision index in a tree for a given point at the given width.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
     let width = width.to_inner();
@@ -201,6 +244,8 @@ pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
      (((point.z >> width) & UScalar::one()) << 2)) as usize
 }
 
+/// Gets a vector to the origin of a subdivision in a tree at a given index and
+/// width.
 pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
     assert!(index < 8);
     let index = index as UScalar;
