@@ -1,5 +1,5 @@
 use clamp::{Clamped, ClampedRange};
-use math::{Clamp, FPoint3, FromSpace, UPoint3};
+use math::{Clamp, FPoint3, FromSpace, FScalar, UPoint3};
 use super::space::Axis;
 
 /// Defines the bounds for `Offset` values.
@@ -77,14 +77,19 @@ impl Edge {
         self.back() - self.front()
     }
 
-    fn front_unit_transform(&self) -> f32 {
+    fn front_unit_transform(&self) -> FScalar {
         let min = Offset::min_inner_value();
-        ((self.front().to_inner() - min) as f32) / ((Offset::max_inner_value() - min) as f32)
+        let n = (self.front().to_inner() - min) as FScalar;
+        let d = (Offset::max_inner_value() - min) as FScalar;
+        n / d
     }
 
-    fn back_unit_transform(&self) -> f32 {
-        let len = Offset::max_inner_value() - Offset::min_inner_value();
-        -((len - (self.back().to_inner() - Offset::min_inner_value())) as f32) / (len as f32)
+    fn back_unit_transform(&self) -> FScalar {
+        let min = Offset::min_inner_value();
+        let span = Offset::max_inner_value() - min;
+        let n = -((span - (self.back().to_inner() - min)) as FScalar);
+        let d = span as FScalar;
+        n / d
     }
 }
 
