@@ -21,16 +21,15 @@ impl Cursor {
     }
 
     pub fn at_point(point: &UPoint3, width: LogWidth) -> Self {
-        let partition = Partition::at_point(point, width);
-        Cursor::new(partition.origin(), width, &UVector3::zero())
+        Cursor::at_point_with_span(point, width, &UVector3::zero())
     }
 
-    pub fn span_from_point(point: &UPoint3, span: &UVector3, width: LogWidth) -> Self {
+    pub fn at_point_with_span(point: &UPoint3, width: LogWidth, span: &UVector3) -> Self {
         let partition = Partition::at_point(point, width);
         Cursor::new(partition.origin(), width, span)
     }
 
-    pub fn span_points(start: &UPoint3, end: &UPoint3, width: LogWidth) -> Self {
+    pub fn from_point_to_point(start: &UPoint3, end: &UPoint3, width: LogWidth) -> Self {
         let (start, end) = {
             (Partition::at_point(&start.lower_bound(end), width),
              Partition::at_point(&start.upper_bound(end), width))
@@ -45,19 +44,19 @@ impl Cursor {
         Cursor::at_point(cube.partition().origin(), cube.partition().width())
     }
 
-    pub fn span_from_cube<C>(cube: &C, span: &UVector3) -> Self
+    pub fn at_cube_with_span<C>(cube: &C, span: &UVector3) -> Self
         where C: Spatial
     {
-        Cursor::span_from_point(cube.partition().origin(), span, cube.partition().width())
+        Cursor::at_point_with_span(cube.partition().origin(), cube.partition().width(), span)
     }
 
-    pub fn span_cubes<S, E>(start: &S, end: &E) -> Self
+    pub fn from_cube_to_cube<S, E>(start: &S, end: &E) -> Self
         where S: Spatial,
               E: Spatial
     {
         let width = cmp::min(start.partition().width(), end.partition().width());
         let aabb = start.aabb().union(&end.aabb());
-        Cursor::span_points(&aabb.origin, &aabb.endpoint(), width)
+        Cursor::from_point_to_point(&aabb.origin, &aabb.endpoint(), width)
     }
 
     pub fn origin(&self) -> &UPoint3 {
