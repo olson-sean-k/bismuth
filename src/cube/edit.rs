@@ -4,10 +4,23 @@ use std::cmp;
 use math::{LowerBound, UPoint3, UpperBound, UVector3};
 use super::space::{AABB, LogWidth, Partition, Spatial};
 
+/// A contiguous selection of cubes in a tree.
+///
+/// A `Cursor` is essentially a bounding box with an associated width
+/// (granularity) used to isolate cubes in a tree.
 #[derive(Clone)]
 pub struct Cursor {
+    /// Location of the `Cursor`. Being in the `UScalar` space, `Cursor`s must
+    /// extend positively from their origin. The origin is aligned to the width
+    /// of the `Cursor`.
     origin: UPoint3,
+    /// Target width of the `Cursor`. This is the granularity of the `Cursor`,
+    /// and determines the width of the cubes on which it operates.
     width: LogWidth,
+    /// The span of the `Cursor` from its origin. This is based on the width of
+    /// the `Cursor`, and each component essentially selects a number of cubes
+    /// in the positive direction along that axis. The zero vector means only
+    /// one cube is selected by the `Cursor`.
     span: UVector3,
 }
 
@@ -59,22 +72,31 @@ impl Cursor {
         Cursor::from_point_to_point(&aabb.origin, &aabb.endpoint(), width)
     }
 
+    /// Gets the origin of the `Cursor`.
     pub fn origin(&self) -> &UPoint3 {
         &self.origin
     }
 
+    /// Gets the width associated with the `Cursor`, which is the width of the
+    /// cubes that it selects.
     pub fn width(&self) -> LogWidth {
         self.width
     }
 
+    /// Gets the span of the `Cursor` from its origin. This is based on the
+    /// width of the `Cursor`, and each component essentially selects a number
+    /// of cubes in the positive direction along that axis. A span of zero means
+    /// that only one cube is selected by the `Cursor`.
     pub fn span(&self) -> &UVector3 {
         &self.span
     }
 
+    /// Gets the extent of the `Cursor` from its origin.
     pub fn extent(&self) -> UVector3 {
         ((self.span + UVector3::one()) * self.width.exp()) - UVector3::one()
     }
 
+    /// Gets the `AABB` of the `Cursor`.
     pub fn aabb(&self) -> AABB {
         AABB::new(self.origin, self.extent())
     }
