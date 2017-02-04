@@ -15,6 +15,7 @@ doc = false
 
 [dependencies]
 gfx = "0.14.*"
+gfx_device_gl = "0.13.*"
 gfx_window_glutin = "0.14.*"
 glutin = "0.7.*"
 lazy_static = "0.1.*"

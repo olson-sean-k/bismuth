@@ -1,19 +1,12 @@
 extern crate bismuth;
-#[macro_use]
-extern crate gfx;
-extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate nalgebra;
 
-use bismuth::camera::Camera;
-use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root};
-use bismuth::render;
-use bismuth::prelude::*;
-use gfx::{format, Device};
-use gfx::traits::FactoryExt;
+use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
+use bismuth::math::{FPoint3, IntoSpace, UPoint3, UVector3};
+use bismuth::render::{Camera, Context, Mesh};
+use glutin::{Event, VirtualKeyCode, WindowBuilder};
 use nalgebra::Origin;
-
-const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 fn new_root() -> Root {
     let width = LogWidth::max_value();
@@ -35,47 +28,34 @@ fn new_root() -> Root {
 }
 
 fn main() {
-    let (window, mut device, mut factory, color, _) =
-        gfx_window_glutin::init::<format::Rgba8,
-                                  format::DepthStencil>(glutin::WindowBuilder::new()
-            .with_title("Bismuth")
-            .with_dimensions(640, 480)
-            .with_vsync());
-    let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
-    let state = factory.create_pipeline_simple(include_bytes!("shader/cube.v.glsl"),
-                                               include_bytes!("shader/cube.f.glsl"),
-                                               render::pipeline::new())
-        .unwrap();
-
+    let mut context = Context::from_glutin_window(WindowBuilder::new()
+        .with_title("Bismuth")
+        .with_dimensions(640, 480)
+        .with_vsync()
+        .build()
+        .unwrap());
     let root = new_root();
+    let buffer = root.to_cube().mesh_buffer();
     let transform = {
         let midpoint: FPoint3 = root.partition().midpoint().into_space();
         let mut camera =
-            Camera::new(&window,
+            Camera::new(&context.window,
                         &FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0));
         camera.look_at(&midpoint);
         camera.transform()
     };
-    let (vertex_buffer, slice) = render::vertex_buffer_from_cube(&root.to_cube(), &mut factory);
-    let data = render::pipeline::Data {
-        vertex_buffer: vertex_buffer,
-        transform: *transform.as_ref(),
-        output: color,
-    };
-
     'main: loop {
-        for event in window.poll_events() {
+        for event in context.window.poll_events() {
             match event {
-                glutin::Event::KeyboardInput(_, _, Some(glutin::VirtualKeyCode::Escape)) |
-                glutin::Event::Closed => break 'main,
-                _ => {}
+                Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) | Event::Closed => {
+                    break 'main;
+                },
+                _ => {},
             }
         }
-
-        encoder.clear(&data.output, CLEAR_COLOR);
-        encoder.draw(&slice, &state, &data);
-        encoder.flush(&mut device);
-        window.swap_buffers().unwrap();
-        device.cleanup();
+        context.clear();
+        context.set_transform(&transform);
+        context.draw_mesh_buffer(&buffer);
+        context.flush().unwrap();
     }
 }

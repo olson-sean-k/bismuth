@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate gfx;
+extern crate gfx_device_gl;
 extern crate gfx_window_glutin;
 extern crate glutin;
 #[macro_use]
@@ -8,18 +9,12 @@ extern crate nalgebra;
 extern crate num;
 extern crate rand;
 
-pub mod camera;
 pub mod clamp;
 pub mod cube;
 pub mod math;
 pub mod mesh;
 pub mod render;
 pub mod resource;
-
-pub mod prelude {
-    pub use cube::Spatial;
-    pub use math::*;
-}
 
 pub trait OptionExt<T> {
     fn and_if<F>(self, f: F) -> Self
