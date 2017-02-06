@@ -49,7 +49,7 @@ impl<'a> Mesh for CubeRef<'a> {
         let mut buffer = MeshBuffer::new();
         for cube in self.iter() {
             if let Some(leaf) = cube.try_as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
-                let origin: FVector3 = cube.partition().origin().to_vector().into_space();
+                let origin: FVector3 = cube.partition().origin().coords.into_space();
                 let width = cube.partition().width().exp() as FScalar;
                 let mut local = MeshBuffer::new();
                 local.extend(UCube::with_unit_width()

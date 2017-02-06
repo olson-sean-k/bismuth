@@ -4,9 +4,8 @@ extern crate nalgebra;
 
 use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
 use bismuth::math::{FPoint3, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{Camera, Context, Mesh};
+use bismuth::render::{Camera, Context, Mesh, Projection};
 use glutin::{Event, VirtualKeyCode, WindowBuilder};
-use nalgebra::Origin;
 
 fn new_root() -> Root {
     let width = LogWidth::max_value();
@@ -38,10 +37,9 @@ fn main() {
     let buffer = root.to_cube().mesh_buffer();
     let transform = {
         let midpoint: FPoint3 = root.partition().midpoint().into_space();
-        let mut camera =
-            Camera::new(&context.window,
-                        &FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0));
-        camera.look_at(&midpoint);
+        let mut camera = Camera::new(&context.window, &Projection::default());
+        camera.look_at(&FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0),
+                       &midpoint);
         camera.transform()
     };
     'main: loop {

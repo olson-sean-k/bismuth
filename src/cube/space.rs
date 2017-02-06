@@ -207,7 +207,7 @@ impl Partition {
     }
 
     pub fn extent(&self) -> UVector3 {
-        (UVector3::one() * self.width.exp()) - UVector3::one()
+        (UVector3::new(1, 1, 1) * self.width.exp()) - UVector3::new(1, 1, 1)
     }
 
     /// Gets the `AABB` of the `Partition`.

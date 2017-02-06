@@ -1,5 +1,4 @@
 use gfx;
-use nalgebra::Origin;
 use rand;
 
 use math::{FPoint3, FScalar, FVector4};
@@ -41,8 +40,8 @@ gfx_vertex_struct!{
 impl Vertex {
     pub fn new(position: &FPoint3, color: &Color) -> Self {
         Vertex {
-            position: *position.as_ref(),
-            color: *color.as_ref(),
+            position: [position.x, position.y, position.z],
+            color: [color.x, color.y, color.z, color.w],
         }
     }
 }

@@ -1,4 +1,3 @@
-use nalgebra::Origin;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;

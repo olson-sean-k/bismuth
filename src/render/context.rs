@@ -4,7 +4,6 @@ use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::{ContextError, Window};
-use num::Zero;
 use std::error::{self, Error};
 use std::fmt;
 
@@ -73,6 +72,7 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
            color: RenderTargetView<R, ColorFormat>,
            depth: DepthStencilView<R, DepthFormat>)
            -> Self {
+        #[cfg_attr(rustfmt, rustfmt_skip)]
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
                                                    include_bytes!("../shader/cube.f.glsl"),
                                                    pipeline::new())
@@ -80,7 +80,7 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
-            transform: *FMatrix4::zero().as_ref(),
+            transform: [[0.0; 4]; 4],
             color: color,
             depth: depth,
         };
@@ -94,8 +94,13 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
         }
     }
 
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     pub fn set_transform(&mut self, transform: &FMatrix4) {
-        self.data.transform = *transform.as_ref();
+        let m = transform;
+        self.data.transform = [[m[0],  m[1],  m[2],  m[3]],
+                               [m[4],  m[5],  m[6],  m[7]],
+                               [m[8],  m[9],  m[10], m[11]],
+                               [m[12], m[13], m[14], m[15]]];
     }
 
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {

@@ -1,4 +1,4 @@
-use num::{One, Zero};
+use num::Zero;
 use std::cmp;
 
 use math::{LowerBound, UPoint3, UpperBound, UVector3};
@@ -47,7 +47,7 @@ impl Cursor {
             (Partition::at_point(&start.lower_bound(end), width),
              Partition::at_point(&start.upper_bound(end), width))
         };
-        let span = (end.origin().to_vector() - start.origin().to_vector()) / width.exp();
+        let span = (end.origin() - start.origin()) / width.exp();
         Cursor::new(start.origin(), width, &span)
     }
 
@@ -93,7 +93,7 @@ impl Cursor {
 
     /// Gets the extent of the `Cursor` from its origin.
     pub fn extent(&self) -> UVector3 {
-        ((self.span + UVector3::one()) * self.width.exp()) - UVector3::one()
+        ((self.span + UVector3::new(1, 1, 1)) * self.width.exp()) - UVector3::new(1, 1, 1)
     }
 
     /// Gets the `AABB` of the `Cursor`.

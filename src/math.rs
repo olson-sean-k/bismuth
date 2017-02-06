@@ -1,5 +1,6 @@
-use nalgebra;
-use num::{Float, Num};
+use alga::general::SupersetOf;
+use nalgebra::{self, Point3, Scalar, Vector3};
+use num::Float;
 use std::cmp;
 use std::ops;
 
@@ -14,25 +15,27 @@ pub type FVector3 = nalgebra::Vector3<FScalar>;
 pub type FVector4 = nalgebra::Vector4<FScalar>;
 pub type FMatrix4 = nalgebra::Matrix4<FScalar>;
 
+// TODO: The `FromSpace` and `IntoSpace` traits may not be useful. Instead, the
+//       `nalgebra::convert` function can be used directly.
 pub trait FromSpace<T> {
     fn from_space(value: T) -> Self;
 }
 
-impl<T, U> FromSpace<nalgebra::Point3<U>> for nalgebra::Point3<T>
-    where T: nalgebra::Cast<U> + Copy,
-          U: Copy
+impl<T, U> FromSpace<Point3<U>> for Point3<T>
+    where T: SupersetOf<U> + Scalar,
+          U: Scalar
 {
-    fn from_space(point: nalgebra::Point3<U>) -> Self {
-        nalgebra::cast(point)
+    fn from_space(point: Point3<U>) -> Self {
+        nalgebra::convert(point)
     }
 }
 
-impl<T, U> FromSpace<nalgebra::Vector3<U>> for nalgebra::Vector3<T>
-    where T: nalgebra::Cast<U> + Copy,
-          U: Copy
+impl<T, U> FromSpace<Vector3<U>> for Vector3<T>
+    where T: SupersetOf<U> + Scalar,
+          U: Scalar
 {
-    fn from_space(vector: nalgebra::Vector3<U>) -> Self {
-        nalgebra::cast(vector)
+    fn from_space(vector: Vector3<U>) -> Self {
+        nalgebra::convert(vector)
     }
 }
 
@@ -54,13 +57,13 @@ pub trait Clamp<T>
     fn clamp(&self, min: T, max: T) -> Self;
 }
 
-impl<T> Clamp<T> for nalgebra::Point3<T>
-    where T: Copy + PartialOrd
+impl<T> Clamp<T> for Point3<T>
+    where T: PartialOrd + Scalar
 {
     fn clamp(&self, min: T, max: T) -> Self {
-        nalgebra::Point3::new(nalgebra::clamp(self.x, min, max),
-                              nalgebra::clamp(self.y, min, max),
-                              nalgebra::clamp(self.z, min, max))
+        use nalgebra::clamp;
+
+        Point3::new(clamp(self.x, min, max), clamp(self.y, min, max), clamp(self.z, min, max))
     }
 }
 
@@ -70,11 +73,11 @@ pub trait Mask<T>
     fn mask(&self, value: T) -> Self;
 }
 
-impl<T> Mask<T> for nalgebra::Point3<T>
-    where T: Copy + ops::BitAnd<Output = T>
+impl<T> Mask<T> for Point3<T>
+    where T: ops::BitAnd<Output = T> + Scalar
 {
     fn mask(&self, value: T) -> Self {
-        nalgebra::Point3::new(self.x & value, self.y & value, self.z & value)
+        Point3::new(self.x & value, self.y & value, self.z & value)
     }
 }
 
@@ -82,13 +85,13 @@ pub trait UpperBound {
     fn upper_bound(&self, other: &Self) -> Self;
 }
 
-impl<T> UpperBound for nalgebra::Point3<T>
-    where T: Copy + Ord
+impl<T> UpperBound for Point3<T>
+    where T: Ord + Scalar
 {
     fn upper_bound(&self, other: &Self) -> Self {
-        nalgebra::Point3::new(cmp::max(self.x, other.x),
-                              cmp::max(self.y, other.y),
-                              cmp::max(self.y, other.y))
+        Point3::new(cmp::max(self.x, other.x),
+                    cmp::max(self.y, other.y),
+                    cmp::max(self.y, other.y))
     }
 }
 
@@ -96,13 +99,13 @@ pub trait LowerBound {
     fn lower_bound(&self, other: &Self) -> Self;
 }
 
-impl<T> LowerBound for nalgebra::Point3<T>
-    where T: Copy + Ord
+impl<T> LowerBound for Point3<T>
+    where T: Ord + Scalar
 {
     fn lower_bound(&self, other: &Self) -> Self {
-        nalgebra::Point3::new(cmp::min(self.x, other.x),
-                              cmp::min(self.y, other.y),
-                              cmp::min(self.y, other.y))
+        Point3::new(cmp::min(self.x, other.x),
+                    cmp::min(self.y, other.y),
+                    cmp::min(self.y, other.y))
     }
 }
 
@@ -111,35 +114,33 @@ pub trait Interpolate<F> {
 }
 
 impl<T, F> Interpolate<F> for (T, T, T)
-    where T: nalgebra::Cast<F> + Copy + Num,
-          F: nalgebra::Cast<T> + Float
+    where T: SupersetOf<F> + Scalar,
+          F: SupersetOf<T> + Float
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         (lerp(self.0, other.0, f), lerp(self.1, other.1, f), lerp(self.2, other.2, f))
     }
 }
 
-impl<T, F> Interpolate<F> for nalgebra::Point3<T>
-    where T: nalgebra::Cast<F> + Copy + Num,
-          F: nalgebra::Cast<T> + Float
+impl<T, F> Interpolate<F> for Point3<T>
+    where T: SupersetOf<F> + Scalar,
+          F: SupersetOf<T> + Float
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
-        nalgebra::Point3::new(lerp(self.x, other.x, f),
-                              lerp(self.y, other.y, f),
-                              lerp(self.z, other.z, f))
+        Point3::new(lerp(self.x, other.x, f), lerp(self.y, other.y, f), lerp(self.z, other.z, f))
     }
 }
 
 pub fn lerp<T, F>(a: T, b: T, f: F) -> T
-    where T: nalgebra::Cast<F> + Copy + Num,
-          F: nalgebra::Cast<T> + Float
+    where T: SupersetOf<F> + Scalar,
+          F: SupersetOf<T> + Float
 {
-    use nalgebra::{cast, clamp};
+    use nalgebra::{convert, clamp};
 
     let f = clamp(f, F::zero(), F::one());
-    let af = cast::<T, F>(a) * (F::one() - f);
-    let bf = cast::<T, F>(b) * f;
-    cast::<F, T>(af + bf)
+    let af = convert::<T, F>(a) * (F::one() - f);
+    let bf = convert::<T, F>(b) * f;
+    convert::<F, T>(af + bf)
 }
 
 #[cfg(test)]

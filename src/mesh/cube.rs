@@ -1,4 +1,4 @@
-use nalgebra::Point3;
+use nalgebra::{Point3, Scalar};
 use num::{Float, Unsigned};
 use std::ops::Range;
 
@@ -53,7 +53,7 @@ impl<T, C> Conjoint<T> for C
 
 #[derive(Clone)]
 pub struct FCube<T>
-    where T: Float
+    where T: Float + Scalar
 {
     faces: Range<usize>,
     low: T,
@@ -61,7 +61,7 @@ pub struct FCube<T>
 }
 
 impl<T> FCube<T>
-    where T: Float
+    where T: Float + Scalar
 {
     fn new(low: T, high: T) -> Self {
         FCube {
@@ -82,7 +82,7 @@ impl<T> FCube<T>
 }
 
 impl<T> Cube for FCube<T>
-    where T: Float
+    where T: Float + Scalar
 {
     type Point = Point3<T>;
 
@@ -92,7 +92,7 @@ impl<T> Cube for FCube<T>
 }
 
 impl<T> Iterator for FCube<T>
-    where T: Float
+    where T: Float + Scalar
 {
     type Item = Quad<<Self as Cube>::Point>;
 
@@ -103,7 +103,7 @@ impl<T> Iterator for FCube<T>
 
 #[derive(Clone)]
 pub struct UCube<T>
-    where T: Copy + Unsigned
+    where T: Unsigned + Scalar
 {
     faces: Range<usize>,
     low: T,
@@ -111,7 +111,7 @@ pub struct UCube<T>
 }
 
 impl<T> UCube<T>
-    where T: Copy + Unsigned
+    where T: Unsigned + Scalar
 {
     fn new(low: T, high: T) -> Self {
         UCube {
@@ -131,7 +131,7 @@ impl<T> UCube<T>
 }
 
 impl<T> Cube for UCube<T>
-    where T: Copy + Unsigned
+    where T: Unsigned + Scalar
 {
     type Point = Point3<T>;
 
@@ -141,7 +141,7 @@ impl<T> Cube for UCube<T>
 }
 
 impl<T> Iterator for UCube<T>
-    where T: Copy + Unsigned
+    where T: Unsigned + Scalar
 {
     type Item = Quad<<Self as Cube>::Point>;
 
@@ -151,7 +151,7 @@ impl<T> Iterator for UCube<T>
 }
 
 fn point<T>(index: usize, low: T, high: T) -> Point3<T>
-    where T: Copy
+    where T: Scalar
 {
     let x = if index & 0b100 == 0b100 { high } else { low };
     let y = if index & 0b010 == 0b010 { high } else { low };

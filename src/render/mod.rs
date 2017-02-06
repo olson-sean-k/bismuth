@@ -3,7 +3,7 @@ mod context;
 mod mesh;
 pub mod pipeline;
 
-pub use self::camera::Camera;
+pub use self::camera::{AspectRatio, Camera, Projection};
 pub use self::context::Context;
 pub use self::mesh::{Mesh, MeshBuffer};
 pub use self::pipeline::{Color, ColorExt, Index, Vertex};

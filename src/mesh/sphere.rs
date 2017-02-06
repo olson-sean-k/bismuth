@@ -1,4 +1,4 @@
-use nalgebra::Point3;
+use nalgebra::{Point3, Scalar};
 use num::Float;
 use num::traits::FloatConst;
 use std::cmp;
@@ -11,7 +11,7 @@ use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
 pub struct UVSphere<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     nu: usize,
     nv: usize,
@@ -21,7 +21,7 @@ pub struct UVSphere<T>
 }
 
 impl<T> UVSphere<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     pub fn with_unit_radius(nu: usize, nv: usize) -> Self {
         let nu = cmp::max(3, nu);
@@ -53,7 +53,7 @@ impl<T> UVSphere<T>
 }
 
 impl<T> Conjoint<Point3<T>> for UVSphere<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     fn conjoint_point(&self, index: usize) -> Point3<T> {
         if index == 0 {
@@ -74,7 +74,7 @@ impl<T> Conjoint<Point3<T>> for UVSphere<T>
 }
 
 impl<T> Indexed<Polygon<usize>> for UVSphere<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     fn indexed_polygon(&self, index: usize) -> Polygon<usize> {
         let u = index % self.nu;
@@ -102,7 +102,7 @@ impl<T> Indexed<Polygon<usize>> for UVSphere<T>
 }
 
 impl<T> Iterator for UVSphere<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     type Item = Polygon<Point3<T>>;
 
@@ -147,7 +147,7 @@ impl<T> Iterator for UVSphere<T>
 }
 
 fn point<T>(u: usize, v: usize, nu: usize, nv: usize) -> Point3<T>
-    where T: Float + FloatConst
+    where T: Float + FloatConst + Scalar
 {
     let u = (T::from(u).unwrap() / T::from(nu).unwrap()) * T::PI() * (T::one() + T::one());
     let v = (T::from(v).unwrap() / T::from(nv).unwrap()) * T::PI();
