@@ -1,3 +1,4 @@
+use rayon;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
@@ -367,7 +368,11 @@ impl Spatial for Root {
     }
 }
 
-trait TraversalBuffer<'a, N>
+trait Split: Sized {
+    fn split(self) -> (Self, Self);
+}
+
+trait TraversalBuffer<'a, N>: Split
     where N: AsRef<Node>
 {
     fn pop(&mut self) -> Option<Cube<'a, N>>;
@@ -383,6 +388,16 @@ impl<'a, N> TraversalBuffer<'a, N> for Vec<Cube<'a, N>>
 
     fn push(&mut self, cube: Cube<'a, N>) {
         self.push(cube);
+    }
+}
+
+impl<'a, N> Split for Vec<Cube<'a, N>>
+    where N: AsRef<Node>
+{
+    fn split(mut self) -> (Self, Self) {
+        let midpoint = self.len() / 2;
+        let right = self.split_off(midpoint);
+        (self, right)
     }
 }
 
@@ -523,12 +538,24 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each<F>(&self, f: F)
-        where F: Fn(&Cube<&Node>)
+        where F: Fn(&Cube<&Node>) + Sync
     {
-        traverse!(cube => self.to_value(), |traversal| {
-            f(traversal.peek());
-            traversal.push();
-        });
+        f(&self.to_value());
+        if let Some(cubes) = self.subdivisions() {
+            let (mut left, mut right) = cubes.split();
+            rayon::join(|| {
+                            traverse!(buffer => left, |traversal| {
+                                f(traversal.peek());
+                                traversal.push();
+                            });
+                        },
+                        || {
+                            traverse!(buffer => right, |traversal| {
+                                f(traversal.peek());
+                                traversal.push();
+                            });
+                        });
+        }
     }
 
     pub fn for_each_path<F>(&mut self, f: F)
@@ -565,6 +592,16 @@ impl<'a, N> Cube<'a, N>
         })
     }
 
+    pub fn subdivisions(&self) -> Option<Vec<Cube<&Node>>> {
+        self.node.as_ref().try_as_branch().map_or(None, |branch| {
+            let mut cubes = vec![];
+            for (index, node) in branch.nodes.iter().enumerate() {
+                cubes.push(Cube::new(node, self.root, self.partition.at_index(index).unwrap()));
+            }
+            Some(cubes)
+        })
+    }
+
     fn to_value(&self) -> Cube<&Node> {
         Cube::new(self.node.as_ref(), self.root, self.partition)
     }
@@ -578,10 +615,7 @@ impl<'a, N> Cube<'a, &'a N>
     }
 
     pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
-        CursorIter {
-            cubes: vec![self.clone()],
-            cursor: cursor,
-        }
+        CursorIter::new(vec![self.clone()], cursor)
     }
 }
 
@@ -594,12 +628,24 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_mut<F>(&mut self, f: F)
-        where F: Fn(&mut Cube<&mut Node>)
+        where F: Fn(&mut Cube<&mut Node>) + Sync
     {
-        traverse!(cube => self.to_value_mut(), |traversal| {
-            f(traversal.peek_mut());
-            traversal.push();
-        });
+        f(&mut self.to_value_mut());
+        if let Some(cubes) = self.subdivisions_mut() {
+            let (mut left, mut right) = cubes.split();
+            rayon::join(|| {
+                            traverse!(buffer => left, |traversal| {
+                                f(traversal.peek_mut());
+                                traversal.push();
+                            });
+                        },
+                        || {
+                            traverse!(buffer => right, |traversal| {
+                                f(traversal.peek_mut());
+                                traversal.push();
+                            });
+                        });
+        }
     }
 
     pub fn for_each_path_mut<F>(&mut self, f: F)
@@ -622,6 +668,19 @@ impl<'a, N> Cube<'a, N>
                     .at_index(index)
                     .map(move |partition| Cube::new(&mut branch.nodes[index], root, partition))
             }
+            _ => None,
+        }
+    }
+
+    pub fn subdivisions_mut(&mut self) -> Option<Vec<Cube<&mut Node>>> {
+        match *self.node.as_mut() {
+            Node::Branch(ref mut branch) => {
+                let mut cubes = vec![];
+                for (index, node) in branch.nodes.iter_mut().enumerate() {
+                    cubes.push(Cube::new(node, self.root, self.partition.at_index(index).unwrap()));
+                }
+                Some(cubes)
+            },
             _ => None,
         }
     }
@@ -714,10 +773,7 @@ impl<'a, N> Cube<'a, &'a mut N>
     }
 
     pub fn iter_cursor_mut(&mut self, cursor: &'a Cursor) -> CursorIter<&mut N> {
-        CursorIter {
-            cubes: vec![Cube::new(&mut *self.node, self.root, self.partition)],
-            cursor: cursor,
-        }
+        CursorIter::new(vec![Cube::new(&mut *self.node, self.root, self.partition)], cursor)
     }
 }
 
@@ -752,6 +808,15 @@ impl<'a, N> Spatial for Cube<'a, N>
 }
 
 pub struct CubeIter<'a, N>(Vec<Cube<'a, N>>) where N: AsRef<Node>;
+
+impl<'a, N> Split for CubeIter<'a, N>
+    where N: AsRef<Node>
+{
+    fn split(self) -> (Self, Self) {
+        let (left, right) = self.0.split();
+        (CubeIter(left), CubeIter(right))
+    }
+}
 
 impl<'a> Iterator for CubeIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
@@ -798,6 +863,26 @@ pub struct CursorIter<'a, N>
 {
     cubes: Vec<Cube<'a, N>>,
     cursor: &'a Cursor,
+}
+
+impl<'a, N> CursorIter<'a, N>
+    where N: AsRef<Node>
+{
+    pub fn new(cubes: Vec<Cube<'a, N>>, cursor: &'a Cursor) -> Self {
+        CursorIter {
+            cubes: cubes,
+            cursor: cursor,
+        }
+    }
+}
+
+impl<'a, N> Split for CursorIter<'a, N>
+    where N: AsRef<Node>
+{
+    fn split(self) -> (Self, Self) {
+        let (left, right) = self.cubes.split();
+        (CursorIter::new(left, self.cursor), CursorIter::new(right, self.cursor))
+    }
 }
 
 impl<'a> Iterator for CursorIter<'a, &'a Node> {

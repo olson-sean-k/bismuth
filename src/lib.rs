@@ -9,6 +9,7 @@ extern crate lazy_static;
 extern crate nalgebra;
 extern crate num;
 extern crate rand;
+extern crate rayon;
 
 pub mod clamp;
 pub mod cube;
