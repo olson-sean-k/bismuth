@@ -1,8 +1,10 @@
 use rayon;
+use std::cmp;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
 use std::fmt;
+use std::marker::PhantomData;
 use std::ops;
 
 use math::{Clamp, UPoint3};
@@ -512,6 +514,24 @@ macro_rules! thread {
     }};
 }
 
+fn join<B, F>(n: usize, buffer: B, f: &F)
+    where B: Split + Send,
+          F: Fn(B) + Sync
+{
+    if n == 0 {
+        f(buffer);
+    }
+    else {
+        let (left, right) = buffer.split();
+        if n == 1 {
+            rayon::join(|| f(left), || f(right));
+        }
+        else {
+            rayon::join(|| join(n - 1, left, f), || join(n - 1, right, f));
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
@@ -542,19 +562,12 @@ impl<'a, N> Cube<'a, N>
     {
         f(&self.to_value());
         if let Some(cubes) = self.subdivisions() {
-            let (mut left, mut right) = cubes.split();
-            rayon::join(|| {
-                            traverse!(buffer => left, |traversal| {
-                                f(traversal.peek());
-                                traversal.push();
-                            });
-                        },
-                        || {
-                            traverse!(buffer => right, |traversal| {
-                                f(traversal.peek());
-                                traversal.push();
-                            });
-                        });
+            join(2, cubes, &|mut cubes| {
+                traverse!(buffer => cubes, |traversal| {
+                    f(traversal.peek());
+                    traversal.push();
+                });
+            });
         }
     }
 
@@ -632,19 +645,12 @@ impl<'a, N> Cube<'a, N>
     {
         f(&mut self.to_value_mut());
         if let Some(cubes) = self.subdivisions_mut() {
-            let (mut left, mut right) = cubes.split();
-            rayon::join(|| {
-                            traverse!(buffer => left, |traversal| {
-                                f(traversal.peek_mut());
-                                traversal.push();
-                            });
-                        },
-                        || {
-                            traverse!(buffer => right, |traversal| {
-                                f(traversal.peek_mut());
-                                traversal.push();
-                            });
-                        });
+            join(2, cubes, &|mut cubes| {
+                traverse!(buffer => cubes, |traversal| {
+                    f(traversal.peek_mut());
+                    traversal.push();
+                });
+            });
         }
     }
 
