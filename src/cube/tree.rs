@@ -1,10 +1,8 @@
 use rayon;
-use std::cmp;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
 use std::fmt;
-use std::marker::PhantomData;
 use std::ops;
 
 use math::{Clamp, UPoint3};
