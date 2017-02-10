@@ -532,7 +532,6 @@ fn join<B, F>(n: usize, buffer: B, f: &F)
     }
 }
 
-#[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
 {
@@ -625,11 +624,11 @@ impl<'a, N> Cube<'a, &'a N>
     where N: AsRef<Node>
 {
     pub fn iter(&self) -> CubeIter<&N> {
-        CubeIter(vec![self.clone()])
+        CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
 
     pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
-        CursorIter::new(vec![self.clone()], cursor)
+        CursorIter::new(vec![Cube::new(& *self.node, self.root, self.partition)], cursor)
     }
 }
 
