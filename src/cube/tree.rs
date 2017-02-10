@@ -569,8 +569,8 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn for_each_path<F>(&mut self, f: F)
-        where F: Fn(&mut [Cube<&Node>])
+    pub fn for_each_path<F>(&self, mut f: F)
+        where F: FnMut(&mut [Cube<&Node>])
     {
         thread!(cube => self.to_value(), |path| {
             f(path);
@@ -652,8 +652,8 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn for_each_path_mut<F>(&mut self, f: F)
-        where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
+    pub fn for_each_path_mut<F>(&mut self, mut f: F)
+        where F: FnMut(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
         thread!(cube => self.to_value_mut(), |path| {
             f(path);
