@@ -628,7 +628,8 @@ impl<'a, N> Cube<'a, &'a N>
     }
 
     pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
-        CursorIter::new(vec![Cube::new(& *self.node, self.root, self.partition)], cursor)
+        CursorIter::new(vec![Cube::new(&*self.node, self.root, self.partition)],
+                        cursor)
     }
 }
 
