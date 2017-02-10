@@ -13,7 +13,7 @@ fn new_root() -> Root {
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
-            if let Some(leaf) = cube.try_as_leaf_mut() {
+            if let Some(leaf) = cube.as_leaf_mut() {
                 for axis in Axis::range() {
                     for edge in leaf.geometry.edges_mut(axis.into()) {
                         edge.set_front(Offset::from(2));

@@ -30,28 +30,28 @@ impl Node {
         }
     }
 
-    pub fn try_as_leaf(&self) -> Option<&LeafNode> {
+    pub fn as_leaf(&self) -> Option<&LeafNode> {
         match *self {
             Node::Leaf(ref leaf) => Some(leaf),
             _ => None,
         }
     }
 
-    pub fn try_as_leaf_mut(&mut self) -> Option<&mut LeafNode> {
+    pub fn as_leaf_mut(&mut self) -> Option<&mut LeafNode> {
         match *self {
             Node::Leaf(ref mut leaf) => Some(leaf),
             _ => None,
         }
     }
 
-    pub fn try_as_branch(&self) -> Option<&BranchNode> {
+    pub fn as_branch(&self) -> Option<&BranchNode> {
         match *self {
             Node::Branch(ref branch) => Some(branch),
             _ => None,
         }
     }
 
-    pub fn try_as_branch_mut(&mut self) -> Option<&mut BranchNode> {
+    pub fn as_branch_mut(&mut self) -> Option<&mut BranchNode> {
         match *self {
             Node::Branch(ref mut branch) => Some(branch),
             _ => None,
@@ -159,14 +159,14 @@ impl<L, B> OrphanNode<L, B>
         }
     }
 
-    pub fn try_as_leaf(&self) -> Option<&LeafPayload> {
+    pub fn as_leaf(&self) -> Option<&LeafPayload> {
         match *self {
             OrphanNode::Leaf(ref leaf) => Some(leaf.as_ref()),
             _ => None,
         }
     }
 
-    pub fn try_as_branch(&self) -> Option<&BranchPayload> {
+    pub fn as_branch(&self) -> Option<&BranchPayload> {
         match *self {
             OrphanNode::Branch(ref branch) => Some(branch.as_ref()),
             _ => None,
@@ -185,14 +185,14 @@ impl<L, B> OrphanNode<L, B>
     where L: AsRef<LeafPayload> + AsMut<LeafPayload>,
           B: AsRef<BranchPayload> + AsMut<BranchPayload>
 {
-    pub fn try_as_leaf_mut(&mut self) -> Option<&mut LeafPayload> {
+    pub fn as_leaf_mut(&mut self) -> Option<&mut LeafPayload> {
         match *self {
             OrphanNode::Leaf(ref mut leaf) => Some(leaf.as_mut()),
             _ => None,
         }
     }
 
-    pub fn try_as_branch_mut(&mut self) -> Option<&mut BranchPayload> {
+    pub fn as_branch_mut(&mut self) -> Option<&mut BranchPayload> {
         match *self {
             OrphanNode::Branch(ref mut branch) => Some(branch.as_mut()),
             _ => None,
@@ -584,7 +584,7 @@ impl<'a, N> Cube<'a, N>
         let point = point.clamp(0, self.root.width().exp() - 1);
         let width = width.clamp(LogWidth::min_value(), depth);
         while width < depth {
-            if let Some(branch) = node.try_as_branch() {
+            if let Some(branch) = node.as_branch() {
                 depth = depth - 1;
                 node = &branch.nodes[space::index_at_point(&point, depth)]
             }
@@ -596,7 +596,7 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
-        self.node.as_ref().try_as_branch().map_or(None, |branch| {
+        self.node.as_ref().as_branch().map_or(None, |branch| {
             self.partition
                 .at_index(index)
                 .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
@@ -604,7 +604,7 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn subdivisions(&self) -> Option<Vec<Cube<&Node>>> {
-        self.node.as_ref().try_as_branch().map_or(None, |branch| {
+        self.node.as_ref().as_branch().map_or(None, |branch| {
             let mut cubes = vec![];
             for (index, node) in branch.nodes.iter().enumerate() {
                 cubes.push(Cube::new(node, self.root, self.partition.at_index(index).unwrap()));
