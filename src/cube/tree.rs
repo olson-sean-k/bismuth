@@ -1,4 +1,3 @@
-use rayon;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
@@ -9,6 +8,7 @@ use math::{Clamp, UPoint3};
 use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
+use super::parallel::{self, Join, Split};
 use super::space::{self, LogWidth, Partition, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
@@ -370,20 +370,6 @@ impl Spatial for Root {
     }
 }
 
-trait Split: Sized {
-    fn split(self) -> (Self, Self);
-}
-
-pub trait Join: Sized {
-    fn join(self, other: Self) -> Self;
-}
-
-impl Join for () {
-    fn join(self, _: Self) -> Self {
-        ()
-    }
-}
-
 trait TraversalBuffer<'a, N>: Split
     where N: AsRef<Node>
 {
@@ -524,27 +510,6 @@ macro_rules! thread {
     }};
 }
 
-fn join<B, T, F>(n: usize, buffer: B, f: &F) -> T
-    where B: Split + Send,
-          T: Join + Send,
-          F: Fn(B) -> T + Sync
-{
-    if n == 0 {
-        f(buffer)
-    }
-    else {
-        let (left, right) = buffer.split();
-        if n == 1 {
-            let (left, right) = rayon::join(|| f(left), || f(right));
-            left.join(right)
-        }
-        else {
-            let (left, right) = rayon::join(|| join(n - 1, left, f), || join(n - 1, right, f));
-            left.join(right)
-        }
-    }
-}
-
 pub struct Cube<'a, N>
     where N: AsRef<Node>
 {
@@ -576,7 +541,7 @@ impl<'a, N> Cube<'a, N>
     {
         let value = f(&self.to_value());
         if let Some(cubes) = self.subdivisions() {
-            value.join(join(2, cubes, &|mut cubes| {
+            value.join(parallel::join(2, cubes, &|mut cubes| {
                 let mut value = T::default();
                 traverse!(buffer => cubes, |traversal| {
                     value = value.join(f(traversal.peek()));
@@ -667,7 +632,7 @@ impl<'a, N> Cube<'a, N>
     {
         let value = f(&mut self.to_value_mut());
         if let Some(cubes) = self.subdivisions_mut() {
-            value.join(join(2, cubes, &|mut cubes| {
+            value.join(parallel::join(2, cubes, &|mut cubes| {
                 let mut value = T::default();
                 traverse!(buffer => cubes, |traversal| {
                     value = value.join(f(traversal.peek_mut()));
