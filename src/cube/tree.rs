@@ -607,7 +607,7 @@ impl<'a, N> Cube<'a, N>
 
     pub fn subdivisions(&self) -> Option<Vec<Cube<&Node>>> {
         self.node.as_ref().as_branch().map_or(None, |branch| {
-            let mut cubes = vec![];
+            let mut cubes = Vec::with_capacity(8);
             for (index, node) in branch.nodes.iter().enumerate() {
                 cubes.push(Cube::new(node, self.root, self.partition.at_index(index).unwrap()));
             }
@@ -683,7 +683,7 @@ impl<'a, N> Cube<'a, N>
     pub fn subdivisions_mut(&mut self) -> Option<Vec<Cube<&mut Node>>> {
         match *self.node.as_mut() {
             Node::Branch(ref mut branch) => {
-                let mut cubes = vec![];
+                let mut cubes = Vec::with_capacity(8);
                 for (index, node) in branch.nodes.iter_mut().enumerate() {
                     cubes.push(Cube::new(node, self.root, self.partition.at_index(index).unwrap()));
                 }
