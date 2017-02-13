@@ -374,6 +374,16 @@ trait Split: Sized {
     fn split(self) -> (Self, Self);
 }
 
+pub trait Join: Sized {
+    fn join(self, other: Self) -> Self;
+}
+
+impl Join for () {
+    fn join(self, _: Self) -> Self {
+        ()
+    }
+}
+
 trait TraversalBuffer<'a, N>: Split
     where N: AsRef<Node>
 {
@@ -514,20 +524,23 @@ macro_rules! thread {
     }};
 }
 
-fn join<B, F>(n: usize, buffer: B, f: &F)
+fn join<B, T, F>(n: usize, buffer: B, f: &F) -> T
     where B: Split + Send,
-          F: Fn(B) + Sync
+          T: Join + Send,
+          F: Fn(B) -> T + Sync
 {
     if n == 0 {
-        f(buffer);
+        f(buffer)
     }
     else {
         let (left, right) = buffer.split();
         if n == 1 {
-            rayon::join(|| f(left), || f(right));
+            let (left, right) = rayon::join(|| f(left), || f(right));
+            left.join(right)
         }
         else {
-            rayon::join(|| join(n - 1, left, f), || join(n - 1, right, f));
+            let (left, right) = rayon::join(|| join(n - 1, left, f), || join(n - 1, right, f));
+            left.join(right)
         }
     }
 }
@@ -557,17 +570,23 @@ impl<'a, N> Cube<'a, N>
     }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub fn for_each<F>(&self, f: F)
-        where F: Fn(&Cube<&Node>) + Sync
+    pub fn for_each<T, F>(&self, f: F) -> T
+        where T: Default + Join + Send,
+              F: Fn(&Cube<&Node>) -> T + Sync
     {
-        f(&self.to_value());
+        let value = f(&self.to_value());
         if let Some(cubes) = self.subdivisions() {
-            join(2, cubes, &|mut cubes| {
+            value.join(join(2, cubes, &|mut cubes| {
+                let mut value = T::default();
                 traverse!(buffer => cubes, |traversal| {
-                    f(traversal.peek());
+                    value = value.join(f(traversal.peek()));
                     traversal.push();
                 });
-            });
+                value
+            }))
+        }
+        else {
+            value
         }
     }
 
@@ -642,17 +661,23 @@ impl<'a, N> Cube<'a, N>
     }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub fn for_each_mut<F>(&mut self, f: F)
-        where F: Fn(&mut Cube<&mut Node>) + Sync
+    pub fn for_each_mut<T, F>(&mut self, f: F) -> T
+        where T: Default + Join + Send,
+              F: Fn(&mut Cube<&mut Node>) -> T + Sync
     {
-        f(&mut self.to_value_mut());
+        let value = f(&mut self.to_value_mut());
         if let Some(cubes) = self.subdivisions_mut() {
-            join(2, cubes, &|mut cubes| {
+            value.join(join(2, cubes, &|mut cubes| {
+                let mut value = T::default();
                 traverse!(buffer => cubes, |traversal| {
-                    f(traversal.peek_mut());
+                    value = value.join(f(traversal.peek_mut()));
                     traversal.push();
                 });
-            });
+                value
+            }))
+        }
+        else {
+            value
         }
     }
 
