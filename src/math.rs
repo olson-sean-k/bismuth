@@ -109,8 +109,14 @@ impl<T> LowerBound for Point3<T>
     }
 }
 
-pub trait Interpolate<F> {
+pub trait Interpolate<F>: Sized
+    where F: Float
+{
     fn lerp(&self, other: &Self, f: F) -> Self;
+
+    fn midpoint(&self, other: &Self) -> Self {
+        self.lerp(other, F::one() / (F::one() + F::one()))
+    }
 }
 
 impl<T, F> Interpolate<F> for (T, T, T)

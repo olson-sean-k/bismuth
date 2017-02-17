@@ -27,7 +27,7 @@ impl<T> PolygonalExt<T> for Triangle<T>
     {
         for triangle in n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
-            let ac = a.lerp(&c, 0.5);
+            let ac = a.midpoint(&c);
             vec![Triangle::new(b.clone(), ac.clone(), a),
                  Triangle::new(c, ac, b)]
         }) {
@@ -44,11 +44,11 @@ impl<T> PolygonalExt<T> for Quad<T>
     {
         for quad in n_map_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
-            let ab = a.lerp(&b, 0.5);
-            let bc = b.lerp(&c, 0.5);
-            let cd = c.lerp(&d, 0.5);
-            let da = d.lerp(&a, 0.5);
-            let ac = a.lerp(&c, 0.5); // Diagonal.
+            let ab = a.midpoint(&b);
+            let bc = b.midpoint(&c);
+            let cd = c.midpoint(&d);
+            let da = d.midpoint(&a);
+            let ac = a.midpoint(&c); // Diagonal.
             vec![Quad::new(a, ab.clone(), ac.clone(), da.clone()),
                  Quad::new(ab, b, bc.clone(), ac.clone()),
                  Quad::new(ac.clone(), bc, c, cd.clone()),
@@ -66,7 +66,7 @@ impl<T> QuadExt<T> for Quad<T>
         where F: FnMut(Triangle<T>)
     {
         let Quad { a, b, c, d } = self;
-        let ac = a.lerp(&c, 0.5); // Diagonal.
+        let ac = a.midpoint(&c); // Diagonal.
         f(Triangle::new(a.clone(), b.clone(), ac.clone()));
         f(Triangle::new(b, c.clone(), ac.clone()));
         f(Triangle::new(c, d.clone(), ac.clone()));
