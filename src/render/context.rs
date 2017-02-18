@@ -1,4 +1,5 @@
 use gfx::{self, CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
+use gfx::format::{DepthStencil, Rgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
 use gfx_device_gl;
@@ -10,9 +11,6 @@ use std::fmt;
 use math::FMatrix4;
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
-
-type ColorFormat = gfx::format::Rgba8;
-type DepthFormat = gfx::format::DepthStencil;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
@@ -70,8 +68,8 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
            mut factory: F,
            device: D,
            encoder: Encoder<R, B>,
-           color: RenderTargetView<R, ColorFormat>,
-           depth: DepthStencilView<R, DepthFormat>)
+           color: RenderTargetView<R, Rgba8>,
+           depth: DepthStencilView<R, DepthStencil>)
            -> Self {
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
                                                    include_bytes!("../shader/cube.f.glsl"),
