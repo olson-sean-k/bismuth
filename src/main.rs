@@ -3,7 +3,7 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
-use bismuth::math::{FPoint3, IntoSpace, UPoint3, UVector3};
+use bismuth::math::{FMatrix4, FPoint3, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{Camera, Context, Mesh, Projection};
 use glutin::{Event, VirtualKeyCode, WindowBuilder};
 
@@ -42,6 +42,7 @@ fn main() {
                        &midpoint);
         camera.transform()
     };
+    let identity = FMatrix4::identity();
     'main: loop {
         for event in context.window.poll_events() {
             match event {
@@ -52,7 +53,7 @@ fn main() {
             }
         }
         context.clear();
-        context.set_transform(&transform);
+        context.set_transform(&transform, &identity).unwrap();
         context.draw_mesh_buffer(&buffer);
         context.flush().unwrap();
     }

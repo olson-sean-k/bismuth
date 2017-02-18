@@ -15,6 +15,24 @@ pub type FVector3 = nalgebra::Vector3<FScalar>;
 pub type FVector4 = nalgebra::Vector4<FScalar>;
 pub type FMatrix4 = nalgebra::Matrix4<FScalar>;
 
+pub trait Matrix4Ext<T>
+    where T: Scalar
+{
+    fn to_array(&self) -> [[T; 4]; 4];
+}
+
+impl<T> Matrix4Ext<T> for nalgebra::Matrix4<T>
+    where T: Scalar
+{
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn to_array(&self) -> [[T; 4]; 4] {
+        [[self[0],  self[1],  self[2],  self[3]],
+         [self[4],  self[5],  self[6],  self[7]],
+         [self[8],  self[9],  self[10], self[11]],
+         [self[12], self[13], self[14], self[15]]]
+    }
+}
+
 // TODO: The `FromSpace` and `IntoSpace` traits may not be useful. Instead, the
 //       `nalgebra::convert` function can be used directly.
 pub trait FromSpace<T> {

@@ -4,7 +4,7 @@ use nalgebra::{Isometry3, Perspective3};
 use math::{FMatrix4, FPoint3, FScalar, FVector3};
 
 lazy_static! {
-    static ref UP: FVector3 = FVector3::new(0.0, 0.0, 1.0);
+    static ref UP: FVector3 = FVector3::z();
 }
 
 pub trait AspectRatio {

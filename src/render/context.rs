@@ -9,7 +9,7 @@ use std::fmt;
 
 use math::FMatrix4;
 use super::mesh::MeshBuffer;
-use super::pipeline::{self, Data, Meta, Vertex};
+use super::pipeline::{self, Data, Meta, Transform, Vertex};
 
 type ColorFormat = gfx::format::Rgba8;
 type DepthFormat = gfx::format::DepthStencil;
@@ -74,13 +74,15 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
            -> Self {
         #[cfg_attr(rustfmt, rustfmt_skip)]
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
-                                                   include_bytes!("../shader/cube.f.glsl"),
-                                                   pipeline::new())
+                                    include_bytes!("../shader/cube.f.glsl"),
+                                    pipeline::new())
             .unwrap();
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
-            transform: [[0.0; 4]; 4],
+            transform: factory.create_constant_buffer(1),
+            camera: [[0.0; 4]; 4],
+            model: [[0.0; 4]; 4],
             color: color,
             depth: depth,
         };
@@ -94,18 +96,22 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
         }
     }
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub fn set_transform(&mut self, transform: &FMatrix4) {
-        let m = transform;
-        self.data.transform = [[m[0],  m[1],  m[2],  m[3]],
-                               [m[4],  m[5],  m[6],  m[7]],
-                               [m[8],  m[9],  m[10], m[11]],
-                               [m[12], m[13], m[14], m[15]]];
+    pub fn set_transform(&mut self,
+                         camera: &FMatrix4,
+                         model: &FMatrix4)
+                         -> Result<(), RenderError> {
+        let transform = Transform::new(camera, model);
+        self.data.camera = transform.camera;
+        self.data.model = transform.model;
+        self.encoder.update_buffer(&self.data.transform, &[transform], 0).map_err(|_| {
+            // TODO: Coerce and expose the `UpdateError`.
+            RenderError::Unknown
+        })
     }
 
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {
-        let (buffer, slice) = self.factory.create_vertex_buffer_with_slice(
-            buffer.vertices(), buffer.indices());
+        let (buffer, slice) = self.factory
+            .create_vertex_buffer_with_slice(buffer.vertices(), buffer.indices());
         self.data.buffer = buffer;
         self.encoder.draw(&slice, &self.state, &self.data);
     }

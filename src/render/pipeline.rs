@@ -1,7 +1,7 @@
 use gfx;
 use rand;
 
-use math::{FPoint3, FScalar, FVector4};
+use math::{FPoint3, FMatrix4, FScalar, FVector4, Matrix4Ext};
 
 pub use self::pipeline::*;
 
@@ -24,9 +24,27 @@ impl ColorExt for Color {
 gfx_pipeline!{
     pipeline {
         buffer: gfx::VertexBuffer<Vertex> = (),
-        transform: gfx::Global<[[f32; 4]; 4]> = "u_transform",
+        transform: gfx::ConstantBuffer<Transform> = "transform",
+        camera: gfx::Global<[[f32; 4]; 4]> = "u_camera",
+        model: gfx::Global<[[f32; 4]; 4]> = "u_model",
         color: gfx::RenderTarget<gfx::format::Rgba8> = "f_target0",
         depth: gfx::DepthTarget<gfx::format::DepthStencil> = gfx::preset::depth::LESS_EQUAL_WRITE,
+    }
+}
+
+gfx_constant_struct!{
+    Transform {
+        camera: [[f32; 4]; 4] = "u_camera",
+        model: [[f32; 4]; 4] = "u_model",
+    }
+}
+
+impl Transform {
+    pub fn new(camera: &FMatrix4, model: &FMatrix4) -> Self {
+        Transform {
+            camera: camera.to_array(),
+            model: model.to_array(),
+        }
     }
 }
 
