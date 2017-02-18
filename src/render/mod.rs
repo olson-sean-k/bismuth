@@ -6,7 +6,7 @@ pub mod pipeline;
 pub use self::camera::{AspectRatio, Camera, Projection};
 pub use self::context::Context;
 pub use self::mesh::{Mesh, MeshBuffer};
-pub use self::pipeline::{Color, ColorExt, Index, Vertex};
+pub use self::pipeline::{Color, ColorExt, Index, Transform, Vertex};
 
 #[cfg(test)]
 mod tests {

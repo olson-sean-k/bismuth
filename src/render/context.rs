@@ -94,14 +94,10 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
         }
     }
 
-    pub fn set_transform(&mut self,
-                         camera: &FMatrix4,
-                         model: &FMatrix4)
-                         -> Result<(), RenderError> {
-        let transform = Transform::new(camera, model);
+    pub fn set_transform(&mut self, transform: &Transform) -> Result<(), RenderError> {
         self.data.camera = transform.camera;
         self.data.model = transform.model;
-        self.encoder.update_buffer(&self.data.transform, &[transform], 0).map_err(|_| {
+        self.encoder.update_buffer(&self.data.transform, &[transform.clone()], 0).map_err(|_| {
             // TODO: Coerce and expose the `UpdateError`.
             RenderError::Unknown
         })

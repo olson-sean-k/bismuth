@@ -3,8 +3,8 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
-use bismuth::math::{FMatrix4, FPoint3, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{Camera, Context, Mesh, Projection};
+use bismuth::math::{FPoint3, IntoSpace, Matrix4Ext, UPoint3, UVector3};
+use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
 use glutin::{Event, VirtualKeyCode, WindowBuilder};
 
 fn new_root() -> Root {
@@ -26,6 +26,17 @@ fn new_root() -> Root {
     root
 }
 
+fn new_camera<W, C>(window: &W, cube: &C) -> Camera
+    where W: AspectRatio,
+          C: Spatial
+{
+    let midpoint: FPoint3 = cube.partition().midpoint().into_space();
+    let mut camera = Camera::new(window, &Projection::default());
+    camera.look_at(&FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0),
+                   &midpoint);
+    camera
+}
+
 fn main() {
     let mut context = Context::from_glutin_window(WindowBuilder::new()
         .with_title("Bismuth")
@@ -34,16 +45,11 @@ fn main() {
         .build()
         .unwrap());
     let root = new_root();
-    let buffer = root.to_cube().mesh_buffer();
-    let transform = {
-        let midpoint: FPoint3 = root.partition().midpoint().into_space();
-        let mut camera = Camera::new(&context.window, &Projection::default());
-        camera.look_at(&FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0),
-                       &midpoint);
-        camera.transform()
-    };
-    let identity = FMatrix4::identity();
+    let mesh = root.to_cube().mesh_buffer();
+    let camera = new_camera(&context.window, &root);
+    let mut transform = Transform::default();
     'main: loop {
+        transform.camera = camera.transform().to_array();
         for event in context.window.poll_events() {
             match event {
                 Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) | Event::Closed => {
@@ -53,8 +59,8 @@ fn main() {
             }
         }
         context.clear();
-        context.set_transform(&transform, &identity).unwrap();
-        context.draw_mesh_buffer(&buffer);
+        context.set_transform(&transform).unwrap();
+        context.draw_mesh_buffer(&mesh);
         context.flush().unwrap();
     }
 }

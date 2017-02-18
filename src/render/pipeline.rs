@@ -48,6 +48,13 @@ impl Transform {
     }
 }
 
+impl Default for Transform {
+    fn default() -> Self {
+        let identity = FMatrix4::identity();
+        Transform::new(&identity, &identity)
+    }
+}
+
 gfx_vertex_struct!{
     Vertex {
         position: [f32; 3] = "a_position",
