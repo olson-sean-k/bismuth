@@ -65,6 +65,7 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
           B: CommandBuffer<R>,
           D: Device<Resources = R, CommandBuffer = B>
 {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn new(window: W,
            mut factory: F,
            device: D,
@@ -72,10 +73,9 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
            color: RenderTargetView<R, ColorFormat>,
            depth: DepthStencilView<R, DepthFormat>)
            -> Self {
-        #[cfg_attr(rustfmt, rustfmt_skip)]
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
-                                    include_bytes!("../shader/cube.f.glsl"),
-                                    pipeline::new())
+                                                   include_bytes!("../shader/cube.f.glsl"),
+                                                   pipeline::new())
             .unwrap();
         let data = Data {
             // Using an empty slice here causes an error.
