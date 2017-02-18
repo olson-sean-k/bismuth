@@ -1,4 +1,4 @@
-use gfx::{self, CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
+use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
 use gfx::format::{DepthStencil, Rgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
