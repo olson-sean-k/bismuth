@@ -1,5 +1,5 @@
 use alga::general::SupersetOf;
-use nalgebra::{self, Point3, Scalar, Vector3};
+use nalgebra::{self, Matrix4, Point3, Scalar, Vector3, Vector4};
 use num::Float;
 use std::cmp;
 use std::ops;
@@ -7,13 +7,13 @@ use std::ops;
 pub type UScalar = u32;
 pub type FScalar = f32;
 
-pub type UPoint3 = nalgebra::Point3<UScalar>;
-pub type UVector3 = nalgebra::Vector3<UScalar>;
+pub type UPoint3 = Point3<UScalar>;
+pub type UVector3 = Vector3<UScalar>;
 
-pub type FPoint3 = nalgebra::Point3<FScalar>;
-pub type FVector3 = nalgebra::Vector3<FScalar>;
-pub type FVector4 = nalgebra::Vector4<FScalar>;
-pub type FMatrix4 = nalgebra::Matrix4<FScalar>;
+pub type FPoint3 = Point3<FScalar>;
+pub type FVector3 = Vector3<FScalar>;
+pub type FVector4 = Vector4<FScalar>;
+pub type FMatrix4 = Matrix4<FScalar>;
 
 pub trait Matrix4Ext<T>
     where T: Scalar
@@ -21,7 +21,7 @@ pub trait Matrix4Ext<T>
     fn to_array(&self) -> [[T; 4]; 4];
 }
 
-impl<T> Matrix4Ext<T> for nalgebra::Matrix4<T>
+impl<T> Matrix4Ext<T> for Matrix4<T>
     where T: Scalar
 {
     #[cfg_attr(rustfmt, rustfmt_skip)]

@@ -8,7 +8,6 @@ use glutin::{ContextError, Window};
 use std::error::{self, Error};
 use std::fmt;
 
-use math::FMatrix4;
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
 
