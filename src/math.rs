@@ -35,6 +35,18 @@ impl<T> Ray3<T>
             direction: Unit::new_normalize(direction),
         }
     }
+
+    pub fn x() -> Self {
+        Ray3::new(Point3::origin(), Vector3::x())
+    }
+
+    pub fn y() -> Self {
+        Ray3::new(Point3::origin(), Vector3::y())
+    }
+
+    pub fn z() -> Self {
+        Ray3::new(Point3::origin(), Vector3::z())
+    }
 }
 
 pub trait Matrix4Ext<T>
