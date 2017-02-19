@@ -1,7 +1,7 @@
 use glutin::Window;
 use nalgebra::{Isometry3, Perspective3};
 
-use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, IntoSpace, UPoint2, UScalar};
+use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
 lazy_static! {
     static ref UP: FVector3 = FVector3::z();
@@ -75,15 +75,12 @@ impl Camera {
     pub fn cast_ray<W>(&self, window: &W, point: &UPoint2) -> FRay3
         where W: AspectRatio
     {
-        let point: FPoint2 = (*point).into_space();
         let (width, height) = window.dimensions();
+        let point = FPoint2::new(point.x as FScalar / width as FScalar,
+                                 point.y as FScalar / height as FScalar);
+        let near = self.projection.unproject_point(&FPoint3::new(point.x, point.y, -1.0));
+        let far = self.projection.unproject_point(&FPoint3::new(point.x, point.y, 1.0));
         let inverse = self.view.inverse();
-        let near = self.projection.unproject_point(&FPoint3::new(point.x / width as FScalar,
-                                                                 point.y / height as FScalar,
-                                                                 -1.0));
-        let far = self.projection.unproject_point(&FPoint3::new(point.x / width as FScalar,
-                                                                point.y / height as FScalar,
-                                                                1.0));
         FRay3::new(inverse * near, (inverse * (far - near)))
     }
 
