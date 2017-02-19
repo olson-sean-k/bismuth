@@ -1,5 +1,5 @@
-use alga::general::SupersetOf;
-use nalgebra::{self, Matrix4, Point2, Point3, Scalar, Vector3, Vector4};
+use alga::general::{Real, SupersetOf};
+use nalgebra::{self, Matrix4, Point2, Point3, Scalar, Unit, Vector3, Vector4};
 use num::Float;
 use std::cmp;
 use std::ops;
@@ -16,6 +16,26 @@ pub type FPoint3 = Point3<FScalar>;
 pub type FVector3 = Vector3<FScalar>;
 pub type FVector4 = Vector4<FScalar>;
 pub type FMatrix4 = Matrix4<FScalar>;
+
+pub type FRay3 = Ray3<FScalar>;
+
+pub struct Ray3<T>
+    where T: Scalar
+{
+    pub position: Point3<T>,
+    pub direction: Unit<Vector3<T>>,
+}
+
+impl<T> Ray3<T>
+    where T: Real + Scalar
+{
+    pub fn new(position: Point3<T>, direction: Vector3<T>) -> Self {
+        Ray3 {
+            position: position,
+            direction: Unit::new_normalize(direction),
+        }
+    }
+}
 
 pub trait Matrix4Ext<T>
     where T: Scalar
