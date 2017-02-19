@@ -1,5 +1,5 @@
 use alga::general::SupersetOf;
-use nalgebra::{self, Matrix4, Point3, Scalar, Vector3, Vector4};
+use nalgebra::{self, Matrix4, Point2, Point3, Scalar, Vector3, Vector4};
 use num::Float;
 use std::cmp;
 use std::ops;
@@ -7,9 +7,11 @@ use std::ops;
 pub type UScalar = u32;
 pub type FScalar = f32;
 
+pub type UPoint2 = Point2<UScalar>;
 pub type UPoint3 = Point3<UScalar>;
 pub type UVector3 = Vector3<UScalar>;
 
+pub type FPoint2 = Point2<FScalar>;
 pub type FPoint3 = Point3<FScalar>;
 pub type FVector3 = Vector3<FScalar>;
 pub type FVector4 = Vector4<FScalar>;
@@ -37,6 +39,15 @@ impl<T> Matrix4Ext<T> for Matrix4<T>
 //       `nalgebra::convert` function can be used directly.
 pub trait FromSpace<T> {
     fn from_space(value: T) -> Self;
+}
+
+impl<T, U> FromSpace<Point2<U>> for Point2<T>
+    where T: SupersetOf<U> + Scalar,
+          U: Scalar
+{
+    fn from_space(point: Point2<U>) -> Self {
+        nalgebra::convert(point)
+    }
 }
 
 impl<T, U> FromSpace<Point3<U>> for Point3<T>
