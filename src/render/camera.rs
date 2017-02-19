@@ -44,6 +44,12 @@ impl Default for Projection {
     }
 }
 
+impl From<Perspective3<FScalar>> for Projection {
+    fn from(perspective: Perspective3<FScalar>) -> Self {
+        Projection::new(perspective.fovy(), perspective.znear(), perspective.zfar())
+    }
+}
+
 pub struct Camera {
     projection: Perspective3<FScalar>,
     view: Isometry3<FScalar>,
