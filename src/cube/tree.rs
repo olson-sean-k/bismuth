@@ -568,17 +568,17 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<Cube<&Node>> {
-        let mut min = FScalar::max_value();
+        let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value(), |traversal| {
             if traversal.peek().aabb().intersects(ray) {
                 if traversal.peek().partition.width() == width {
                     if !traversal.peek().is_empty() {
-                        let dd = nalgebra::distance_squared(
+                        let distance = nalgebra::distance_squared(
                             &ray.origin,
                             &traversal.peek().partition().midpoint().into_space());
-                        if dd < min {
-                            min = dd;
+                        if distance < min_distance {
+                            min_distance = distance;
                             cube = Some(traversal.take());
                         }
                     }
@@ -660,17 +660,17 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn at_ray_mut(&mut self, ray: &FRay3, width: LogWidth) -> Option<Cube<&mut Node>> {
-        let mut min = FScalar::max_value();
+        let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value_mut(), |traversal| {
             if traversal.peek().aabb().intersects(ray) {
                 if traversal.peek().partition.width() == width {
                     if !traversal.peek().is_empty() {
-                        let dd = nalgebra::distance_squared(
+                        let distance = nalgebra::distance_squared(
                             &ray.origin,
                             &traversal.peek().partition().midpoint().into_space());
-                        if dd < min {
-                            min = dd;
+                        if distance < min_distance {
+                            min_distance = distance;
                             cube = Some(traversal.take());
                         }
                     }
