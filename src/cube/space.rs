@@ -2,7 +2,7 @@ use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{LowerBound, Mask, UPoint3, UpperBound, UScalar, UVector3};
+use math::{self, FRay3, FScalar, LowerBound, Mask, UPoint3, UpperBound, UScalar, UVector3};
 
 /// Defines the bounds for `LogWidth` values.
 pub struct LogWidthRange;
@@ -103,6 +103,12 @@ impl Orientation {
     }
 }
 
+pub trait Intersects<T> {
+    fn intersects(&self, other: &T) -> bool;
+}
+
+pub trait BoundingVolume: Intersects<Self> + Sized {}
+
 /// Axis-aligned bounding box.
 ///
 /// `AABB`s are represented as an origin and extent.
@@ -131,22 +137,46 @@ impl AABB {
         AABB::new(start, end - start)
     }
 
+    /// Gets the absolute endpoint of the `AABB`.
+    pub fn endpoint(&self) -> UPoint3 {
+        self.origin + self.extent
+    }
+}
+
+impl BoundingVolume for AABB {}
+
+impl Intersects<AABB> for AABB {
     /// Determines if two `AABB`s intersect.
-    pub fn intersects(&self, other: &Self) -> bool {
+    fn intersects(&self, aabb: &AABB) -> bool {
         for axis in Axis::range() {
-            if (self.origin[axis] + self.extent[axis]) < other.origin[axis] {
+            if (self.origin[axis] + self.extent[axis]) < aabb.origin[axis] {
                 return false;
             }
-            if self.origin[axis] > (other.origin[axis] + other.extent[axis]) {
+            if self.origin[axis] > (aabb.origin[axis] + aabb.extent[axis]) {
                 return false;
             }
         }
         true
     }
+}
 
-    /// Gets the absolute endpoint of the `AABB`.
-    pub fn endpoint(&self) -> UPoint3 {
-        self.origin + self.extent
+impl Intersects<FRay3> for AABB {
+    /// Determines if an `FRay3` intersects an `AABB`.
+    fn intersects(&self, ray: &FRay3) -> bool {
+        let mut min = UVector3::zero();
+        let mut max = UVector3::zero();
+        for axis in Axis::range() {
+            let low = self.origin[axis];
+            let high = low + self.extent[axis];
+            let origin = ray.origin[axis];
+            let direction = ray.direction[axis];
+
+            let (low, high) = math::min_max((low as FScalar - origin) / direction,
+                                            (high as FScalar - origin) / direction);
+            min[axis] = low as UScalar;
+            max[axis] = high as UScalar;
+        }
+        !((min.x > max.y) || (min.y > max.x) || (min.x > max.z) || (min.z > max.x))
     }
 }
 

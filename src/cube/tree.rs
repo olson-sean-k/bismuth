@@ -1,14 +1,16 @@
+use nalgebra;
+use num::Float;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
 use std::fmt;
 use std::ops;
 
-use math::{Clamp, UPoint3};
+use math::{Clamp, FRay3, FScalar, IntoSpace, UPoint3};
 use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
-use super::space::{self, LogWidth, Partition, Spatial};
+use super::space::{self, Intersects, LogWidth, Partition, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
 
@@ -565,6 +567,37 @@ impl<'a, N> Cube<'a, N>
         })
     }
 
+    pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<Cube<&Node>> {
+        let mut min = FScalar::max_value();
+        let mut cube = None;
+        traverse!(cube => self.to_value(), |traversal| {
+            if traversal.peek().aabb().intersects(ray) {
+                if traversal.peek().partition.width() == width {
+                    if !traversal.peek().is_empty() {
+                        let dd = nalgebra::distance_squared(
+                            &ray.origin,
+                            &traversal.peek().partition().midpoint().into_space());
+                        if dd < min {
+                            min = dd;
+                            cube = Some(traversal.take());
+                        }
+                    }
+                }
+                else if traversal.peek().partition.width() > width {
+                    traversal.push();
+                }
+            }
+        });
+        cube
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match *self.node.as_ref() {
+            Node::Leaf(ref leaf) => leaf.geometry.is_empty(),
+            Node::Branch(..) => true,
+        }
+    }
+
     fn to_value(&self) -> Cube<&Node> {
         Cube::new(self.node.as_ref(), self.root, self.partition)
     }
@@ -624,6 +657,30 @@ impl<'a, N> Cube<'a, N>
             }
             _ => None,
         }
+    }
+
+    pub fn at_ray_mut(&mut self, ray: &FRay3, width: LogWidth) -> Option<Cube<&mut Node>> {
+        let mut min = FScalar::max_value();
+        let mut cube = None;
+        traverse!(cube => self.to_value_mut(), |traversal| {
+            if traversal.peek().aabb().intersects(ray) {
+                if traversal.peek().partition.width() == width {
+                    if !traversal.peek().is_empty() {
+                        let dd = nalgebra::distance_squared(
+                            &ray.origin,
+                            &traversal.peek().partition().midpoint().into_space());
+                        if dd < min {
+                            min = dd;
+                            cube = Some(traversal.take());
+                        }
+                    }
+                }
+                else if traversal.peek().partition.width() > width {
+                    traversal.push();
+                }
+            }
+        });
+        cube
     }
 
     pub fn join(&mut self) -> Result<(), JoinError> {

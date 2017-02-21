@@ -22,16 +22,16 @@ pub type FRay3 = Ray3<FScalar>;
 pub struct Ray3<T>
     where T: Scalar
 {
-    pub position: Point3<T>,
+    pub origin: Point3<T>,
     pub direction: Unit<Vector3<T>>,
 }
 
 impl<T> Ray3<T>
     where T: Real + Scalar
 {
-    pub fn new(position: Point3<T>, direction: Vector3<T>) -> Self {
+    pub fn new(origin: Point3<T>, direction: Vector3<T>) -> Self {
         Ray3 {
-            position: position,
+            origin: origin,
             direction: Unit::new_normalize(direction),
         }
     }
@@ -208,6 +208,17 @@ pub fn lerp<T, F>(a: T, b: T, f: F) -> T
     let af = convert::<T, F>(a) * (F::one() - f);
     let bf = convert::<T, F>(b) * f;
     convert::<F, T>(af + bf)
+}
+
+pub fn min_max<T>(a: T, b: T) -> (T, T)
+    where T: PartialOrd
+{
+    if a < b {
+        (a, b)
+    }
+    else {
+        (b, a)
+    }
 }
 
 #[cfg(test)]
