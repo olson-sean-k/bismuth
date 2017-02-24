@@ -1,5 +1,6 @@
 use glutin::Window;
 use nalgebra::{Isometry3, Perspective3};
+use num::traits::FloatConst;
 
 use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
@@ -40,7 +41,7 @@ impl Projection {
 
 impl Default for Projection {
     fn default() -> Self {
-        Projection::new(1.0, -1.0, 1.0)
+        Projection::new(FScalar::FRAC_PI_2(), 0.1, 100.0)
     }
 }
 
@@ -85,14 +86,6 @@ impl Camera {
     }
 
     pub fn transform(&self) -> FMatrix4 {
-        self.projection() * self.view()
-    }
-
-    fn projection(&self) -> &FMatrix4 {
-        self.projection.as_matrix()
-    }
-
-    fn view(&self) -> FMatrix4 {
-        self.view.to_homogeneous()
+        self.projection.as_matrix() * self.view.to_homogeneous()
     }
 }
