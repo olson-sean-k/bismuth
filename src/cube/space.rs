@@ -97,8 +97,8 @@ impl Orientation {
     /// Gets the `Direction` associated with the `Orientation`.
     pub fn direction(&self) -> Direction {
         match *self {
-            Orientation::Left | Orientation::Top | Orientation::Front => Direction::Positive,
-            Orientation::Right | Orientation::Bottom | Orientation::Back => Direction::Negative,
+            Orientation::Left | Orientation::Bottom | Orientation::Back => Direction::Positive,
+            Orientation::Right | Orientation::Top | Orientation::Front => Direction::Negative,
         }
     }
 }

@@ -5,7 +5,7 @@ use num::traits::FloatConst;
 use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
 lazy_static! {
-    static ref UP: FVector3 = FVector3::z();
+    static ref UP: FVector3 = FVector3::y();
 }
 
 pub trait AspectRatio {
@@ -69,8 +69,8 @@ impl Camera {
         }
     }
 
-    pub fn look_at(&mut self, position: &FPoint3, point: &FPoint3) {
-        self.view = Isometry3::look_at_rh(position, point, &UP);
+    pub fn look_at(&mut self, from: &FPoint3, to: &FPoint3) {
+        self.view = Isometry3::look_at_rh(from, to, &UP);
     }
 
     pub fn cast_ray<W>(&self, window: &W, point: &UPoint2) -> FRay3

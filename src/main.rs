@@ -3,12 +3,11 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
-use bismuth::math::{FPoint3, IntoSpace, Matrix4Ext, UPoint3, UVector3};
+use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
 use glutin::{Event, VirtualKeyCode, WindowBuilder};
 
-fn new_root() -> Root {
-    let width = LogWidth::max_value();
+fn new_root(width: LogWidth) -> Root {
     let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
@@ -31,8 +30,13 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
           C: Spatial
 {
     let midpoint: FPoint3 = cube.partition().midpoint().into_space();
-    let mut camera = Camera::new(window, &Projection::default());
-    camera.look_at(&FPoint3::new(midpoint.x * 0.25, -midpoint.y, -midpoint.z * 2.0),
+    let projection = {
+        let mut projection = Projection::default();
+        projection.far = cube.partition().width().exp() as FScalar * 2.0;
+        projection
+    };
+    let mut camera = Camera::new(window, &projection);
+    camera.look_at(&FPoint3::new(-midpoint.x * 0.25, -midpoint.y * 0.5, -midpoint.z),
                    &midpoint);
     camera
 }
@@ -44,7 +48,7 @@ fn main() {
         .with_vsync()
         .build()
         .unwrap());
-    let root = new_root();
+    let root = new_root(LogWidth::max_value());
     let mesh = root.to_cube().mesh_buffer();
     let camera = new_camera(&context.window, &root);
     let mut transform = Transform::default();
