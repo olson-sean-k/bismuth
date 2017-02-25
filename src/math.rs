@@ -213,11 +213,33 @@ pub fn lerp<T, F>(a: T, b: T, f: F) -> T
 pub fn min_max<T>(a: T, b: T) -> (T, T)
     where T: PartialOrd
 {
-    if a < b {
+    if a <= b {
         (a, b)
     }
     else {
         (b, a)
+    }
+}
+
+pub fn partial_min<T>(a: T, b: T) -> T
+    where T: PartialOrd
+{
+    if a <= b {
+        a
+    }
+    else {
+        b
+    }
+}
+
+pub fn partial_max<T>(a: T, b: T) -> T
+    where T: PartialOrd
+{
+    if a > b {
+        a
+    }
+    else {
+        b
     }
 }
 

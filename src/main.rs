@@ -2,13 +2,15 @@ extern crate bismuth;
 extern crate glutin;
 extern crate nalgebra;
 
-use bismuth::cube::{Axis, Cursor, LogWidth, Offset, Root, Spatial};
-use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint3, UVector3};
+use bismuth::cube::{Axis, Cursor, Geometry, LogWidth, Offset, Root, Spatial};
+use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint2, UPoint3, UScalar, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
-use glutin::{Event, VirtualKeyCode, WindowBuilder};
+use glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder};
 
 fn new_root(width: LogWidth) -> Root {
-    let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
+    let cursor = Cursor::at_point_with_span(&UPoint3::origin(),
+                                            width - 3,
+                                            &UVector3::new(7, 1, 7));
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
@@ -36,7 +38,7 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
         projection
     };
     let mut camera = Camera::new(window, &projection);
-    camera.look_at(&FPoint3::new(-midpoint.x * 0.25, -midpoint.y * 0.5, -midpoint.z),
+    camera.look_at(&FPoint3::new(midpoint.x * 0.25, -midpoint.y, midpoint.z * 3.0),
                    &midpoint);
     camera
 }
@@ -48,9 +50,11 @@ fn main() {
         .with_vsync()
         .build()
         .unwrap());
-    let root = new_root(LogWidth::max_value());
-    let mesh = root.to_cube().mesh_buffer();
+    let width = LogWidth::new(8);
+    let mut root = new_root(width);
+    let mut mesh = root.to_cube().mesh_buffer();
     let camera = new_camera(&context.window, &root);
+    let mut pointer = UPoint2::origin();
     let mut transform = Transform::default();
     'main: loop {
         transform.camera = camera.transform().to_array();
@@ -58,6 +62,22 @@ fn main() {
             match event {
                 Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) | Event::Closed => {
                     break 'main;
+                },
+                Event::MouseInput(ElementState::Pressed, MouseButton::Left) => {
+                    let ray = camera.cast_ray(&context.window, &pointer);
+                    let mut edited = false;
+                    if let Some(mut cube) = root.to_cube_mut().at_ray_mut(&ray, width - 3) {
+                        if let Some(leaf) = cube.try_as_leaf_mut() {
+                            leaf.geometry = Geometry::empty();
+                            edited = true;
+                        }
+                    }
+                    if edited {
+                        mesh = root.to_cube().mesh_buffer();
+                    }
+                },
+                Event::MouseMoved(x, y) => {
+                    pointer = UPoint2::new(x as UScalar, y as UScalar);
                 },
                 _ => {},
             }

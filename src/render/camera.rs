@@ -65,7 +65,7 @@ impl Camera {
                                           projection.fov,
                                           projection.near,
                                           projection.far),
-            view: Isometry3::look_at_rh(&FPoint3::origin(), &FPoint3::new(0.0, 0.0, 1.0), &UP),
+            view: Isometry3::look_at_rh(&FPoint3::origin(), &FPoint3::new(0.0, 0.0, -1.0), &UP),
         }
     }
 
@@ -77,8 +77,8 @@ impl Camera {
         where W: AspectRatio
     {
         let (width, height) = window.dimensions();
-        let point = FPoint2::new(point.x as FScalar / width as FScalar,
-                                 point.y as FScalar / height as FScalar);
+        let point = FPoint2::new(((2.0 * point.x as FScalar) / width as FScalar) - 1.0,
+                                 1.0 - ((2.0 * point.y as FScalar) / height as FScalar));
         let near = self.projection.unproject_point(&FPoint3::new(point.x, point.y, -1.0));
         let far = self.projection.unproject_point(&FPoint3::new(point.x, point.y, 1.0));
         let inverse = self.view.inverse();

@@ -2,7 +2,8 @@ use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{self, FRay3, FScalar, LowerBound, Mask, UPoint3, UpperBound, UScalar, UVector3};
+use math::{self, FRay3, FScalar, FVector3, LowerBound, Mask, UPoint3, UpperBound, UScalar,
+           UVector3};
 
 /// Defines the bounds for `LogWidth` values.
 pub struct LogWidthRange;
@@ -163,20 +164,27 @@ impl Intersects<AABB> for AABB {
 impl Intersects<FRay3> for AABB {
     /// Determines if an `FRay3` intersects an `AABB`.
     fn intersects(&self, ray: &FRay3) -> bool {
-        let mut min = UVector3::zero();
-        let mut max = UVector3::zero();
+        let mut axis_min = FVector3::zero();
+        let mut axis_max = FVector3::zero();
         for axis in Axis::range() {
-            let low = self.origin[axis];
-            let high = low + self.extent[axis];
+            let low = self.origin[axis] as FScalar;
+            let high = low + self.extent[axis] as FScalar;
             let origin = ray.origin[axis];
             let direction = ray.direction[axis];
 
-            let (low, high) = math::min_max((low as FScalar - origin) / direction,
-                                            (high as FScalar - origin) / direction);
-            min[axis] = low as UScalar;
-            max[axis] = high as UScalar;
+            let (min, max) = math::min_max((low - origin) / direction,
+                                           (high - origin) / direction);
+            axis_min[axis] = min;
+            axis_max[axis] = max;
         }
-        !((min.x > max.y) || (min.y > max.x) || (min.x > max.z) || (min.z > max.x))
+        let tmin = math::partial_max(math::partial_max(axis_min.x, axis_min.y), axis_min.z);
+        let tmax = math::partial_min(math::partial_min(axis_max.x, axis_max.y), axis_max.z);
+        if tmax < 0.0 || tmin > tmax {
+            false
+        }
+        else {
+            true
+        }
     }
 }
 
