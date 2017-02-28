@@ -1,8 +1,9 @@
-use num::{One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
+use nalgebra::Unit;
+use num::{Bounded, One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{self, FRay3, FScalar, FVector3, LowerBound, Mask, UPoint3, UpperBound, UScalar,
+use math::{self, FRay3, FPoint3, FScalar, FVector3, LowerBound, Mask, UPoint3, UpperBound, UScalar,
            UVector3};
 
 /// Defines the bounds for `LogWidth` values.
@@ -51,6 +52,14 @@ impl Axis {
     /// Gets a `Range` over axes as `usize`s.
     pub fn range() -> Range<usize> {
         (Axis::X as usize)..(Axis::Z as usize + 1)
+    }
+
+    pub fn to_vector(&self) -> FVector3 {
+        match *self {
+            Axis::X => FVector3::x(),
+            Axis::Y => FVector3::y(),
+            Axis::Z => FVector3::z(),
+        }
     }
 }
 
@@ -104,11 +113,56 @@ impl Orientation {
     }
 }
 
+/// A shape or primitive that can test for intersection with another shape or
+/// primitive.
 pub trait Intersects<T> {
+    /// Tests for intersection.
     fn intersects(&self, other: &T) -> bool;
 }
 
-pub trait BoundingVolume: Intersects<Self> + Sized {}
+/// Details of intersection with an `FRay3`.
+pub struct RayIntersection {
+    /// The minimum time of impact.
+    pub distance: FScalar,
+    /// The minimum point of intersection.
+    pub point: FPoint3,
+    /// The normal at the point of intersection.
+    pub normal: Unit<FVector3>,
+}
+
+impl RayIntersection {
+    /// Creates a new `RayIntersection`. Normalizes `normal`.
+    fn new(distance: FScalar, point: FPoint3, normal: FVector3) -> Self {
+        RayIntersection {
+            distance: distance,
+            point: point,
+            normal: Unit::new_normalize(normal),
+        }
+    }
+}
+
+/// Shape or primitive that can test for intersection with an `FRay3`, omitting
+/// some details about the intersection.
+pub trait PartialRayCast {
+    /// Determines if an `FRay3` intersects the shape or primitive. Returns the
+    /// minimum and maximum time of impact (distance), respectively.
+    fn partial_ray_intersection(&self, ray: &FRay3) -> Option<(FScalar, FScalar)>;
+}
+
+/// Shape or primitive that can test for intersection with an `FRay3`.
+pub trait RayCast: PartialRayCast {
+    /// Determines if an `FRay3` intersects the shape or primitive and returns
+    /// details about the intersection.
+    fn ray_intersection(&self, ray: &FRay3) -> Option<RayIntersection>;
+}
+
+impl<T> Intersects<FRay3> for T
+    where T: PartialRayCast
+{
+    fn intersects(&self, ray: &FRay3) -> bool {
+        self.partial_ray_intersection(ray).is_some()
+    }
+}
 
 /// Axis-aligned bounding box.
 ///
@@ -142,9 +196,21 @@ impl AABB {
     pub fn endpoint(&self) -> UPoint3 {
         self.origin + self.extent
     }
-}
 
-impl BoundingVolume for AABB {}
+    /// Gets the normal at a point along or near the surface of the `AABB`.
+    fn normal(&self, point: &FPoint3) -> FVector3 {
+        let mut min_distance = FScalar::max_value();
+        let mut normal = FVector3::zero();
+        for axis in Axis::range() {
+            let distance = (self.extent[axis] as FScalar - point[axis].abs()).abs();
+            if distance < min_distance {
+                min_distance = distance;
+                normal = Axis::from(axis).to_vector() * point[axis].signum();
+            }
+        }
+        normal
+    }
+}
 
 impl Intersects<AABB> for AABB {
     /// Determines if two `AABB`s intersect.
@@ -161,30 +227,43 @@ impl Intersects<AABB> for AABB {
     }
 }
 
-impl Intersects<FRay3> for AABB {
-    /// Determines if an `FRay3` intersects an `AABB`.
-    fn intersects(&self, ray: &FRay3) -> bool {
-        let mut axis_min = FVector3::zero();
-        let mut axis_max = FVector3::zero();
+impl PartialRayCast for AABB {
+    /// Determines if an `FRay3` intersects an `AABB`. Returns the minimum and
+    /// maximum times of impact as a tuple, respectively.
+    fn partial_ray_intersection(&self, ray: &FRay3) -> Option<(FScalar, FScalar)> {
+        let mut min = FVector3::zero();
+        let mut max = FVector3::zero();
         for axis in Axis::range() {
-            let low = self.origin[axis] as FScalar;
-            let high = low + self.extent[axis] as FScalar;
+            let lower = self.origin[axis] as FScalar;
+            let upper = lower + self.extent[axis] as FScalar;
             let origin = ray.origin[axis];
             let direction = ray.direction[axis];
 
-            let (min, max) = math::min_max((low - origin) / direction,
-                                           (high - origin) / direction);
-            axis_min[axis] = min;
-            axis_max[axis] = max;
+            let (low, high) = math::min_max((lower - origin) / direction,
+                                            (upper - origin) / direction);
+            min[axis] = low;
+            max[axis] = high;
         }
-        let tmin = math::partial_max(math::partial_max(axis_min.x, axis_min.y), axis_min.z);
-        let tmax = math::partial_min(math::partial_min(axis_max.x, axis_max.y), axis_max.z);
+
+        let tmin = math::partial_max(math::partial_max(min.x, min.y), min.z);
+        let tmax = math::partial_min(math::partial_min(max.x, max.y), max.z);
         if tmax < 0.0 || tmin > tmax {
-            false
+            None
         }
         else {
-            true
+            Some((tmin, tmax))
         }
+    }
+}
+
+impl RayCast for AABB {
+    /// Determines if an `FRay3` intersects an `AABB`. Returns detailed
+    /// `RayIntersection` data.
+    fn ray_intersection(&self, ray: &FRay3) -> Option<RayIntersection> {
+        self.partial_ray_intersection(ray).map(|(distance, _)| {
+            let point = ray.origin + (*ray.direction * distance);
+            RayIntersection::new(distance, point, self.normal(&point))
+        })
     }
 }
 

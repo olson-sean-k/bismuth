@@ -1,5 +1,5 @@
 use nalgebra;
-use num::Float;
+use num::Bounded;
 use std::convert::{AsMut, AsRef};
 use std::error;
 use std::error::Error;
