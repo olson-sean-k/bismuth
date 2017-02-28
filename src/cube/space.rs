@@ -3,8 +3,8 @@ use num::{Bounded, One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{self, FRay3, FPoint3, FScalar, FVector3, LowerBound, Mask, UPoint3, UpperBound, UScalar,
-           UVector3};
+use math::{self, FRay3, FPoint3, FromSpace, FScalar, FVector3, LowerBound, Mask, UPoint3,
+           UpperBound, UScalar, UVector3};
 
 /// Defines the bounds for `LogWidth` values.
 pub struct LogWidthRange;
@@ -192,6 +192,11 @@ impl AABB {
         AABB::new(start, end - start)
     }
 
+    /// Gets the midpoint (center) of the `AABB`.
+    pub fn midpoint(&self) -> UPoint3 {
+        self.origin + (self.extent / 2)
+    }
+
     /// Gets the absolute endpoint of the `AABB`.
     pub fn endpoint(&self) -> UPoint3 {
         self.origin + self.extent
@@ -199,6 +204,7 @@ impl AABB {
 
     /// Gets the normal at a point along or near the surface of the `AABB`.
     fn normal(&self, point: &FPoint3) -> FVector3 {
+        let point = point - FPoint3::from_space(self.midpoint());
         let mut min_distance = FScalar::max_value();
         let mut normal = FVector3::zero();
         for axis in Axis::range() {
