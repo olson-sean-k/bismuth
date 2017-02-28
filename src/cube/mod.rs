@@ -55,7 +55,7 @@ use self::tree::{Cube, OrphanCube};
 pub use self::edit::Cursor;
 pub use self::geometry::{Edge, Geometry, Offset};
 pub use self::space::{AABB, Axis, Direction, Intersects, LogWidth, Orientation, Partition, RayCast,
-                      Spatial};
+                      RayIntersection, Spatial};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
 
 pub type CubeRef<'a> = Cube<'a, &'a Node>;
