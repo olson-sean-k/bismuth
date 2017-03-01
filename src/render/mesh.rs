@@ -1,5 +1,5 @@
 use OptionExt;
-use cube::{CubeRef, Spatial};
+use cube::{CubeRef, OrphanCubeRef, Spatial};
 use math::{IntoSpace, FScalar, FVector3};
 use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Triangle, UCube};
 use super::pipeline::{Color, ColorExt, Index, Vertex};
@@ -48,28 +48,34 @@ impl<'a> Mesh for CubeRef<'a> {
     fn mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         for cube in self.iter() {
-            if let Some(leaf) = cube.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
-                let origin: FVector3 = cube.partition().origin().coords.into_space();
-                let width = cube.partition().width().exp() as FScalar;
-                let mut local = MeshBuffer::new();
-                local.extend(UCube::with_unit_width()
-                                 .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
-                                 .map_points(|point| (point * width) + origin)
-                                 .triangulate()
-                                 .map(|triangle| {
-                                     let color = Color::random();
-                                     Triangle::new(Vertex::new(&triangle.a, &color),
-                                                   Vertex::new(&triangle.b, &color),
-                                                   Vertex::new(&triangle.c, &color))
-                                 })
-                                 .points(),
-                             UCube::with_unit_width()
-                                 .triangulate()
-                                 .points()
-                                 .enumerate()
-                                 .map(|(index, _)| index as Index));
-                buffer.append(&mut local);
-            }
+            buffer.append(&mut cube.to_orphan().mesh_buffer());
+        }
+        buffer
+    }
+}
+
+impl<'a> Mesh for OrphanCubeRef<'a> {
+    fn mesh_buffer(&self) -> MeshBuffer {
+        let mut buffer = MeshBuffer::new();
+        if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
+            let origin: FVector3 = self.partition().origin().coords.into_space();
+            let width = self.partition().width().exp() as FScalar;
+            buffer.extend(UCube::with_unit_width()
+                              .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
+                              .map_points(|point| (point * width) + origin)
+                              .triangulate()
+                              .map(|triangle| {
+                                  let color = Color::random();
+                                  Triangle::new(Vertex::new(&triangle.a, &color),
+                                                Vertex::new(&triangle.b, &color),
+                                                Vertex::new(&triangle.c, &color))
+                              })
+                              .points(),
+                          UCube::with_unit_width()
+                              .triangulate()
+                              .points()
+                              .enumerate()
+                              .map(|(index, _)| index as Index));
         }
         buffer
     }
