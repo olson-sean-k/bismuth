@@ -499,7 +499,6 @@ macro_rules! thread {
     }};
 }
 
-#[derive(Clone)]
 pub struct Cube<'a, N>
     where N: AsRef<Node>
 {
@@ -607,12 +606,12 @@ impl<'a, N> Cube<'a, &'a N>
     where N: AsRef<Node>
 {
     pub fn iter(&self) -> CubeIter<&N> {
-        CubeIter(vec![self.clone()])
+        CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
 
     pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
         CursorIter {
-            cubes: vec![self.clone()],
+            cubes: vec![Cube::new(self.node, self.root, self.partition)],
             cursor: cursor,
         }
     }
