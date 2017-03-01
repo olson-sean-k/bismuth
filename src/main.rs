@@ -14,7 +14,7 @@ fn new_root(width: LogWidth) -> Root {
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
-            if let Some(leaf) = cube.try_as_leaf_mut() {
+            if let Some(leaf) = cube.as_leaf_mut() {
                 for axis in Axis::range() {
                     for edge in leaf.geometry.edges_mut(axis.into()) {
                         edge.set_front(Offset::from(2));
@@ -67,7 +67,7 @@ fn main() {
                     let ray = camera.cast_ray(&context.window, &pointer);
                     let mut edited = false;
                     if let Some(mut cube) = root.to_cube_mut().at_ray_mut(&ray, width - 3) {
-                        if let Some(leaf) = cube.try_as_leaf_mut() {
+                        if let Some(leaf) = cube.as_leaf_mut() {
                             leaf.geometry = Geometry::empty();
                             edited = true;
                         }
