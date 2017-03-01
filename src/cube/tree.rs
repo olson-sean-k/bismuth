@@ -1,4 +1,3 @@
-use nalgebra;
 use num::Bounded;
 use std::convert::{AsMut, AsRef};
 use std::error;
@@ -6,11 +5,11 @@ use std::error::Error;
 use std::fmt;
 use std::ops;
 
-use math::{Clamp, FRay3, FScalar, IntoSpace, UPoint3};
+use math::{Clamp, FRay3, FScalar, UPoint3};
 use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
-use super::space::{self, Intersects, LogWidth, Partition, Spatial};
+use super::space::{self, Intersects, LogWidth, PartialRayCast, Partition, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
 
@@ -570,12 +569,9 @@ impl<'a, N> Cube<'a, N>
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value(), |traversal| {
-            if traversal.peek().aabb().intersects(ray) {
+            if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
                 if traversal.peek().partition.width() == width {
                     if !traversal.peek().is_empty() {
-                        let distance = nalgebra::distance_squared(
-                            &ray.origin,
-                            &traversal.peek().partition().midpoint().into_space());
                         if distance < min_distance {
                             min_distance = distance;
                             cube = Some(traversal.take());
@@ -662,12 +658,9 @@ impl<'a, N> Cube<'a, N>
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value_mut(), |traversal| {
-            if traversal.peek().aabb().intersects(ray) {
+            if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
                 if traversal.peek().partition.width() == width {
                     if !traversal.peek().is_empty() {
-                        let distance = nalgebra::distance_squared(
-                            &ray.origin,
-                            &traversal.peek().partition().midpoint().into_space());
                         if distance < min_distance {
                             min_distance = distance;
                             cube = Some(traversal.take());
