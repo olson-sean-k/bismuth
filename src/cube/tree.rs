@@ -523,8 +523,8 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn for_each<F>(&self, f: F)
-        where F: Fn(&Cube<&Node>)
+    pub fn for_each<F>(&self, mut f: F)
+        where F: FnMut(&Cube<&Node>)
     {
         traverse!(cube => self.to_value(), |traversal| {
             f(traversal.peek());
@@ -532,8 +532,8 @@ impl<'a, N> Cube<'a, N>
         });
     }
 
-    pub fn for_each_path<F>(&mut self, f: F)
-        where F: Fn(&mut [Cube<&Node>])
+    pub fn for_each_path<F>(&mut self, mut f: F)
+        where F: FnMut(&mut [Cube<&Node>])
     {
         thread!(cube => self.to_value(), |path| {
             f(path);
@@ -625,8 +625,8 @@ impl<'a, N> Cube<'a, N>
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
-    pub fn for_each_mut<F>(&mut self, f: F)
-        where F: Fn(&mut Cube<&mut Node>)
+    pub fn for_each_mut<F>(&mut self, mut f: F)
+        where F: FnMut(&mut Cube<&mut Node>)
     {
         traverse!(cube => self.to_value_mut(), |traversal| {
             f(traversal.peek_mut());
@@ -634,8 +634,8 @@ impl<'a, N> Cube<'a, N>
         });
     }
 
-    pub fn for_each_path_mut<F>(&mut self, f: F)
-        where F: Fn(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
+    pub fn for_each_path_mut<F>(&mut self, mut f: F)
+        where F: FnMut(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
         thread!(cube => self.to_value_mut(), |path| {
             f(path);
@@ -736,9 +736,9 @@ impl<'a, N> Cube<'a, N>
     fn for_each_node_to_point<F>(&mut self,
                                  point: &UPoint3,
                                  width: LogWidth,
-                                 f: F)
+                                 mut f: F)
                                  -> Cube<&mut Node>
-        where F: Fn(&mut Node)
+        where F: FnMut(&mut Node)
     {
         let mut node: Option<&mut Node> = Some(self.node.as_mut());
         let mut depth = self.partition.width();
