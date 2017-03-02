@@ -570,16 +570,17 @@ impl<'a, N> Cube<'a, N>
         let mut cube = None;
         traverse!(cube => self.to_value(), |traversal| {
             if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
-                if traversal.peek().partition.width() == width {
-                    if !traversal.peek().is_empty() {
+                if traversal.peek().partition.width() >= width {
+                    if !traversal.peek().is_empty() { // Non-empty leaf.
                         if distance < min_distance {
                             min_distance = distance;
+                            // No need to `push`; this is a leaf.
                             cube = Some(traversal.take());
                         }
                     }
-                }
-                else if traversal.peek().partition.width() > width {
-                    traversal.push();
+                    else if traversal.peek().partition.width() > width {
+                        traversal.push();
+                    }
                 }
             }
         });
@@ -659,16 +660,17 @@ impl<'a, N> Cube<'a, N>
         let mut cube = None;
         traverse!(cube => self.to_value_mut(), |traversal| {
             if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
-                if traversal.peek().partition.width() == width {
-                    if !traversal.peek().is_empty() {
+                if traversal.peek().partition.width() >= width {
+                    if !traversal.peek().is_empty() { // Non-empty leaf.
                         if distance < min_distance {
                             min_distance = distance;
+                            // No need to `push`; this is a leaf.
                             cube = Some(traversal.take());
                         }
                     }
-                }
-                else if traversal.peek().partition.width() > width {
-                    traversal.push();
+                    else if traversal.peek().partition.width() > width {
+                        traversal.push();
+                    }
                 }
             }
         });

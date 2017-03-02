@@ -8,9 +8,7 @@ use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform}
 use glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder};
 
 fn new_root(width: LogWidth) -> Root {
-    let cursor = Cursor::at_point_with_span(&UPoint3::origin(),
-                                            width - 3,
-                                            &UVector3::new(7, 1, 7));
+    let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
     let mut root = Root::new(width);
     for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
         for mut cube in cube.iter_mut() {
@@ -60,13 +58,15 @@ fn main() {
         transform.camera = camera.transform().to_array();
         for event in context.window.poll_events() {
             match event {
-                Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) | Event::Closed => {
+                Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) |
+                Event::Closed => {
                     break 'main;
-                },
+                }
                 Event::MouseInput(ElementState::Pressed, MouseButton::Left) => {
                     let ray = camera.cast_ray(&context.window, &pointer);
                     let mut edited = false;
-                    if let Some(mut cube) = root.to_cube_mut().at_ray_mut(&ray, width - 3) {
+                    if let Some(mut cube) = root.to_cube_mut()
+                        .at_ray_mut(&ray, LogWidth::min_value()) {
                         if let Some(leaf) = cube.as_leaf_mut() {
                             leaf.geometry = Geometry::empty();
                             edited = true;
@@ -75,11 +75,11 @@ fn main() {
                     if edited {
                         mesh = root.to_cube().mesh_buffer();
                     }
-                },
+                }
                 Event::MouseMoved(x, y) => {
                     pointer = UPoint2::new(x as UScalar, y as UScalar);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         context.clear();
