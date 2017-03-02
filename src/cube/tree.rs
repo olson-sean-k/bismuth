@@ -539,22 +539,27 @@ impl<'a, N> Cube<'a, N>
         });
     }
 
-    pub fn at_point(&self, point: &UPoint3, width: LogWidth) -> Cube<&Node> {
-        let mut node = self.node.as_ref();
-        let mut depth = self.partition.width();
+    pub fn at_point(&self, point: &UPoint3, width: LogWidth) -> Option<Cube<&Node>> {
+        if self.partition.aabb().intersects(point) {
+            let mut node = self.node.as_ref();
+            let mut depth = self.partition.width();
 
-        let point = point.clamp(0, self.root.width().exp() - 1);
-        let width = width.clamp(LogWidth::min_value(), depth);
-        while width < depth {
-            if let Some(branch) = node.as_branch() {
-                depth = depth - 1;
-                node = &branch.nodes[space::index_at_point(&point, depth)]
+            let point = point.clamp(0, self.root.width().exp() - 1);
+            let width = width.clamp(LogWidth::min_value(), depth);
+            while width < depth {
+                if let Some(branch) = node.as_branch() {
+                    depth = depth - 1;
+                    node = &branch.nodes[space::index_at_point(&point, depth)]
+                }
+                else {
+                    break;
+                }
             }
-            else {
-                break;
-            }
+            Some(Cube::new(node, self.root, Partition::at_point(&point, depth)))
         }
-        Cube::new(node, self.root, Partition::at_point(&point, depth))
+        else {
+            None
+        }
     }
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
@@ -639,7 +644,7 @@ impl<'a, N> Cube<'a, N>
         });
     }
 
-    pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
+    pub fn at_point_mut(&mut self, point: &UPoint3, width: LogWidth) -> Option<Cube<&mut Node>> {
         self.for_each_node_to_point(point, width, |_| {})
     }
 
@@ -690,7 +695,10 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn subdivide_to_point(&mut self, point: &UPoint3, width: LogWidth) -> Cube<&mut Node> {
+    pub fn subdivide_to_point(&mut self,
+                              point: &UPoint3,
+                              width: LogWidth)
+                              -> Option<Cube<&mut Node>> {
         self.for_each_node_to_point(point, width, |node| {
             let _ = node.subdivide();
         })
@@ -732,31 +740,36 @@ impl<'a, N> Cube<'a, N>
                                  point: &UPoint3,
                                  width: LogWidth,
                                  mut f: F)
-                                 -> Cube<&mut Node>
+                                 -> Option<Cube<&mut Node>>
         where F: FnMut(&mut Node)
     {
-        let mut node: Option<&mut Node> = Some(self.node.as_mut());
-        let mut depth = self.partition.width();
+        if self.partition.aabb().intersects(point) {
+            let mut node: Option<&mut Node> = Some(self.node.as_mut());
+            let mut depth = self.partition.width();
 
-        let point = point.clamp(0, self.root.width().exp() - 1);
-        let width = width.clamp(LogWidth::min_value(), depth);
-        while width < depth {
-            let taken = node.take().unwrap();
-            f(taken);
-            match *taken {
-                Node::Branch(ref mut branch) => {
-                    depth = depth - 1;
-                    node = Some(&mut branch.nodes[space::index_at_point(&point, depth)]);
-                }
-                _ => {
-                    node = Some(taken);
-                    break;
+            let point = point.clamp(0, self.root.width().exp() - 1);
+            let width = width.clamp(LogWidth::min_value(), depth);
+            while width < depth {
+                let taken = node.take().unwrap();
+                f(taken);
+                match *taken {
+                    Node::Branch(ref mut branch) => {
+                        depth = depth - 1;
+                        node = Some(&mut branch.nodes[space::index_at_point(&point, depth)]);
+                    }
+                    _ => {
+                        node = Some(taken);
+                        break;
+                    }
                 }
             }
+            Some(Cube::new(node.take().unwrap(),
+                           self.root,
+                           Partition::at_point(&point, depth)))
         }
-        Cube::new(node.take().unwrap(),
-                  self.root,
-                  Partition::at_point(&point, depth))
+        else {
+            None
+        }
     }
 
     fn to_value_mut(&mut self) -> Cube<&mut Node> {
