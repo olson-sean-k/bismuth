@@ -124,7 +124,9 @@ impl<T> Clamp<T> for Point3<T>
     fn clamp(&self, min: T, max: T) -> Self {
         use nalgebra::clamp;
 
-        Point3::new(clamp(self.x, min, max), clamp(self.y, min, max), clamp(self.z, min, max))
+        Point3::new(clamp(self.x, min, max),
+                    clamp(self.y, min, max),
+                    clamp(self.z, min, max))
     }
 }
 
@@ -194,7 +196,9 @@ impl<T, F> Interpolate<F> for Point3<T>
           F: SupersetOf<T> + Float
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
-        Point3::new(lerp(self.x, other.x, f), lerp(self.y, other.y, f), lerp(self.z, other.z, f))
+        Point3::new(lerp(self.x, other.x, f),
+                    lerp(self.y, other.y, f),
+                    lerp(self.z, other.z, f))
     }
 }
 
@@ -213,34 +217,19 @@ pub fn lerp<T, F>(a: T, b: T, f: F) -> T
 pub fn min_max<T>(a: T, b: T) -> (T, T)
     where T: PartialOrd
 {
-    if a <= b {
-        (a, b)
-    }
-    else {
-        (b, a)
-    }
+    if a <= b { (a, b) } else { (b, a) }
 }
 
 pub fn partial_min<T>(a: T, b: T) -> T
     where T: PartialOrd
 {
-    if a <= b {
-        a
-    }
-    else {
-        b
-    }
+    if a <= b { a } else { b }
 }
 
 pub fn partial_max<T>(a: T, b: T) -> T
     where T: PartialOrd
 {
-    if a > b {
-        a
-    }
-    else {
-        b
-    }
+    if a > b { a } else { b }
 }
 
 #[cfg(test)]

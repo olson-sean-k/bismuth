@@ -21,7 +21,8 @@ impl<T, R> Clamped<T, R>
           R: ClampedRange<T>
 {
     pub fn new(value: T) -> Self {
-        Clamped(nalgebra::clamp(value, R::min_value(), R::max_value()), PhantomData)
+        Clamped(nalgebra::clamp(value, R::min_value(), R::max_value()),
+                PhantomData)
     }
 
     pub fn max_value() -> Self {
@@ -65,7 +66,9 @@ impl<T, R> Clone for Clamped<T, R>
 
 impl<T, R> Copy for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
-          R: ClampedRange<T> {}
+          R: ClampedRange<T>
+{
+}
 
 impl<T, R> From<T> for Clamped<T, R>
     where T: Copy + Num + cmp::PartialOrd,
@@ -78,7 +81,9 @@ impl<T, R> From<T> for Clamped<T, R>
 
 impl<T, R> cmp::Eq for Clamped<T, R>
     where T: Copy + cmp::Eq + Num + cmp::PartialOrd,
-          R: ClampedRange<T> {}
+          R: ClampedRange<T>
+{
+}
 
 impl<T, R> cmp::Ord for Clamped<T, R>
     where T: Copy + Num + cmp::Ord + cmp::PartialOrd,

@@ -22,6 +22,7 @@ pub trait QuadExt<T>
 impl<T> PolygonalExt<T> for Triangle<T>
     where T: Clone + Interpolate
 {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn into_subdivisions<F>(self, n: usize, mut f: F)
         where F: FnMut(Polygon<T>)
     {

@@ -69,7 +69,7 @@ impl From<usize> for Axis {
             0 => Axis::X,
             1 => Axis::Y,
             2 => Axis::Z,
-            _ => panic!() // TODO: Use `TryFrom`.
+            _ => panic!(), // TODO: Use `TryFrom`.
         }
     }
 }
