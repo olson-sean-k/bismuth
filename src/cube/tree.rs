@@ -475,7 +475,7 @@ macro_rules! traverse {
     }};
 }
 
-macro_rules! thread {
+macro_rules! trace {
     (cube => $c:expr, | $p:ident | $f:block) => {{
         let mut depth = $c.depth();
         let mut path = vec![];
@@ -536,7 +536,7 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each_path<F>(&mut self, mut f: F)
         where F: FnMut(&mut [Cube<&Node>])
     {
-        thread!(cube => self.to_value(), |path| {
+        trace!(cube => self.to_value(), |path| {
             f(path);
         });
     }
@@ -641,7 +641,7 @@ impl<'a, N> Cube<'a, N>
     pub fn for_each_path_mut<F>(&mut self, mut f: F)
         where F: FnMut(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
     {
-        thread!(cube => self.to_value_mut(), |path| {
+        trace!(cube => self.to_value_mut(), |path| {
             f(path);
         });
     }
