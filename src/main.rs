@@ -65,7 +65,7 @@ fn main() {
                 Event::MouseInput(ElementState::Pressed, MouseButton::Left) => {
                     let ray = camera.cast_ray(&context.window, &pointer);
                     let mut edited = false;
-                    if let Some(mut cube) = root.to_cube_mut()
+                    if let Some((_, mut cube)) = root.to_cube_mut()
                         .at_ray_mut(&ray, LogWidth::min_value()) {
                         if let Some(leaf) = cube.as_leaf_mut() {
                             leaf.geometry = Geometry::empty();
