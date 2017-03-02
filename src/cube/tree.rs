@@ -9,7 +9,7 @@ use math::{Clamp, FRay3, FScalar, UPoint3};
 use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
-use super::space::{self, Intersects, LogWidth, PartialRayCast, Partition, Spatial};
+use super::space::{self, Intersects, LogWidth, Partition, RayCast, RayIntersection, Spatial};
 
 type NodeLink = Box<[Node; 8]>;
 
@@ -570,17 +570,17 @@ impl<'a, N> Cube<'a, N>
         })
     }
 
-    pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<Cube<&Node>> {
+    pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<(RayIntersection, Cube<&Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value(), |traversal| {
-            if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
+            if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
-                        if distance < min_distance {
-                            min_distance = distance;
+                        if intersection.distance < min_distance {
+                            min_distance = intersection.distance;
                             // No need to `push`; this is a leaf.
-                            cube = Some(traversal.take());
+                            cube = Some((intersection, traversal.take()));
                         }
                     }
                     else if traversal.peek().partition.width() > width {
@@ -660,17 +660,20 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn at_ray_mut(&mut self, ray: &FRay3, width: LogWidth) -> Option<Cube<&mut Node>> {
+    pub fn at_ray_mut(&mut self,
+                      ray: &FRay3,
+                      width: LogWidth)
+                      -> Option<(RayIntersection, Cube<&mut Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value_mut(), |traversal| {
-            if let Some((distance, _)) = traversal.peek().aabb().partial_ray_intersection(ray) {
+            if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
-                        if distance < min_distance {
-                            min_distance = distance;
+                        if intersection.distance < min_distance {
+                            min_distance = intersection.distance;
                             // No need to `push`; this is a leaf.
-                            cube = Some(traversal.take());
+                            cube = Some((intersection, traversal.take()));
                         }
                     }
                     else if traversal.peek().partition.width() > width {
