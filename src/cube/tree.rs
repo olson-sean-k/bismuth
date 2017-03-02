@@ -65,6 +65,7 @@ impl Node {
         }
     }
 
+    #[allow(dead_code)]
     fn hint_mut(&mut self) -> &mut Hint {
         match *self {
             Node::Leaf(ref mut leaf) => &mut leaf.hint,
@@ -173,6 +174,7 @@ impl<L, B> OrphanNode<L, B>
         }
     }
 
+    #[allow(dead_code)]
     fn hint(&self) -> &Hint {
         match *self {
             OrphanNode::Leaf(ref leaf) => &leaf.as_ref().hint,
