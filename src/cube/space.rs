@@ -1,4 +1,5 @@
-use nalgebra::Unit;
+use alga::general::SupersetOf;
+use nalgebra::{Point3, Scalar, Unit};
 use num::{Bounded, One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
@@ -226,6 +227,25 @@ impl Intersects<AABB> for AABB {
                 return false;
             }
             if self.origin[axis] > (aabb.origin[axis] + aabb.extent[axis]) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl<T> Intersects<Point3<T>> for AABB
+    where T: PartialOrd + Scalar + SupersetOf<UScalar>
+{
+    /// Determines if a point intersects an `AABB`.
+    fn intersects(&self, point: &Point3<T>) -> bool {
+        use nalgebra::convert;
+
+        for axis in Axis::range() {
+            if convert::<UScalar, T>(self.origin[axis] + self.extent[axis]) < point[axis] {
+                return false;
+            }
+            if convert::<UScalar, T>(self.origin[axis]) > point[axis] {
                 return false;
             }
         }
