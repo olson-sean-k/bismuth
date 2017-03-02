@@ -2,7 +2,7 @@ extern crate bismuth;
 extern crate glutin;
 extern crate nalgebra;
 
-use bismuth::cube::{Axis, Cursor, Geometry, LogWidth, Offset, Root, Spatial};
+use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint2, UPoint3, UScalar, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
 use glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder};
@@ -10,18 +10,7 @@ use glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder};
 fn new_root(width: LogWidth) -> Root {
     let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
     let mut root = Root::new(width);
-    for mut cube in root.to_cube_mut().subdivide_to_cursor(&cursor).iter_mut() {
-        for mut cube in cube.iter_mut() {
-            if let Some(leaf) = cube.as_leaf_mut() {
-                for axis in Axis::range() {
-                    for edge in leaf.geometry.edges_mut(axis.into()) {
-                        edge.set_front(Offset::from(2));
-                        edge.set_back(Offset::from(14));
-                    }
-                }
-            }
-        }
-    }
+    root.to_cube_mut().subdivide_to_cursor(&cursor);
     root
 }
 
@@ -44,7 +33,7 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
 fn main() {
     let mut context = Context::from_glutin_window(WindowBuilder::new()
         .with_title("Bismuth")
-        .with_dimensions(640, 480)
+        .with_dimensions(1024, 576)
         .with_vsync()
         .build()
         .unwrap());
