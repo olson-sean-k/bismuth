@@ -71,7 +71,7 @@ impl<C> Textured<Quad<Point2<f32>>> for C
 }
 
 #[derive(Clone)]
-pub struct FCube<T>
+pub struct RCube<T>
     where T: Float + Scalar
 {
     faces: Range<usize>,
@@ -79,11 +79,11 @@ pub struct FCube<T>
     high: T,
 }
 
-impl<T> FCube<T>
+impl<T> RCube<T>
     where T: Float + Scalar
 {
     fn new(low: T, high: T) -> Self {
-        FCube {
+        RCube {
             faces: 0..6,
             low: low,
             high: high,
@@ -91,16 +91,16 @@ impl<T> FCube<T>
     }
 
     pub fn with_unit_radius() -> Self {
-        FCube::new(-T::one(), T::one())
+        RCube::new(-T::one(), T::one())
     }
 
     pub fn with_unit_width() -> Self {
         let half = T::one() / (T::one() + T::one());
-        FCube::new(-half, half)
+        RCube::new(-half, half)
     }
 }
 
-impl<T> Cube for FCube<T>
+impl<T> Cube for RCube<T>
     where T: Float + Scalar
 {
     type Point = Point3<T>;
@@ -110,7 +110,7 @@ impl<T> Cube for FCube<T>
     }
 }
 
-impl<T> Iterator for FCube<T>
+impl<T> Iterator for RCube<T>
     where T: Float + Scalar
 {
     type Item = Quad<<Self as Cube>::Point>;
@@ -121,7 +121,7 @@ impl<T> Iterator for FCube<T>
 }
 
 #[derive(Clone)]
-pub struct UCube<T>
+pub struct NCube<T>
     where T: Unsigned + Scalar
 {
     faces: Range<usize>,
@@ -129,11 +129,11 @@ pub struct UCube<T>
     high: T,
 }
 
-impl<T> UCube<T>
+impl<T> NCube<T>
     where T: Unsigned + Scalar
 {
     fn new(low: T, high: T) -> Self {
-        UCube {
+        NCube {
             faces: 0..6,
             low: low,
             high: high,
@@ -141,15 +141,15 @@ impl<T> UCube<T>
     }
 
     pub fn with_unit_radius() -> Self {
-        UCube::new(T::zero(), T::one() + T::one())
+        NCube::new(T::zero(), T::one() + T::one())
     }
 
     pub fn with_unit_width() -> Self {
-        UCube::new(T::zero(), T::one())
+        NCube::new(T::zero(), T::one())
     }
 }
 
-impl<T> Cube for UCube<T>
+impl<T> Cube for NCube<T>
     where T: Unsigned + Scalar
 {
     type Point = Point3<T>;
@@ -159,7 +159,7 @@ impl<T> Cube for UCube<T>
     }
 }
 
-impl<T> Iterator for UCube<T>
+impl<T> Iterator for NCube<T>
     where T: Unsigned + Scalar
 {
     type Item = Quad<<Self as Cube>::Point>;
