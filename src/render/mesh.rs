@@ -1,7 +1,7 @@
 use OptionExt;
 use cube::{CubeRef, OrphanCubeRef, Spatial};
 use math::{IntoSpace, FScalar, FVector3};
-use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Triangle, UCube};
+use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Textured, Triangle, UCube};
 use super::pipeline::{Color, ColorExt, Index, Vertex};
 
 pub struct MeshBuffer {
@@ -64,11 +64,12 @@ impl<'a> Mesh for OrphanCubeRef<'a> {
                               .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
                               .map_points(|point| (point * width) + origin)
                               .triangulate()
-                              .map(|triangle| {
+                              .zip(UCube::with_unit_width().textured_polygons().triangulate())
+                              .map(|(triangle, texture)| {
                                   let color = Color::random();
-                                  Triangle::new(Vertex::new(&triangle.a, &color),
-                                                Vertex::new(&triangle.b, &color),
-                                                Vertex::new(&triangle.c, &color))
+                                  Triangle::new(Vertex::new(&triangle.a, &texture.a, &color),
+                                                Vertex::new(&triangle.b, &texture.b, &color),
+                                                Vertex::new(&triangle.c, &texture.c, &color))
                               })
                               .points(),
                           UCube::with_unit_width()

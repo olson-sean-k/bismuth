@@ -1,7 +1,7 @@
 use gfx;
 use rand;
 
-use math::{FPoint3, FMatrix4, FScalar, FVector4, Matrix4Ext};
+use math::{FPoint2, FPoint3, FMatrix4, FScalar, FVector4, Matrix4Ext};
 
 pub use self::pipeline::*;
 
@@ -58,14 +58,16 @@ impl Default for Transform {
 gfx_vertex_struct!{
     Vertex {
         position: [f32; 3] = "a_position",
+        uv: [f32; 2] = "a_uv",
         color: [f32; 4] = "a_color",
     }
 }
 
 impl Vertex {
-    pub fn new(position: &FPoint3, color: &Color) -> Self {
+    pub fn new(position: &FPoint3, uv: &FPoint2, color: &Color) -> Self {
         Vertex {
             position: [position.x, position.y, position.z],
+            uv: [uv.x, uv.y],
             color: [color.x, color.y, color.z, color.w],
         }
     }
@@ -73,6 +75,6 @@ impl Vertex {
 
 impl Default for Vertex {
     fn default() -> Self {
-        Vertex::new(&FPoint3::origin(), &Color::new(0.0, 0.0, 0.0, 1.0))
+        Vertex::new(&FPoint3::origin(), &FPoint2::origin(), &Color::new(0.0, 0.0, 0.0, 1.0))
     }
 }
