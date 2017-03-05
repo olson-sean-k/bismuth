@@ -12,7 +12,7 @@ pub trait Conjoint<T>: Sized {
 pub struct ConjointPointIter<'a, S: 'a, T> {
     shape: &'a S,
     points: ops::Range<usize>,
-    phantom_t: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<'a, S, T> ConjointPointIter<'a, S, T> {
@@ -20,7 +20,7 @@ impl<'a, S, T> ConjointPointIter<'a, S, T> {
         ConjointPointIter {
             shape: shape,
             points: points,
-            phantom_t: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -46,7 +46,7 @@ pub trait Indexed<P>: Sized {
 pub struct IndexedPolygonIter<'a, S: 'a, P> {
     shape: &'a S,
     polygons: ops::Range<usize>,
-    phantom_p: PhantomData<P>,
+    phantom: PhantomData<P>,
 }
 
 impl<'a, S, P> IndexedPolygonIter<'a, S, P> {
@@ -54,7 +54,7 @@ impl<'a, S, P> IndexedPolygonIter<'a, S, P> {
         IndexedPolygonIter {
             shape: shape,
             polygons: polygons,
-            phantom_p: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -66,5 +66,39 @@ impl<'a, S, P> Iterator for IndexedPolygonIter<'a, S, P>
 
     fn next(&mut self) -> Option<Self::Item> {
         self.polygons.next().map(|index| self.shape.indexed_polygon(index))
+    }
+}
+
+pub trait Textured<P>: Sized {
+    fn textured_polygon(&self, index: usize) -> P;
+    fn textured_polygon_count(&self) -> usize;
+    fn textured_polygons<'a>(&'a self) -> TexturedPolygonIter<'a, Self, P> {
+        TexturedPolygonIter::new(self, 0..self.textured_polygon_count())
+    }
+}
+
+pub struct TexturedPolygonIter<'a, S: 'a, P> {
+    shape: &'a S,
+    polygons: ops::Range<usize>,
+    phantom: PhantomData<P>,
+}
+
+impl<'a, S, P> TexturedPolygonIter<'a, S, P> {
+    fn new(shape: &'a S, polygons: ops::Range<usize>) -> Self {
+        TexturedPolygonIter {
+            shape: shape,
+            polygons: polygons,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<'a, S, P> Iterator for TexturedPolygonIter<'a, S, P>
+    where S: Textured<P>
+{
+    type Item = P;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.polygons.next().map(|index| self.shape.textured_polygon(index))
     }
 }

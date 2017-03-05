@@ -182,12 +182,30 @@ pub trait Interpolate<F>: Sized
     }
 }
 
+impl<T, F> Interpolate<F> for (T, T)
+    where T: SupersetOf<F> + Scalar,
+          F: SupersetOf<T> + Float
+{
+    fn lerp(&self, other: &Self, f: F) -> Self {
+        (lerp(self.0, other.0, f), lerp(self.1, other.1, f))
+    }
+}
+
 impl<T, F> Interpolate<F> for (T, T, T)
     where T: SupersetOf<F> + Scalar,
           F: SupersetOf<T> + Float
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         (lerp(self.0, other.0, f), lerp(self.1, other.1, f), lerp(self.2, other.2, f))
+    }
+}
+
+impl<T, F> Interpolate<F> for Point2<T>
+    where T: SupersetOf<F> + Scalar,
+          F: SupersetOf<T> + Float
+{
+    fn lerp(&self, other: &Self, f: F) -> Self {
+        Point2::new(lerp(self.x, other.x, f), lerp(self.y, other.y, f))
     }
 }
 

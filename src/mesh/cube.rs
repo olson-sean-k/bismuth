@@ -1,8 +1,8 @@
-use nalgebra::{Point3, Scalar};
+use nalgebra::{Point2, Point3, Scalar};
 use num::{Float, Unsigned};
 use std::ops::Range;
 
-use super::generate::{Conjoint, Indexed};
+use super::generate::{Conjoint, Indexed, Textured};
 use super::primitive::{MapPrimitiveInto, Quad};
 
 pub trait Cube: Iterator + Sized {
@@ -25,6 +25,25 @@ pub trait Cube: Iterator + Sized {
             _ => panic!(),
         }
     }
+
+    fn textured_face(&self, _: usize) -> Quad<Point2<f32>> {
+        Quad::new(Point2::new(0.0, 1.0),
+                  Point2::new(1.0, 1.0),
+                  Point2::new(1.0, 0.0),
+                  Point2::new(0.0, 0.0))
+    }
+}
+
+impl<T, C> Conjoint<T> for C
+    where C: Cube<Point = T>
+{
+    fn conjoint_point(&self, index: usize) -> T {
+        self.point(index)
+    }
+
+    fn conjoint_point_count(&self) -> usize {
+        8
+    }
 }
 
 impl<C> Indexed<Quad<usize>> for C
@@ -39,15 +58,15 @@ impl<C> Indexed<Quad<usize>> for C
     }
 }
 
-impl<T, C> Conjoint<T> for C
-    where C: Cube<Point = T>
+impl<C> Textured<Quad<Point2<f32>>> for C
+    where C: Cube
 {
-    fn conjoint_point(&self, index: usize) -> T {
-        self.point(index)
+    fn textured_polygon(&self, index: usize) -> Quad<Point2<f32>> {
+        self.textured_face(index)
     }
 
-    fn conjoint_point_count(&self) -> usize {
-        8
+    fn textured_polygon_count(&self) -> usize {
+        6
     }
 }
 
