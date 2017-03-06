@@ -1,10 +1,19 @@
 use std::marker::PhantomData;
 use std::ops;
 
-pub trait Conjoint<T>: Sized {
+pub trait ConjointGenerator<T> {
     fn conjoint_point(&self, index: usize) -> T;
     fn conjoint_point_count(&self) -> usize;
-    fn conjoint_points<'a>(&'a self) -> ConjointPointIter<'a, Self, T> {
+}
+
+pub trait Conjoint<T>: Sized {
+    fn conjoint_points<'a>(&'a self) -> ConjointPointIter<'a, Self, T>;
+}
+
+impl<T, U> Conjoint<U> for T
+    where T: ConjointGenerator<U>
+{
+    fn conjoint_points<'a>(&'a self) -> ConjointPointIter<'a, Self, U> {
         ConjointPointIter::new(self, 0..self.conjoint_point_count())
     }
 }
@@ -26,7 +35,7 @@ impl<'a, S, T> ConjointPointIter<'a, S, T> {
 }
 
 impl<'a, S, T> Iterator for ConjointPointIter<'a, S, T>
-    where S: Conjoint<T>
+    where S: ConjointGenerator<T>
 {
     type Item = T;
 
@@ -35,11 +44,23 @@ impl<'a, S, T> Iterator for ConjointPointIter<'a, S, T>
     }
 }
 
-pub trait Indexed<P>: Sized {
+pub trait PolygonGenerator {
+    fn polygon_count(&self) -> usize;
+}
+
+pub trait IndexedGenerator<P>: PolygonGenerator {
     fn indexed_polygon(&self, index: usize) -> P;
-    fn indexed_polygon_count(&self) -> usize;
+}
+
+pub trait Indexed<P>: Sized {
+    fn indexed_polygons<'a>(&'a self) -> IndexedPolygonIter<'a, Self, P>;
+}
+
+impl<T, P> Indexed<P> for T
+    where T: IndexedGenerator<P> + PolygonGenerator
+{
     fn indexed_polygons<'a>(&'a self) -> IndexedPolygonIter<'a, Self, P> {
-        IndexedPolygonIter::new(self, 0..self.indexed_polygon_count())
+        IndexedPolygonIter::new(self, 0..self.polygon_count())
     }
 }
 
@@ -60,7 +81,7 @@ impl<'a, S, P> IndexedPolygonIter<'a, S, P> {
 }
 
 impl<'a, S, P> Iterator for IndexedPolygonIter<'a, S, P>
-    where S: Indexed<P>
+    where S: IndexedGenerator<P> + PolygonGenerator
 {
     type Item = P;
 
@@ -69,11 +90,19 @@ impl<'a, S, P> Iterator for IndexedPolygonIter<'a, S, P>
     }
 }
 
-pub trait Textured<P>: Sized {
+pub trait TexturedGenerator<P> {
     fn textured_polygon(&self, index: usize) -> P;
-    fn textured_polygon_count(&self) -> usize;
+}
+
+pub trait Textured<P>: Sized {
+    fn textured_polygons<'a>(&'a self) -> TexturedPolygonIter<'a, Self, P>;
+}
+
+impl<T, P> Textured<P> for T
+    where T: PolygonGenerator + TexturedGenerator<P>
+{
     fn textured_polygons<'a>(&'a self) -> TexturedPolygonIter<'a, Self, P> {
-        TexturedPolygonIter::new(self, 0..self.textured_polygon_count())
+        TexturedPolygonIter::new(self, 0..self.polygon_count())
     }
 }
 
@@ -94,7 +123,7 @@ impl<'a, S, P> TexturedPolygonIter<'a, S, P> {
 }
 
 impl<'a, S, P> Iterator for TexturedPolygonIter<'a, S, P>
-    where S: Textured<P>
+    where S: PolygonGenerator + TexturedGenerator<P>
 {
     type Item = P;
 

@@ -6,7 +6,7 @@ use std::iter::Peekable;
 use std::ops::Range;
 use std::marker::PhantomData;
 
-use super::generate::{Conjoint, Indexed};
+use super::generate::{ConjointGenerator, IndexedGenerator, PolygonGenerator};
 use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
@@ -52,7 +52,7 @@ impl<T> UVSphere<T>
     }
 }
 
-impl<T> Conjoint<Point3<T>> for UVSphere<T>
+impl<T> ConjointGenerator<Point3<T>> for UVSphere<T>
     where T: Float + FloatConst + Scalar
 {
     fn conjoint_point(&self, index: usize) -> Point3<T> {
@@ -73,7 +73,15 @@ impl<T> Conjoint<Point3<T>> for UVSphere<T>
     }
 }
 
-impl<T> Indexed<Polygon<usize>> for UVSphere<T>
+impl<T> PolygonGenerator for UVSphere<T>
+    where T: Float + FloatConst + Scalar
+{
+    fn polygon_count(&self) -> usize {
+        self.nu * self.nv
+    }
+}
+
+impl<T> IndexedGenerator<Polygon<usize>> for UVSphere<T>
     where T: Float + FloatConst + Scalar
 {
     fn indexed_polygon(&self, index: usize) -> Polygon<usize> {
@@ -94,10 +102,6 @@ impl<T> Indexed<Polygon<usize>> for UVSphere<T>
                                     high,
                                     self.indexed_point(u + 1, v)))
         }
-    }
-
-    fn indexed_polygon_count(&self) -> usize {
-        self.nu * self.nv
     }
 }
 
