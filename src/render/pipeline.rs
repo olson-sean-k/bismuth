@@ -27,6 +27,7 @@ gfx_pipeline!{
         transform: gfx::ConstantBuffer<Transform> = "transform",
         camera: gfx::Global<[[f32; 4]; 4]> = "u_camera",
         model: gfx::Global<[[f32; 4]; 4]> = "u_model",
+        sampler: gfx::TextureSampler<[f32; 4]> = "t_texture",
         color: gfx::RenderTarget<gfx::format::Rgba8> = "f_target0",
         depth: gfx::DepthTarget<gfx::format::DepthStencil> = gfx::preset::depth::LESS_EQUAL_WRITE,
     }
