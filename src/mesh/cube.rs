@@ -16,21 +16,30 @@ pub trait Cube: Iterator + Sized {
 
     fn indexed_face(&self, index: usize) -> Quad<usize> {
         match index {
-            0 => Quad::new(5, 7, 3, 1),
-            1 => Quad::new(6, 7, 5, 4),
-            2 => Quad::new(3, 7, 6, 2),
-            3 => Quad::new(0, 1, 3, 2),
-            4 => Quad::new(4, 5, 1, 0),
-            5 => Quad::new(0, 2, 6, 4),
+            0 => Quad::new(5, 7, 3, 1), // front
+            1 => Quad::new(6, 7, 5, 4), // right
+            2 => Quad::new(3, 7, 6, 2), // top
+            3 => Quad::new(0, 1, 3, 2), // left
+            4 => Quad::new(4, 5, 1, 0), // bottom
+            5 => Quad::new(0, 2, 6, 4), // back
             _ => panic!(),
         }
     }
 
-    fn textured_face(&self, _: usize) -> Quad<Point2<f32>> {
-        Quad::new(Point2::new(0.0, 1.0),
-                  Point2::new(1.0, 1.0),
-                  Point2::new(1.0, 0.0),
-                  Point2::new(0.0, 0.0))
+    fn textured_face(&self, index: usize) -> Quad<Point2<f32>> {
+        let uu = Point2::new(1.0, 1.0);
+        let ul = Point2::new(1.0, 0.0);
+        let ll = Point2::new(0.0, 0.0);
+        let lu = Point2::new(0.0, 1.0);
+        match index {
+            0 => Quad::new(uu, ul, ll, lu), // front
+            1 => Quad::new(ul, ll, lu, uu), // right
+            2 => Quad::new(lu, uu, ul, ll), // top
+            3 => Quad::new(lu, uu, ul, ll), // left
+            4 => Quad::new(uu, ul, ll, lu), // bottom
+            5 => Quad::new(uu, ul, ll, lu), // back
+            _ => panic!(),
+        }
     }
 }
 
