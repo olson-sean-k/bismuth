@@ -11,8 +11,8 @@ pub use self::primitive::{DecomposePolygon, DecomposePrimitive, Line, MapPrimiti
                           RotatePrimitive, Triangle, Quad};
 pub use self::tessellate::{TessellatePolygon, TessellateQuad};
 
-pub type FCube = self::cube::RCube<FScalar>;
-pub type UCube = self::cube::NCube<UScalar>;
+pub type FCube = self::cube::Cube<FScalar>;
+pub type UCube = self::cube::Cube<UScalar>;
 pub type UVSphere = self::sphere::UVSphere<FScalar>;
 
 #[cfg(test)]
