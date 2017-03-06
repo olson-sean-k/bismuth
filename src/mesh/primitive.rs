@@ -1,7 +1,12 @@
 use std::collections::VecDeque;
 use std::marker::PhantomData;
+use std::mem;
 
-pub trait Primitive<T>: Sized {
+pub trait Rotate {
+    fn rotate(&mut self, n: isize);
+}
+
+pub trait Primitive<T>: Rotate + Sized {
     fn into_points<F>(self, f: F) where F: FnMut(T);
     fn into_lines<F>(self, f: F) where F: FnMut(Line<T>);
 }
@@ -183,7 +188,9 @@ impl<T, U> MapPrimitiveInto<T, U> for Line<T> {
     }
 }
 
-impl<T> Primitive<T> for Line<T> {
+impl<T> Primitive<T> for Line<T>
+    where T: Clone
+{
     fn into_points<F>(self, mut f: F)
         where F: FnMut(T)
     {
@@ -196,6 +203,16 @@ impl<T> Primitive<T> for Line<T> {
         where F: FnMut(Line<T>)
     {
         f(self);
+    }
+}
+
+impl<T> Rotate for Line<T>
+    where T: Clone
+{
+    fn rotate(&mut self, n: isize) {
+        if n % 2 != 0 {
+            mem::swap(&mut self.a, &mut self.b);
+        }
     }
 }
 
@@ -251,6 +268,26 @@ impl<T> Polygonal<T> for Triangle<T>
         where F: FnMut(Triangle<T>)
     {
         f(self);
+    }
+}
+
+impl<T> Rotate for Triangle<T>
+    where T: Clone
+{
+    fn rotate(&mut self, n: isize) {
+        let n = (n % 3) * n.signum();
+        if n >= 0 {
+            for _ in 0..n {
+                mem::swap(&mut self.a, &mut self.b);
+                mem::swap(&mut self.b, &mut self.c);
+            }
+        }
+        else {
+            for _ in 0..n {
+                mem::swap(&mut self.c, &mut self.b);
+                mem::swap(&mut self.b, &mut self.a);
+            }
+        }
     }
 }
 
@@ -319,6 +356,28 @@ impl<T> Polygonal<T> for Quad<T>
     }
 }
 
+impl<T> Rotate for Quad<T>
+    where T: Clone
+{
+    fn rotate(&mut self, n: isize) {
+        let n = (n % 4) * n.signum();
+        if n >= 0 {
+            for _ in 0..n {
+                mem::swap(&mut self.a, &mut self.b);
+                mem::swap(&mut self.b, &mut self.c);
+                mem::swap(&mut self.c, &mut self.d);
+            }
+        }
+        else {
+            for _ in 0..n {
+                mem::swap(&mut self.d, &mut self.c);
+                mem::swap(&mut self.c, &mut self.b);
+                mem::swap(&mut self.b, &mut self.a);
+            }
+        }
+    }
+}
+
 pub enum Polygon<T> {
     Triangle(Triangle<T>),
     Quad(Quad<T>),
@@ -368,6 +427,17 @@ impl<T> Polygonal<T> for Polygon<T>
         match self {
             Polygon::Triangle(triangle) => triangle.into_triangles(f),
             Polygon::Quad(quad) => quad.into_triangles(f),
+        }
+    }
+}
+
+impl<T> Rotate for Polygon<T>
+    where T: Clone
+{
+    fn rotate(&mut self, n: isize) {
+        match *self {
+            Polygon::Triangle(ref mut triangle) => triangle.rotate(n),
+            Polygon::Quad(ref mut quad) => quad.rotate(n),
         }
     }
 }
