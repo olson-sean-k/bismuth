@@ -33,6 +33,11 @@ impl ClampedRange<u8> for LogWidthRange {
 pub type LogWidth = Clamped<u8, LogWidthRange>;
 
 impl LogWidth {
+    /// Reference width of `Cube`s.
+    pub fn unit() -> Self {
+        LogWidth::new(8)
+    }
+
     /// Exponentiates a `LogWidth` into a `UScalar`.
     pub fn exp(&self) -> UScalar {
         UScalar::one() << self.to_inner()
