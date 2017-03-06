@@ -90,7 +90,7 @@ impl<'a, S, P> Iterator for IndexedPolygonIter<'a, S, P>
     }
 }
 
-pub trait TexturedGenerator<P> {
+pub trait TexturedGenerator<P>: PolygonGenerator {
     fn textured_polygon(&self, index: usize) -> P;
 }
 
