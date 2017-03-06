@@ -8,7 +8,7 @@ mod tessellate;
 
 pub use self::generate::{Conjoint, Indexed, Textured};
 pub use self::primitive::{DecomposePolygon, DecomposePrimitive, Line, MapPrimitive, Polygon,
-                          Rotate, Triangle, Quad};
+                          RotatePrimitive, Triangle, Quad};
 pub use self::tessellate::{TessellatePolygon, TessellateQuad};
 
 pub type FCube = self::cube::RCube<FScalar>;

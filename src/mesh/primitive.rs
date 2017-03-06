@@ -2,11 +2,7 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::mem;
 
-pub trait Rotate {
-    fn rotate(&mut self, n: isize);
-}
-
-pub trait Primitive<T>: Rotate + Sized {
+pub trait Primitive<T>: Sized {
     fn into_points<F>(self, f: F) where F: FnMut(T);
     fn into_lines<F>(self, f: F) where F: FnMut(Line<T>);
 }
@@ -25,6 +21,10 @@ pub trait MapPrimitive<T, U>: Sized {
     type Output;
 
     fn map_points<F>(self, f: F) -> Map<Self, T, U, F> where F: FnMut(T) -> U;
+}
+
+pub trait RotatePrimitive {
+    fn rotate(&mut self, n: isize);
 }
 
 pub trait DecomposePrimitive<T>: Sized {
@@ -206,7 +206,7 @@ impl<T> Primitive<T> for Line<T>
     }
 }
 
-impl<T> Rotate for Line<T>
+impl<T> RotatePrimitive for Line<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
@@ -271,7 +271,7 @@ impl<T> Polygonal<T> for Triangle<T>
     }
 }
 
-impl<T> Rotate for Triangle<T>
+impl<T> RotatePrimitive for Triangle<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
@@ -356,7 +356,7 @@ impl<T> Polygonal<T> for Quad<T>
     }
 }
 
-impl<T> Rotate for Quad<T>
+impl<T> RotatePrimitive for Quad<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
@@ -431,7 +431,7 @@ impl<T> Polygonal<T> for Polygon<T>
     }
 }
 
-impl<T> Rotate for Polygon<T>
+impl<T> RotatePrimitive for Polygon<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
