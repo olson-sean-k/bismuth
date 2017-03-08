@@ -1,6 +1,6 @@
 use nalgebra;
 use num::Num;
-use std::cmp;
+use std::cmp::Ordering;
 use std::convert::From;
 use std::marker::PhantomData;
 use std::ops;
@@ -13,11 +13,11 @@ pub trait ClampedRange<T> {
 }
 
 pub struct Clamped<T, R>(T, PhantomData<R>)
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>;
 
 impl<T, R> Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     pub fn new(value: T) -> Self {
@@ -47,7 +47,7 @@ impl<T, R> Clamped<T, R>
 }
 
 impl<T, R> Clamp<Clamped<T, R>> for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     fn clamp(&self, min: Self, max: Self) -> Self {
@@ -56,7 +56,7 @@ impl<T, R> Clamp<Clamped<T, R>> for Clamped<T, R>
 }
 
 impl<T, R> Clone for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     fn clone(&self) -> Self {
@@ -65,13 +65,13 @@ impl<T, R> Clone for Clamped<T, R>
 }
 
 impl<T, R> Copy for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
 }
 
 impl<T, R> From<T> for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     fn from(value: T) -> Self {
@@ -79,23 +79,23 @@ impl<T, R> From<T> for Clamped<T, R>
     }
 }
 
-impl<T, R> cmp::Eq for Clamped<T, R>
-    where T: Copy + cmp::Eq + Num + cmp::PartialOrd,
+impl<T, R> Eq for Clamped<T, R>
+    where T: Copy + Eq + Num + PartialOrd,
           R: ClampedRange<T>
 {
 }
 
-impl<T, R> cmp::Ord for Clamped<T, R>
-    where T: Copy + Num + cmp::Ord + cmp::PartialOrd,
+impl<T, R> Ord for Clamped<T, R>
+    where T: Copy + Num + Ord + PartialOrd,
           R: ClampedRange<T>
 {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         self.0.cmp(&other.0)
     }
 }
 
-impl<T, R> cmp::PartialEq for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialEq + cmp::PartialOrd,
+impl<T, R> PartialEq for Clamped<T, R>
+    where T: Copy + Num + PartialEq + PartialOrd,
           R: ClampedRange<T>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -103,8 +103,8 @@ impl<T, R> cmp::PartialEq for Clamped<T, R>
     }
 }
 
-impl<T, R> cmp::PartialEq<T> for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialEq + cmp::PartialOrd,
+impl<T, R> PartialEq<T> for Clamped<T, R>
+    where T: Copy + Num + PartialEq + PartialOrd,
           R: ClampedRange<T>
 {
     fn eq(&self, other: &T) -> bool {
@@ -112,26 +112,26 @@ impl<T, R> cmp::PartialEq<T> for Clamped<T, R>
     }
 }
 
-impl<T, R> cmp::PartialOrd for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+impl<T, R> PartialOrd for Clamped<T, R>
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.0.partial_cmp(&other.0)
     }
 }
 
-impl<T, R> cmp::PartialOrd<T> for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+impl<T, R> PartialOrd<T> for Clamped<T, R>
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
-    fn partial_cmp(&self, other: &T) -> Option<cmp::Ordering> {
+    fn partial_cmp(&self, other: &T) -> Option<Ordering> {
         self.0.partial_cmp(other)
     }
 }
 
 impl<T, R> ops::Add for Clamped<T, R>
-    where T: ops::Add<Output = T> + Copy + Num + cmp::PartialOrd,
+    where T: ops::Add<Output = T> + Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -142,7 +142,7 @@ impl<T, R> ops::Add for Clamped<T, R>
 }
 
 impl<T, R> ops::Add<T> for Clamped<T, R>
-    where T: ops::Add<Output = T> + Copy + Num + cmp::PartialOrd,
+    where T: ops::Add<Output = T> + Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -153,7 +153,7 @@ impl<T, R> ops::Add<T> for Clamped<T, R>
 }
 
 impl<T, R> ops::Deref for Clamped<T, R>
-    where T: Copy + Num + cmp::PartialOrd,
+    where T: Copy + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Target = T;
@@ -164,7 +164,7 @@ impl<T, R> ops::Deref for Clamped<T, R>
 }
 
 impl<T, R> ops::Div for Clamped<T, R>
-    where T: Copy + ops::Div<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Div<Output = T> + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -175,7 +175,7 @@ impl<T, R> ops::Div for Clamped<T, R>
 }
 
 impl<T, R> ops::Div<T> for Clamped<T, R>
-    where T: Copy + ops::Div<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Div<Output = T> + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -186,7 +186,7 @@ impl<T, R> ops::Div<T> for Clamped<T, R>
 }
 
 impl<T, R> ops::Mul for Clamped<T, R>
-    where T: Copy + ops::Mul<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Mul<Output = T> + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -197,7 +197,7 @@ impl<T, R> ops::Mul for Clamped<T, R>
 }
 
 impl<T, R> ops::Mul<T> for Clamped<T, R>
-    where T: Copy + ops::Mul<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Mul<Output = T> + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -208,7 +208,7 @@ impl<T, R> ops::Mul<T> for Clamped<T, R>
 }
 
 impl<T, R> ops::Neg for Clamped<T, R>
-    where T: Copy + ops::Neg<Output = T> + Num + cmp::PartialOrd,
+    where T: Copy + ops::Neg<Output = T> + Num + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -219,7 +219,7 @@ impl<T, R> ops::Neg for Clamped<T, R>
 }
 
 impl<T, R> ops::Sub for Clamped<T, R>
-    where T: Copy + Num + ops::Sub<Output = T> + cmp::PartialOrd,
+    where T: Copy + Num + ops::Sub<Output = T> + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
@@ -230,7 +230,7 @@ impl<T, R> ops::Sub for Clamped<T, R>
 }
 
 impl<T, R> ops::Sub<T> for Clamped<T, R>
-    where T: Copy + Num + ops::Sub<Output = T> + cmp::PartialOrd,
+    where T: Copy + Num + ops::Sub<Output = T> + PartialOrd,
           R: ClampedRange<T>
 {
     type Output = Self;
