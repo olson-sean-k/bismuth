@@ -10,9 +10,11 @@ extern crate lazy_static;
 extern crate nalgebra;
 extern crate num;
 extern crate rand;
+extern crate winit;
 
 pub mod clamp;
 pub mod cube;
+pub mod event;
 pub mod math;
 pub mod mesh;
 pub mod render;

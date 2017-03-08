@@ -3,9 +3,10 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
+use bismuth::event::{ElementState, Event, MouseButton, VirtualKeyCode};
 use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint2, UPoint3, UScalar, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
-use glutin::{ElementState, Event, MouseButton, VirtualKeyCode, WindowBuilder};
+use glutin::WindowBuilder;
 
 fn new_root(width: LogWidth) -> Root {
     let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
