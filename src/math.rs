@@ -232,7 +232,7 @@ pub fn lerp<T, F>(a: T, b: T, f: F) -> T
     convert::<F, T>(af + bf)
 }
 
-pub fn min_max<T>(a: T, b: T) -> (T, T)
+pub fn ordered_pair<T>(a: T, b: T) -> (T, T)
     where T: PartialOrd
 {
     if a <= b { (a, b) } else { (b, a) }

@@ -270,8 +270,8 @@ impl PartialRayCast for AABB {
             let origin = ray.origin[axis];
             let direction = ray.direction[axis];
 
-            let (low, high) = math::min_max((lower - origin) / direction,
-                                            (upper - origin) / direction);
+            let (low, high) = math::ordered_pair((lower - origin) / direction,
+                                                 (upper - origin) / direction);
             min[axis] = low;
             max[axis] = high;
         }
