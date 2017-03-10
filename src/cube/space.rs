@@ -119,7 +119,11 @@ impl Orientation {
     }
 }
 
-/// A shape or primitive that can test for intersection with another shape or
+pub trait PointNormal {
+    fn normal(&self, point: &FPoint3) -> FVector3;
+}
+
+/// Shape or primitive that can test for intersection with another shape or
 /// primitive.
 pub trait Intersects<T> {
     /// Tests for intersection.
@@ -170,6 +174,17 @@ impl<T> Intersects<FRay3> for T
     }
 }
 
+impl<T> RayCast for T
+    where T: PartialRayCast + PointNormal
+{
+    fn ray_intersection(&self, ray: &FRay3) -> Option<RayIntersection> {
+        self.partial_ray_intersection(ray).map(|(distance, _)| {
+            let point = ray.origin + (*ray.direction * distance);
+            RayIntersection::new(distance, point, self.normal(&point))
+        })
+    }
+}
+
 /// Axis-aligned bounding box.
 ///
 /// `AABB`s are represented as an origin and extent.
@@ -206,21 +221,6 @@ impl AABB {
     /// Gets the absolute endpoint of the `AABB`.
     pub fn endpoint(&self) -> UPoint3 {
         self.origin + self.extent
-    }
-
-    /// Gets the normal at a point along or near the surface of the `AABB`.
-    fn normal(&self, point: &FPoint3) -> FVector3 {
-        let point = point - FPoint3::from_space(self.midpoint());
-        let mut min_distance = FScalar::max_value();
-        let mut normal = FVector3::zero();
-        for axis in Axis::range() {
-            let distance = (self.extent[axis] as FScalar - point[axis].abs()).abs();
-            if distance < min_distance {
-                min_distance = distance;
-                normal = Axis::from(axis).to_vector() * point[axis].signum();
-            }
-        }
-        normal
     }
 }
 
@@ -287,14 +287,20 @@ impl PartialRayCast for AABB {
     }
 }
 
-impl RayCast for AABB {
-    /// Determines if an `FRay3` intersects an `AABB`. Returns detailed
-    /// `RayIntersection` data.
-    fn ray_intersection(&self, ray: &FRay3) -> Option<RayIntersection> {
-        self.partial_ray_intersection(ray).map(|(distance, _)| {
-            let point = ray.origin + (*ray.direction * distance);
-            RayIntersection::new(distance, point, self.normal(&point))
-        })
+impl PointNormal for AABB {
+    /// Gets the normal at a point along or near the surface of the `AABB`.
+    fn normal(&self, point: &FPoint3) -> FVector3 {
+        let point = point - FPoint3::from_space(self.midpoint());
+        let mut min_distance = FScalar::max_value();
+        let mut normal = FVector3::zero();
+        for axis in Axis::range() {
+            let distance = (self.extent[axis] as FScalar - point[axis].abs()).abs();
+            if distance < min_distance {
+                min_distance = distance;
+                normal = Axis::from(axis).to_vector() * point[axis].signum();
+            }
+        }
+        normal
     }
 }
 
