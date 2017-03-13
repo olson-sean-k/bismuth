@@ -270,19 +270,19 @@ impl PartialRayCast for AABB {
             let origin = ray.origin[axis];
             let direction = ray.direction[axis];
 
-            let (low, high) = math::ordered_pair((lower - origin) / direction,
-                                                 (upper - origin) / direction);
-            min[axis] = low;
-            max[axis] = high;
+            let (lower, upper) = math::ordered_pair((lower - origin) / direction,
+                                                    (upper - origin) / direction);
+            min[axis] = lower;
+            max[axis] = upper;
         }
 
-        let tmin = math::partial_max(math::partial_max(min.x, min.y), min.z);
-        let tmax = math::partial_min(math::partial_min(max.x, max.y), max.z);
-        if tmax < 0.0 || tmin > tmax {
+        let min = math::partial_max(math::partial_max(min.x, min.y), min.z);
+        let max = math::partial_min(math::partial_min(max.x, max.y), max.z);
+        if max < 0.0 || min > max {
             None
         }
         else {
-            Some((tmin, tmax))
+            Some((min, max))
         }
     }
 }
