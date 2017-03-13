@@ -1,25 +1,13 @@
-use gfx;
-use rand;
+//! This module defines graphics pipelines and types bound to those pipelines.
+//!
+//! Namely, this includes vertex and uniform buffer types.
 
-use math::{FPoint2, FPoint3, FMatrix4, FScalar, FVector4, Matrix4Ext};
+use gfx;
+
+use math::{FPoint2, FPoint3, FMatrix4, Matrix4Ext};
+use super::Color;
 
 pub use self::pipeline::*;
-
-pub type Index = u32;
-pub type Color = FVector4;
-
-pub trait ColorExt {
-    fn random() -> Self;
-}
-
-impl ColorExt for Color {
-    fn random() -> Self {
-        Color::new(rand::random::<FScalar>(),
-                   rand::random::<FScalar>(),
-                   rand::random::<FScalar>(),
-                   1.0)
-    }
-}
 
 gfx_pipeline!{
     pipeline {
