@@ -6,11 +6,13 @@ mod camera;
 mod context;
 mod mesh;
 pub mod pipeline;
+mod texture;
 
 pub use self::camera::{AspectRatio, Camera, Projection};
 pub use self::context::Context;
 pub use self::mesh::{Mesh, MeshBuffer};
 pub use self::pipeline::{Transform, Vertex};
+pub use self::texture::Texture;
 
 pub type Index = u32;
 pub type Color = FVector4;

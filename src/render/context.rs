@@ -1,17 +1,17 @@
 use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
 use gfx::format::{DepthStencil, Rgba8};
-use gfx::handle::{DepthStencilView, RenderTargetView, ShaderResourceView};
-use gfx::texture::{AaMode, FilterMethod, Kind, SamplerInfo, WrapMode};
+use gfx::handle::{DepthStencilView, RenderTargetView};
+use gfx::texture::{FilterMethod, SamplerInfo, WrapMode};
 use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::{ContextError, Window};
-use image;
 use std::error::{self, Error};
 use std::fmt;
 
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
+use super::texture::Texture;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
@@ -38,7 +38,7 @@ pub struct Context<W, R, F, B, D>
           D: Device<Resources = R, CommandBuffer = B>
 {
     pub window: W,
-    factory: F,
+    pub factory: F,
     device: D,
     encoder: Encoder<R, B>,
     state: PipelineState<R, Meta>,
@@ -84,7 +84,8 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
             transform: factory.create_constant_buffer(1),
             camera: [[0.0; 4]; 4],
             model: [[0.0; 4]; 4],
-            sampler: (new_default_texture(&mut factory), sampler),
+            sampler: (Texture::from_file(&mut factory, "data/texture/default.png").into_inner(),
+                      sampler),
             color: color,
             depth: depth,
         };
@@ -126,20 +127,6 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
             Ok(())
         })
     }
-}
-
-// TODO: Is there some way to generate an empty texture? This should not be
-//       allowed to fail, and certainly shouldn't depend on data on disk.
-fn new_default_texture<R, F>(factory: &mut F) -> ShaderResourceView<R, [f32; 4]>
-    where R: Resources,
-          F: Factory<R>
-{
-    let data = image::open("data/texture/default.png").unwrap().to_rgba();
-    let (width, height) = data.dimensions();
-    let (_, view) = factory.create_texture_immutable_u8::<Rgba8>(
-        Kind::D2(width as u16, height as u16, AaMode::Single),
-        &[data.into_vec().as_slice()]).unwrap();
-    view
 }
 
 #[derive(Debug)]
