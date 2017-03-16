@@ -329,12 +329,12 @@ impl AsMut<BranchPayload> for BranchPayload {
 
 #[derive(Clone, Copy)]
 struct Hint {
-    pub size: usize,
+    pub load: usize,
 }
 
 impl Hint {
     fn new() -> Self {
-        Hint { size: 0 }
+        Hint { load: 0 }
     }
 }
 
@@ -725,20 +725,25 @@ impl<'a, N> Cube<'a, N>
         cubes
     }
 
-    pub fn finalize(&mut self) {
+    #[allow(dead_code)]
+    fn instrument(&mut self) -> usize {
+        let mut load = 0;
         self.for_each_path_mut(|path| {
             if let Some((cube, path)) = path.split_last_mut() {
-                cube.hint_mut().size = if cube.is_leaf() {
-                    0
+                if cube.is_leaf() {
+                    cube.hint_mut().load = 0;
                 }
                 else {
                     for cube in path.iter_mut() {
-                        cube.hint_mut().size += 1;
+                        cube.hint_mut().load += 1;
                     }
-                    1
+                    cube.hint_mut().load = 1;
+
+                    load += 1;
                 }
             }
         });
+        load
     }
 
     fn for_each_node_to_point<F>(&mut self,
@@ -841,7 +846,7 @@ impl<'a> Iterator for CubeIter<'a, &'a Node> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         if let Some(cube) = self.0.last() {
-            (1 + (8 * cube.hint().size), None)
+            (1 + (8 * cube.hint().load), None)
         }
         else {
             (0, None)
@@ -861,7 +866,7 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         if let Some(cube) = self.0.last() {
-            (1 + (8 * cube.hint().size), None)
+            (1 + (8 * cube.hint().load), None)
         }
         else {
             (0, None)
