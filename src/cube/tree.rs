@@ -461,6 +461,75 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c mut Node, B>
     }
 }
 
+struct Trace<'a, 'b, N, L, B, T>
+    where N: 'b + AsRef<Node>,
+          L: 'b + AsRef<LeafPayload>,
+          B: 'b + AsRef<BranchPayload>,
+          T: 'b + TraversalBuffer<'b, N>,
+          'b: 'a
+{
+    traversal: Traversal<'a, 'b, N, T>,
+    path: &'a mut Vec<OrphanCube<'b, L, B>>,
+}
+
+impl<'a, 'b, N, L, B, T> Trace<'a, 'b, N, L, B, T>
+    where N: 'b + AsRef<Node>,
+          L: 'b + AsRef<LeafPayload>,
+          B: 'b + AsRef<BranchPayload>,
+          T: 'b + TraversalBuffer<'b, N>,
+          'b: 'a
+{
+    fn new(traversal: Traversal<'a, 'b, N, T>, path: &'a mut Vec<OrphanCube<'b, L, B>>) -> Self {
+        Trace {
+            traversal: traversal,
+            path: path,
+        }
+    }
+
+    pub fn peek(&self) -> (&Cube<'b, N>, &[OrphanCube<'b, L, B>]) {
+        (self.traversal.peek(), self.path.as_slice())
+    }
+
+    pub fn take(self) -> Cube<'b, N> {
+        self.traversal.take()
+    }
+}
+
+impl<'a, 'b, N, L, B, T> Trace<'a, 'b, N, L, B, T>
+    where N: 'b + AsRef<Node> + AsMut<Node>,
+          L: 'b + AsRef<LeafPayload> + AsMut<LeafPayload>,
+          B: 'b + AsRef<BranchPayload> + AsMut<BranchPayload>,
+          T: 'b + TraversalBuffer<'b, N>,
+          'b: 'a
+{
+    pub fn peek_mut(&mut self) -> (&mut Cube<'b, N>, &mut [OrphanCube<'b, L, B>]) {
+        (self.traversal.peek_mut(), self.path.as_mut_slice())
+    }
+}
+
+impl<'a, 'b, 'c, T> Trace<'a, 'b, &'c Node, &'c LeafPayload, &'c BranchPayload, T>
+    where T: 'b + TraversalBuffer<'b, &'c Node>
+{
+    pub fn push(self) {
+        // The following seems better but leads to lifetime errors:
+        //
+        //   self.path.push(self.traversal.push().to_orphan());
+        //
+        // Just construct the `OrphanCube` inline for now.
+        let cube = self.traversal.push();
+        let (orphan, _) = cube.node.to_orphan();
+        self.path.push(OrphanCube::new(orphan, cube.root, cube.partition));
+    }
+}
+
+impl<'a, 'b, 'c, T> Trace<'a, 'b, &'c mut Node, &'c mut LeafPayload, &'c mut BranchPayload, T>
+    where T: 'b + TraversalBuffer<'b, &'c mut Node>
+{
+    pub fn push(self) {
+        self.path.push(self.traversal.push());
+    }
+}
+
 macro_rules! traverse {
     (cube => $c:expr, | $t:ident | $f:block) => {{
         let mut cubes = vec![$c];
@@ -476,7 +545,7 @@ macro_rules! traverse {
 }
 
 macro_rules! trace {
-    (cube => $c:expr, | $p:ident | $f:block) => {{
+    (cube => $c:expr, | $t:ident | $f:block) => {{
         let mut depth = $c.depth();
         let mut path = vec![];
         traverse!(cube => $c, |traversal| {
@@ -486,14 +555,12 @@ macro_rules! trace {
                 }
             }
             depth = traversal.peek().depth();
-
-            let pop = traversal.peek().is_leaf();
-            path.push(traversal.push());
+            let terminal = traversal.peek().is_leaf();
             {
-                let mut $p = path.as_mut_slice();
+                let mut $t = Trace::new(traversal, &mut path);
                 $f
             }
-            if pop {
+            if terminal {
                 path.pop();
             }
         });
@@ -534,10 +601,11 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_path<F>(&mut self, mut f: F)
-        where F: FnMut(&mut [Cube<&Node>])
+        where F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>]))
     {
-        trace!(cube => self.to_value(), |path| {
-            f(path);
+        trace!(cube => self.to_value(), |trace| {
+            f(trace.peek());
+            trace.push();
         });
     }
 
@@ -639,10 +707,12 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_path_mut<F>(&mut self, mut f: F)
-        where F: FnMut(&mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>])
+        where F: FnMut((&mut Cube<&mut Node>,
+                        &mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>]))
     {
-        trace!(cube => self.to_value_mut(), |path| {
-            f(path);
+        trace!(cube => self.to_value_mut(), |trace| {
+            f(trace.peek_mut());
+            trace.push();
         });
     }
 
@@ -727,17 +797,15 @@ impl<'a, N> Cube<'a, N>
 
     #[allow(dead_code)]
     fn instrument(&mut self) -> usize {
-        self.for_each_path_mut(|path| {
-            if let Some((cube, path)) = path.split_last_mut() {
-                if cube.is_leaf() {
-                    cube.hint_mut().load = 0;
+        self.for_each_path_mut(|(cube, path)| {
+            if cube.is_leaf() {
+                cube.hint_mut().load = 0;
+            }
+            else {
+                for cube in path.iter_mut() {
+                    cube.hint_mut().load += 1;
                 }
-                else {
-                    for cube in path.iter_mut() {
-                        cube.hint_mut().load += 1;
-                    }
-                    cube.hint_mut().load = 1;
-                }
+                cube.hint_mut().load = 1;
             }
         });
         self.hint().load
