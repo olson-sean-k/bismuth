@@ -727,7 +727,6 @@ impl<'a, N> Cube<'a, N>
 
     #[allow(dead_code)]
     fn instrument(&mut self) -> usize {
-        let mut load = 0;
         self.for_each_path_mut(|path| {
             if let Some((cube, path)) = path.split_last_mut() {
                 if cube.is_leaf() {
@@ -738,12 +737,10 @@ impl<'a, N> Cube<'a, N>
                         cube.hint_mut().load += 1;
                     }
                     cube.hint_mut().load = 1;
-
-                    load += 1;
                 }
             }
         });
-        load
+        self.hint().load
     }
 
     fn for_each_node_to_point<F>(&mut self,
