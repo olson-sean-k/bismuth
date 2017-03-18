@@ -535,10 +535,10 @@ macro_rules! traverse {
         let mut cubes = vec![$c];
         traverse!(buffer => cubes, |$t| $f)
     }};
-    (buffer => $s:expr, | $t:ident | $f:block) => {{
+    (buffer => $b:expr, | $t:ident | $f:block) => {{
         #[allow(unused_mut)]
-        while let Some(cube) = $s.pop() {
-            let mut $t = Traversal::new(&mut $s, cube);
+        while let Some(cube) = $b.pop() {
+            let mut $t = Traversal::new(&mut $b, cube);
             $f
         }
     }};
@@ -546,22 +546,25 @@ macro_rules! traverse {
 
 macro_rules! trace {
     (cube => $c:expr, | $t:ident | $f:block) => {{
-        let mut depth = $c.depth();
         let mut path = vec![];
+        trace!(cube => $c, path => path, |$t| $f)
+    }};
+    (cube => $c:expr, path => $p:expr, | $t:ident | $f:block) => {{
+        let mut depth = $c.depth();
         traverse!(cube => $c, |traversal| {
             if depth > traversal.peek().depth() {
                 for _ in 0..(depth - traversal.peek().depth()) {
-                    path.pop();
+                    $p.pop();
                 }
             }
             depth = traversal.peek().depth();
             let terminal = traversal.peek().is_leaf();
             {
-                let mut $t = Trace::new(traversal, &mut path);
+                let mut $t = Trace::new(traversal, &mut $p);
                 $f
             }
             if terminal {
-                path.pop();
+                $p.pop();
             }
         });
     }};
