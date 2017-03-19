@@ -10,7 +10,7 @@ use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
 use super::space::{self, Intersects, LogWidth, Partition, RayCast, RayIntersection, Spatial};
-use super::traverse::{self, Trace, Traversal};
+use super::traverse::{Trace, Traversal};
 
 type NodeLink = Box<[Node; 8]>;
 
