@@ -48,6 +48,8 @@
 mod edit;
 mod geometry;
 mod space;
+#[macro_use]
+mod traverse;
 mod tree;
 
 use self::tree::{Cube, OrphanCube};
