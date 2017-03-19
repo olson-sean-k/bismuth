@@ -433,15 +433,13 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c Node, B>
     where B: 'b + TraversalBuffer<'b, &'c Node>
 {
     pub fn push(self) -> Cube<'b, &'c Node> {
-        let (_, nodes) = self.cube.node.as_ref().to_orphan();
-        if let Some(nodes) = nodes {
-            for (index, node) in nodes.iter().enumerate() {
-                self.cubes.push(Cube::new(node,
-                                          self.cube.root,
-                                          self.cube.partition.at_index(index).unwrap()));
+        let (cube, cubes) = self.cube.next();
+        if let Some(cubes) = cubes {
+            for cube in cubes {
+                self.cubes.push(cube);
             }
         }
-        self.cube
+        cube
     }
 }
 
@@ -449,15 +447,13 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c mut Node, B>
     where B: 'b + TraversalBuffer<'b, &'c mut Node>
 {
     pub fn push(self) -> OrphanCube<'b, &'c mut LeafPayload, &'c mut BranchPayload> {
-        let (orphan, nodes) = self.cube.node.as_mut().to_orphan_mut();
-        if let Some(nodes) = nodes {
-            for (index, node) in nodes.iter_mut().enumerate() {
-                self.cubes.push(Cube::new(node,
-                                          self.cube.root,
-                                          self.cube.partition.at_index(index).unwrap()));
+        let (orphan, cubes) = self.cube.next_mut();
+        if let Some(cubes) = cubes {
+            for cube in cubes {
+                self.cubes.push(cube);
             }
         }
-        OrphanCube::new(orphan, self.cube.root, self.cube.partition)
+        orphan
     }
 }
 
@@ -511,14 +507,7 @@ impl<'a, 'b, 'c, T> Trace<'a, 'b, &'c Node, &'c LeafPayload, &'c BranchPayload, 
     where T: 'b + TraversalBuffer<'b, &'c Node>
 {
     pub fn push(self) {
-        // The following seems better but leads to lifetime errors:
-        //
-        //   self.path.push(self.traversal.push().to_orphan());
-        //
-        // Just construct the `OrphanCube` inline for now.
-        let cube = self.traversal.push();
-        let (orphan, _) = cube.node.to_orphan();
-        self.path.push(OrphanCube::new(orphan, cube.root, cube.partition));
+        self.path.push(self.traversal.push().into_orphan());
     }
 }
 
@@ -680,6 +669,25 @@ impl<'a, N> Cube<'a, N>
 impl<'a, 'b, N> Cube<'a, &'b N>
     where N: AsRef<Node>
 {
+    pub fn next(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
+        let root = self.root;
+        let partition = self.partition;
+        let (_, nodes) = self.node.as_ref().to_orphan();
+        (self,
+         nodes.map(|nodes| {
+             let mut cubes = Vec::with_capacity(8);
+             for (index, node) in nodes.iter().enumerate() {
+                 cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
+             }
+             cubes
+         }))
+    }
+
+    pub fn into_orphan(self) -> OrphanCube<'a, &'b LeafPayload, &'b BranchPayload> {
+        let (orphan, _) = self.node.as_ref().to_orphan();
+        OrphanCube::new(orphan, self.root, self.partition)
+    }
+
     pub fn iter(&self) -> CubeIter<&N> {
         CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
@@ -858,6 +866,26 @@ impl<'a, N> Cube<'a, N>
 impl<'a, 'b, N> Cube<'a, &'b mut N>
     where N: AsRef<Node> + AsMut<Node>
 {
+    pub fn next_mut(self) -> (OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
+                              Option<Vec<Cube<'a, &'b mut Node>>>) {
+        let root = self.root;
+        let partition = self.partition;
+        let (orphan, nodes) = self.node.as_mut().to_orphan_mut();
+        (OrphanCube::new(orphan, root, partition),
+         nodes.map(|nodes| {
+             let mut cubes = Vec::with_capacity(8);
+             for (index, node) in nodes.iter_mut().enumerate() {
+                 cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
+             }
+             cubes
+         }))
+    }
+
+    pub fn into_orphan_mut(self) -> OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload> {
+        let (orphan, _) = self.node.as_mut().to_orphan_mut();
+        OrphanCube::new(orphan, self.root, self.partition)
+    }
+
     pub fn iter_mut(&mut self) -> CubeIter<&mut N> {
         CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
