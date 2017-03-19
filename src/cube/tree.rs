@@ -677,14 +677,14 @@ impl<'a, N> Cube<'a, N>
     }
 }
 
-impl<'a, N> Cube<'a, &'a N>
+impl<'a, 'b, N> Cube<'a, &'b N>
     where N: AsRef<Node>
 {
     pub fn iter(&self) -> CubeIter<&N> {
         CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
 
-    pub fn iter_cursor(&self, cursor: &'a Cursor) -> CursorIter<&N> {
+    pub fn iter_cursor(&self, cursor: &'b Cursor) -> CursorIter<&N> {
         CursorIter {
             cubes: vec![Cube::new(self.node, self.root, self.partition)],
             cursor: cursor,
@@ -855,14 +855,14 @@ impl<'a, N> Cube<'a, N>
     }
 }
 
-impl<'a, N> Cube<'a, &'a mut N>
+impl<'a, 'b, N> Cube<'a, &'b mut N>
     where N: AsRef<Node> + AsMut<Node>
 {
     pub fn iter_mut(&mut self) -> CubeIter<&mut N> {
         CubeIter(vec![Cube::new(self.node, self.root, self.partition)])
     }
 
-    pub fn iter_cursor_mut(&mut self, cursor: &'a Cursor) -> CursorIter<&mut N> {
+    pub fn iter_cursor_mut(&mut self, cursor: &'b Cursor) -> CursorIter<&mut N> {
         CursorIter {
             cubes: vec![Cube::new(&mut *self.node, self.root, self.partition)],
             cursor: cursor,
