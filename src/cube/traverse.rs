@@ -65,7 +65,7 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c Node, B>
     where B: 'b + TraversalBuffer<'b, &'c Node>
 {
     pub fn push(self) -> Cube<'b, &'c Node> {
-        let (cube, cubes) = self.cube.next();
+        let (cube, cubes) = self.cube.into_subdivisions();
         if let Some(cubes) = cubes {
             for cube in cubes {
                 self.cubes.push(cube);
@@ -79,7 +79,7 @@ impl<'a, 'b, 'c, B> Traversal<'a, 'b, &'c mut Node, B>
     where B: 'b + TraversalBuffer<'b, &'c mut Node>
 {
     pub fn push(self) -> OrphanCube<'b, &'c mut LeafPayload, &'c mut BranchPayload> {
-        let (orphan, cubes) = self.cube.next_mut();
+        let (orphan, cubes) = self.cube.into_subdivisions_mut();
         if let Some(cubes) = cubes {
             for cube in cubes {
                 self.cubes.push(cube);

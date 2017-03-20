@@ -481,7 +481,7 @@ impl<'a, N> Cube<'a, N>
 impl<'a, 'b, N> Cube<'a, &'b N>
     where N: AsRef<Node>
 {
-    pub fn next(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
+    pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
         let root = self.root;
         let partition = self.partition;
         let (_, nodes) = self.node.as_ref().to_orphan();
@@ -678,8 +678,10 @@ impl<'a, N> Cube<'a, N>
 impl<'a, 'b, N> Cube<'a, &'b mut N>
     where N: AsRef<Node> + AsMut<Node>
 {
-    pub fn next_mut(self) -> (OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
-                              Option<Vec<Cube<'a, &'b mut Node>>>) {
+    pub fn into_subdivisions_mut(self)
+                                 -> (OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
+                                     Option<Vec<Cube<'a, &'b mut Node>>>)
+    {
         let root = self.root;
         let partition = self.partition;
         let (orphan, nodes) = self.node.as_mut().to_orphan_mut();
