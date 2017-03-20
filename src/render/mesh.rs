@@ -45,7 +45,7 @@ pub trait ToMeshBuffer {
     fn to_mesh_buffer(&self) -> MeshBuffer;
 }
 
-impl<'a> ToMeshBuffer for CubeRef<'a> {
+impl<'a, 'b> ToMeshBuffer for CubeRef<'a, 'b> {
     fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         for cube in self.iter() {
@@ -55,7 +55,7 @@ impl<'a> ToMeshBuffer for CubeRef<'a> {
     }
 }
 
-impl<'a> ToMeshBuffer for OrphanCubeRef<'a> {
+impl<'a, 'b> ToMeshBuffer for OrphanCubeRef<'a, 'b> {
     fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {

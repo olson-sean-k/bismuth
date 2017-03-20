@@ -60,10 +60,10 @@ pub use self::space::{AABB, Axis, Direction, Intersects, LogWidth, Orientation, 
                       RayCast, RayIntersection, Spatial};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
 
-pub type CubeRef<'a> = Cube<'a, &'a Node>;
-pub type CubeMut<'a> = Cube<'a, &'a mut Node>;
-pub type OrphanCubeRef<'a> = OrphanCube<'a, &'a LeafPayload, &'a BranchPayload>;
-pub type OrphanCubeMut<'a> = OrphanCube<'a, &'a mut LeafPayload, &'a mut BranchPayload>;
+pub type CubeRef<'a, 'b> = Cube<'a, &'b Node>;
+pub type CubeMut<'a, 'b> = Cube<'a, &'b mut Node>;
+pub type OrphanCubeRef<'a, 'b> = OrphanCube<'a, &'b LeafPayload, &'b BranchPayload>;
+pub type OrphanCubeMut<'a, 'b> = OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>;
 
 #[cfg(test)]
 mod tests {
