@@ -41,22 +41,22 @@ impl MeshBuffer {
     }
 }
 
-pub trait Mesh {
-    fn mesh_buffer(&self) -> MeshBuffer;
+pub trait ToMeshBuffer {
+    fn to_mesh_buffer(&self) -> MeshBuffer;
 }
 
-impl<'a> Mesh for CubeRef<'a> {
-    fn mesh_buffer(&self) -> MeshBuffer {
+impl<'a> ToMeshBuffer for CubeRef<'a> {
+    fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         for cube in self.iter() {
-            buffer.append(&mut cube.to_orphan().mesh_buffer());
+            buffer.append(&mut cube.to_orphan().to_mesh_buffer());
         }
         buffer
     }
 }
 
-impl<'a> Mesh for OrphanCubeRef<'a> {
-    fn mesh_buffer(&self) -> MeshBuffer {
+impl<'a> ToMeshBuffer for OrphanCubeRef<'a> {
+    fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().coords.into_space();

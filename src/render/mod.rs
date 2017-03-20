@@ -10,7 +10,7 @@ mod texture;
 
 pub use self::camera::{AspectRatio, Camera, Projection};
 pub use self::context::Context;
-pub use self::mesh::{Mesh, MeshBuffer};
+pub use self::mesh::{MeshBuffer, ToMeshBuffer};
 pub use self::pipeline::{Transform, Vertex};
 pub use self::texture::Texture;
 

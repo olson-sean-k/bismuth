@@ -5,7 +5,7 @@ extern crate nalgebra;
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, VirtualKeyCode};
 use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint2, UPoint3, UScalar, UVector3};
-use bismuth::render::{AspectRatio, Camera, Context, Mesh, Projection, Transform};
+use bismuth::render::{AspectRatio, Camera, Context, Projection, ToMeshBuffer, Transform};
 use glutin::WindowBuilder;
 
 fn new_root(width: LogWidth) -> Root {
@@ -40,7 +40,7 @@ fn main() {
         .unwrap());
     let width = LogWidth::new(8);
     let mut root = new_root(width);
-    let mut mesh = root.to_cube().mesh_buffer();
+    let mut mesh = root.to_cube().to_mesh_buffer();
     let camera = new_camera(&context.window, &root);
     let mut pointer = UPoint2::origin();
     let mut transform = Transform::default();
@@ -63,7 +63,7 @@ fn main() {
                         }
                     }
                     if edited {
-                        mesh = root.to_cube().mesh_buffer();
+                        mesh = root.to_cube().to_mesh_buffer();
                     }
                 }
                 Event::MouseMoved(x, y) => {
