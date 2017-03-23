@@ -1,7 +1,6 @@
 use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
 use gfx::format::{DepthStencil, Rgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
-use gfx::texture::{FilterMethod, SamplerInfo, WrapMode};
 use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
@@ -76,16 +75,14 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
                                                    include_bytes!("../shader/cube.f.glsl"),
                                                    pipeline::new())
             .unwrap();
-        let sampler = factory.create_sampler(
-            SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile));
+        let texture = Texture::from_file(&mut factory, "data/texture/default.png");
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
             transform: factory.create_constant_buffer(1),
             camera: [[0.0; 4]; 4],
             model: [[0.0; 4]; 4],
-            sampler: (Texture::from_file(&mut factory, "data/texture/default.png").into_inner(),
-                      sampler),
+            sampler: texture.to_pipeline_data(),
             color: color,
             depth: depth,
         };
