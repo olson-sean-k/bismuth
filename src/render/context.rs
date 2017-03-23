@@ -1,5 +1,5 @@
 use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
-use gfx::format::{DepthStencil, Rgba8};
+use gfx::format::{DepthStencil, Rgba8, Srgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
 use gfx_device_gl;
@@ -75,7 +75,7 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
                                                    include_bytes!("../shader/cube.f.glsl"),
                                                    pipeline::new())
             .unwrap();
-        let texture = Texture::<_, Rgba8>::from_file(&mut factory, "data/texture/default.png");
+        let texture = Texture::<_, Srgba8>::from_file(&mut factory, "data/texture/default.png");
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
