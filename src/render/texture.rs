@@ -17,6 +17,29 @@ pub struct Texture<R, T>
 
 impl<R, T> Texture<R, T>
     where R: Resources,
+          T: TextureFormat
+{
+    pub fn from_file<F, P>(factory: &mut F, path: P) -> Self
+        where F: Factory<R>,
+              P: AsRef<Path>
+    {
+        // TODO: Return a `Result` and expose any errors from `image::open`.
+        let data = image::open(path).unwrap().to_rgba();
+        let (width, height) = data.dimensions();
+        let (surface, view) = factory.create_texture_immutable_u8::<T>(
+            Kind::D2(width as u16, height as u16, AaMode::Single),
+            &[data.into_vec().as_slice()]).unwrap();
+        Texture {
+            surface: surface,
+            view: view,
+            sampler: factory.create_sampler(
+                SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)),
+        }
+    }
+}
+
+impl<R, T> Texture<R, T>
+    where R: Resources,
           T: TextureFormat,
           T::View: Clone
 {
@@ -35,24 +58,6 @@ impl<R> Texture<R, Rgba8>
         let (surface, view) = factory.create_texture_immutable_u8::<Rgba8>(
             Kind::D2(1, 1, AaMode::Single),
             &[&[max, max, max, max]]).unwrap();
-        Texture {
-            surface: surface,
-            view: view,
-            sampler: factory.create_sampler(
-                SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)),
-        }
-    }
-
-    pub fn from_file<F, P>(factory: &mut F, path: P) -> Self
-        where F: Factory<R>,
-              P: AsRef<Path>
-    {
-        // TODO: Return a `Result` and expose any errors from `image::open`.
-        let data = image::open(path).unwrap().to_rgba();
-        let (width, height) = data.dimensions();
-        let (surface, view) = factory.create_texture_immutable_u8::<Rgba8>(
-            Kind::D2(width as u16, height as u16, AaMode::Single),
-            &[data.into_vec().as_slice()]).unwrap();
         Texture {
             surface: surface,
             view: view,

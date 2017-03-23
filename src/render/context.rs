@@ -75,7 +75,7 @@ impl<W, R, F, B, D> Context<W, R, F, B, D>
                                                    include_bytes!("../shader/cube.f.glsl"),
                                                    pipeline::new())
             .unwrap();
-        let texture = Texture::from_file(&mut factory, "data/texture/default.png");
+        let texture = Texture::<_, Rgba8>::from_file(&mut factory, "data/texture/default.png");
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
