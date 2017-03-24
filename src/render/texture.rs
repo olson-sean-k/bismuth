@@ -24,6 +24,23 @@ pub struct Texture<R, T>
     pub sampler: Sampler<R>,
 }
 
+impl<R, T> Texture<R, T>
+    where R: Resources,
+          T: TextureFormat
+{
+    fn new(surface: gfx::handle::Texture<R, T::Surface>,
+           view: ShaderResourceView<R, T::View>,
+           sampler: Sampler<R>)
+           -> Self
+    {
+        Texture {
+            surface: surface,
+            view: view,
+            sampler: sampler,
+        }
+    }
+}
+
 impl<R, C> Texture<R, (R8_G8_B8_A8, C)>
     where R: Resources,
           C: NormalizedChannel + TextureChannel + UnsignedChannel,
@@ -39,12 +56,10 @@ impl<R, C> Texture<R, (R8_G8_B8_A8, C)>
         let (surface, view) = factory.create_texture_immutable_u8::<(R8_G8_B8_A8, C)>(
             Kind::D2(width as u16, height as u16, AaMode::Single),
             &[data.into_vec().as_slice()]).unwrap();
-        Texture {
-            surface: surface,
-            view: view,
-            sampler: factory.create_sampler(
-                SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)),
-        }
+        Texture::new(
+            surface,
+            view,
+            factory.create_sampler(SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)))
     }
 }
 
@@ -68,11 +83,9 @@ impl<R> Texture<R, Rgba8>
         let (surface, view) = factory.create_texture_immutable_u8::<Rgba8>(
             Kind::D2(1, 1, AaMode::Single),
             &[&[max, max, max, max]]).unwrap();
-        Texture {
-            surface: surface,
-            view: view,
-            sampler: factory.create_sampler(
-                SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)),
-        }
+        Texture::new(
+            surface,
+            view,
+            factory.create_sampler(SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)))
     }
 }
