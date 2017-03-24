@@ -41,6 +41,16 @@ impl<R, T> Texture<R, T>
     }
 }
 
+impl<R, T> Texture<R, T>
+    where R: Resources,
+          T: TextureFormat,
+          T::View: Clone
+{
+    pub fn to_pipeline_data(&self) -> (ShaderResourceView<R, T::View>, Sampler<R>) {
+        (self.view.clone(), self.sampler.clone())
+    }
+}
+
 impl<R, C> Texture<R, (R8_G8_B8_A8, C)>
     where R: Resources,
           C: NormalizedChannel + TextureChannel + UnsignedChannel,
@@ -60,16 +70,6 @@ impl<R, C> Texture<R, (R8_G8_B8_A8, C)>
             surface,
             view,
             factory.create_sampler(SamplerInfo::new(FilterMethod::Trilinear, WrapMode::Tile)))
-    }
-}
-
-impl<R, T> Texture<R, T>
-    where R: Resources,
-          T: TextureFormat,
-          T::View: Clone
-{
-    pub fn to_pipeline_data(&self) -> (ShaderResourceView<R, T::View>, Sampler<R>) {
-        (self.view.clone(), self.sampler.clone())
     }
 }
 
