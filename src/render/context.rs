@@ -8,6 +8,7 @@ use glutin::{ContextError, Window};
 use std::error::{self, Error};
 use std::fmt;
 
+use event::PollEvents;
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
 use super::texture::Texture;
@@ -30,7 +31,7 @@ impl SwapBuffers for Window {
 }
 
 pub struct Context<W, R, F, B, D>
-    where W: SwapBuffers,
+    where W: PollEvents + SwapBuffers,
           R: Resources,
           F: Factory<R>,
           B: CommandBuffer<R>,
@@ -57,7 +58,7 @@ impl Context<Window,
 }
 
 impl<W, R, F, B, D> Context<W, R, F, B, D>
-    where W: SwapBuffers,
+    where W: PollEvents + SwapBuffers,
           R: Resources,
           F: Factory<R>,
           B: CommandBuffer<R>,
