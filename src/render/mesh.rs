@@ -2,7 +2,7 @@ use OptionExt;
 use cube::{CubeRef, OrphanCubeRef, Spatial};
 use math::{IntoSpace, FScalar, FVector3};
 use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Textured, Triangle, UCube};
-use super::{Color, ColorExt, Index};
+use super::{Color, Index};
 use super::pipeline::Vertex;
 
 pub struct MeshBuffer {
