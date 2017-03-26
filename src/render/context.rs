@@ -30,26 +30,36 @@ impl SwapBuffers for Window {
     }
 }
 
-pub struct Context<W, R, F, B, D>
-    where W: PollEvents + SwapBuffers,
-          R: Resources,
-          F: Factory<R>,
-          B: CommandBuffer<R>,
-          D: Device<Resources = R, CommandBuffer = B>
-{
-    pub window: W,
-    pub factory: F,
-    device: D,
-    encoder: Encoder<R, B>,
-    state: PipelineState<R, Meta>,
-    data: Data<R>,
+pub trait MetaContext {
+    type Window: PollEvents + SwapBuffers;
+    type Resources: Resources;
+    type Factory: Factory<Self::Resources>;
+    type CommandBuffer: CommandBuffer<Self::Resources>;
+    type Device: Device<Resources = Self::Resources, CommandBuffer = Self::CommandBuffer>;
 }
 
-impl Context<Window,
-             gfx_device_gl::Resources,
-             gfx_device_gl::Factory,
-             gfx_device_gl::CommandBuffer,
-             gfx_device_gl::Device> {
+pub struct GlutinContext {}
+
+impl MetaContext for GlutinContext {
+    type Window = Window;
+    type Resources = gfx_device_gl::Resources;
+    type Factory = gfx_device_gl::Factory;
+    type CommandBuffer = gfx_device_gl::CommandBuffer;
+    type Device = gfx_device_gl::Device;
+}
+
+pub struct Context<C>
+    where C: MetaContext
+{
+    pub window: C::Window,
+    pub factory: C::Factory,
+    device: C::Device,
+    encoder: Encoder<C::Resources, C::CommandBuffer>,
+    state: PipelineState<C::Resources, Meta>,
+    data: Data<C::Resources>,
+}
+
+impl Context<GlutinContext> {
     pub fn from_glutin_window(window: Window) -> Self {
         let (device, mut factory, color, depth) = gfx_window_glutin::init_existing(&window);
         let encoder = factory.create_command_buffer().into();
@@ -57,20 +67,16 @@ impl Context<Window,
     }
 }
 
-impl<W, R, F, B, D> Context<W, R, F, B, D>
-    where W: PollEvents + SwapBuffers,
-          R: Resources,
-          F: Factory<R>,
-          B: CommandBuffer<R>,
-          D: Device<Resources = R, CommandBuffer = B>
+impl<C> Context<C>
+    where C: MetaContext
 {
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn new(window: W,
-           mut factory: F,
-           device: D,
-           encoder: Encoder<R, B>,
-           color: RenderTargetView<R, Rgba8>,
-           depth: DepthStencilView<R, DepthStencil>)
+    fn new(window: C::Window,
+           mut factory: C::Factory,
+           device: C::Device,
+           encoder: Encoder<C::Resources, C::CommandBuffer>,
+           color: RenderTargetView<C::Resources, Rgba8>,
+           depth: DepthStencilView<C::Resources, DepthStencil>)
            -> Self {
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
                                                    include_bytes!("../shader/cube.f.glsl"),

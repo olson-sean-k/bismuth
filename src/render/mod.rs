@@ -10,7 +10,7 @@ pub mod pipeline;
 mod texture;
 
 pub use self::camera::{AspectRatio, Camera, Projection};
-pub use self::context::Context;
+pub use self::context::{Context, GlutinContext, MetaContext};
 pub use self::mesh::{MeshBuffer, ToMeshBuffer};
 pub use self::pipeline::{Transform, Vertex};
 pub use self::texture::Texture;
