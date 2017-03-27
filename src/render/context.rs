@@ -9,11 +9,30 @@ use std::error::{self, Error};
 use std::fmt;
 
 use event::PollEvents;
+use super::camera::AspectRatio;
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
 use super::texture::Texture;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+
+pub trait UpdateFrameBufferView<R>
+    where R: Resources
+{
+    fn update_frame_buffer_view(&mut self,
+                                color: &mut RenderTargetView<R, Rgba8>,
+                                depth: &mut DepthStencilView<R, DepthStencil>);
+}
+
+impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
+    fn update_frame_buffer_view(
+        &mut self,
+        color: &mut RenderTargetView<gfx_device_gl::Resources, Rgba8>,
+        depth: &mut DepthStencilView<gfx_device_gl::Resources, DepthStencil>)
+    {
+        gfx_window_glutin::update_views(&*self, color, depth);
+    }
+}
 
 pub trait SwapBuffers {
     fn swap_buffers(&mut self) -> Result<(), RenderError>;
@@ -31,7 +50,7 @@ impl SwapBuffers for Window {
 }
 
 pub trait MetaContext {
-    type Window: PollEvents + SwapBuffers;
+    type Window: AspectRatio + PollEvents + UpdateFrameBufferView<Self::Resources> + SwapBuffers;
     type Resources: Resources;
     type Factory: Factory<Self::Resources>;
     type CommandBuffer: CommandBuffer<Self::Resources>;
@@ -110,6 +129,10 @@ impl<C> Context<C>
             // TODO: Coerce and expose the `UpdateError`.
             RenderError::Unknown
         })
+    }
+
+    pub fn update_frame_buffer_view(&mut self) {
+        self.window.update_frame_buffer_view(&mut self.data.color, &mut self.data.depth);
     }
 
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {

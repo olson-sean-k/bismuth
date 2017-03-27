@@ -33,11 +33,16 @@ impl<A, C> Harness<A, C>
                     Event::Closed => {
                         break 'main;
                     }
+                    Event::Resized(..) => {
+                        self.context.update_frame_buffer_view();
+                    }
                     _ => {}
                 }
                 self.application.react(&event);
             }
             self.context.clear();
+            // TODO: Do not lend the entire `Context`. Maybe `Context` can emit
+            //       a more limited type that can be used for rendering.
             self.application.render(&mut self.context);
             self.context.flush().unwrap();
         }
