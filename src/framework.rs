@@ -41,16 +41,18 @@ impl<A, C> Harness<A, C>
                 self.application.react(&event);
             }
             self.context.clear();
-            // TODO: Do not lend the entire `Context`. Maybe `Context` can emit
-            //       a more limited type that can be used for rendering.
             self.application.render(&mut self.context);
             self.context.flush().unwrap();
         }
+        self.application.stop();
     }
 }
 
 pub trait Application<C>: Reactor
     where C: MetaContext
 {
+    // TODO: Do not accept the entire `Context`. Maybe `Context` can emit a
+    //       more limited type that can be used for rendering.
     fn render(&mut self, context: &mut Context<C>);
+    fn stop(&mut self) {}
 }
