@@ -2,6 +2,7 @@ use glutin::Window;
 use nalgebra::{Isometry3, Perspective3};
 use num::traits::FloatConst;
 
+use event::{Event, Reactor};
 use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
 lazy_static! {
@@ -87,5 +88,20 @@ impl Camera {
 
     pub fn transform(&self) -> FMatrix4 {
         self.projection.as_matrix() * self.view.to_homogeneous()
+    }
+}
+
+impl Reactor for Camera {
+    fn react(&mut self, event: &Event) {
+        match *event {
+            Event::Resized(width, height) => {
+                let ratio = (width as FScalar) / (height as FScalar);
+                self.projection = Perspective3::new(ratio,
+                                                    self.projection.fovy(),
+                                                    self.projection.znear(),
+                                                    self.projection.zfar());
+            }
+            _ => {}
+        }
     }
 }
