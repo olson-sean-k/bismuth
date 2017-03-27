@@ -16,3 +16,7 @@ impl PollEvents for Window {
         self.poll_events().collect()
     }
 }
+
+pub trait Reactor {
+    fn react(&mut self, event: &Event);
+}

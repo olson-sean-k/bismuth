@@ -15,6 +15,7 @@ extern crate winit;
 pub mod clamp;
 pub mod cube;
 pub mod event;
+pub mod framework;
 pub mod math;
 pub mod mesh;
 pub mod render;
