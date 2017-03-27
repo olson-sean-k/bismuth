@@ -41,6 +41,7 @@ impl<A, C> Harness<A, C>
                 }
                 self.application.react(&event);
             }
+            self.application.update();
             self.application.draw(&mut self.context);
             self.context.flush().unwrap();
         }
@@ -51,6 +52,7 @@ impl<A, C> Harness<A, C>
 pub trait Application<C>: Reactor
     where C: MetaContext
 {
+    fn update(&mut self);
     // TODO: Do not accept the entire `Context`. Maybe `Context` can emit a
     //       more limited type that can be used for rendering.
     fn draw(&mut self, context: &mut Context<C>);
