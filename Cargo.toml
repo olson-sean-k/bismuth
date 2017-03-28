@@ -5,6 +5,7 @@ authors = ["Sean Olson <olson.sean.k@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/olson-sean-k/bismuth"
+description = "A 3D game world represented as cubes in an oct-tree that can be manipulated in real time."
 
 [badges]
 travis-ci = { repository = "https://github.com/olson-sean-k/bismuth" }
