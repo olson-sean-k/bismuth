@@ -8,8 +8,8 @@ repository = "https://github.com/olson-sean-k/bismuth"
 description = "A 3D game world represented as cubes in an oct-tree that can be manipulated in real time."
 
 [badges]
-travis-ci = { repository = "https://github.com/olson-sean-k/bismuth" }
-appveyor = { repository = "https://github.com/olson-sean-k/bismuth" }
+travis-ci = { repository = "olson-sean-k/bismuth" }
+appveyor = { repository = "olson-sean-k/bismuth" }
 
 [lib]
 name = "bismuth"
