@@ -16,6 +16,7 @@ pub mod clamp;
 pub mod cube;
 pub mod event;
 pub mod framework;
+pub mod input;
 pub mod math;
 pub mod mesh;
 pub mod render;
