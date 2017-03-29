@@ -20,9 +20,10 @@ impl Harness<GlutinContext> {
 impl<C> Harness<C>
     where C: MetaContext
 {
-    pub fn start<A>(&mut self, application: &mut A)
+    pub fn start<A>(&mut self)
         where A: Application<C>
     {
+        let mut application = A::start(&mut self.context);
         'main: loop {
             self.context.clear();
             for event in self.context.window.poll_events() {
@@ -45,12 +46,13 @@ impl<C> Harness<C>
     }
 }
 
-pub trait Application<C>: Reactor
+pub trait Application<C>: Reactor + Sized
     where C: MetaContext
 {
+    fn start(context: &mut Context<C>) -> Self;
     fn update(&mut self);
     // TODO: Do not accept the entire `Context`. Maybe `Context` can emit a
     //       more limited type that can be used for rendering.
     fn draw(&mut self, context: &mut Context<C>);
-    fn stop(&mut self) {}
+    fn stop(self);
 }
