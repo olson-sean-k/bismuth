@@ -3,30 +3,26 @@ use glutin::Window;
 use event::{Event, PollEvents, Reactor};
 use render::{Context, GlutinContext, MetaContext};
 
-pub struct Harness<A, C>
-    where A: Application<C>,
-          C: MetaContext
+pub struct Harness<C>
+    where C: MetaContext
 {
-    application: A,
     context: Context<C>,
 }
 
-impl<A> Harness<A, GlutinContext>
-    where A: Application<GlutinContext>
-{
-    pub fn from_glutin_window(application: A, window: Window) -> Self {
+impl Harness<GlutinContext> {
+    pub fn from_glutin_window(window: Window) -> Self {
         Harness {
-            application: application,
             context: Context::from_glutin_window(window),
         }
     }
 }
 
-impl<A, C> Harness<A, C>
-    where A: Application<C>,
-          C: MetaContext
+impl<C> Harness<C>
+    where C: MetaContext
 {
-    pub fn start(&mut self) {
+    pub fn start<A>(&mut self, application: &mut A)
+        where A: Application<C>
+    {
         'main: loop {
             self.context.clear();
             for event in self.context.window.poll_events() {
@@ -39,13 +35,13 @@ impl<A, C> Harness<A, C>
                     }
                     _ => {}
                 }
-                self.application.react(&event);
+                application.react(&event);
             }
-            self.application.update();
-            self.application.draw(&mut self.context);
+            application.update();
+            application.draw(&mut self.context);
             self.context.flush().unwrap();
         }
-        self.application.stop();
+        application.stop();
     }
 }
 
