@@ -3,10 +3,71 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
-use bismuth::event::{ElementState, Event, MouseButton, VirtualKeyCode};
-use bismuth::math::{FPoint3, FScalar, IntoSpace, Matrix4Ext, UPoint2, UPoint3, UScalar, UVector3};
-use bismuth::render::{AspectRatio, Camera, Context, Projection, ToMeshBuffer, Transform};
+use bismuth::event::{ElementState, Event, MouseButton, Reactor};
+use bismuth::framework::{Application, Harness};
+use bismuth::input::Mouse;
+use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
+use bismuth::render::{AspectRatio, Camera, Context, MeshBuffer, MetaContext, Projection,
+                      ToMeshBuffer, Transform};
 use glutin::WindowBuilder;
+
+struct Bismuth {
+    root: Root,
+    mesh: MeshBuffer,
+    camera: Camera,
+    mouse: Mouse,
+}
+
+impl<C> Application<C> for Bismuth
+    where C: MetaContext
+{
+    fn start(context: &mut Context<C>) -> Self {
+        let root = new_root(LogWidth::new(8));
+        let mesh = root.to_cube().to_mesh_buffer();
+        let camera = new_camera(&context.window, &root);
+        Bismuth {
+            root: root,
+            mesh: mesh,
+            camera: camera,
+            mouse: Mouse::new(),
+        }
+    }
+
+    fn update(&mut self, context: &mut Context<C>) {
+        let mut dirty = false;
+        match self.mouse.button(MouseButton::Left) {
+            ElementState::Pressed => {
+                let ray = self.camera.cast_ray(&context.window, self.mouse.position());
+                let mut cube = self.root.to_cube_mut();
+                if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
+                    if let Some(leaf) = cube.as_leaf_mut() {
+                        leaf.geometry = Geometry::empty();
+                        dirty = true;
+                    }
+                }
+            }
+            _ => {}
+        }
+        if dirty {
+            self.mesh = self.root.to_cube().to_mesh_buffer();
+        }
+    }
+
+    fn draw(&mut self, context: &mut Context<C>) {
+        context.set_transform(&Transform::new(&self.camera.transform(),
+                                              &FMatrix4::identity())).unwrap();
+        context.draw_mesh_buffer(&self.mesh);
+    }
+
+    fn stop(self) {}
+}
+
+impl Reactor for Bismuth {
+    fn react(&mut self, event: &Event) {
+        self.camera.react(event);
+        self.mouse.react(event);
+    }
+}
 
 fn new_root(width: LogWidth) -> Root {
     let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
@@ -32,49 +93,11 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
 }
 
 fn main() {
-    let mut context = Context::from_glutin_window(WindowBuilder::new()
+    let mut harness = Harness::from_glutin_window(WindowBuilder::new()
         .with_title("Bismuth")
         .with_dimensions(1024, 576)
         .with_vsync()
         .build()
         .unwrap());
-    let width = LogWidth::new(8);
-    let mut root = new_root(width);
-    let mut mesh = root.to_cube().to_mesh_buffer();
-    let camera = new_camera(&context.window, &root);
-    let mut pointer = UPoint2::origin();
-    let mut transform = Transform::default();
-    'main: loop {
-        transform.camera = camera.transform().to_array();
-        for event in context.window.poll_events() {
-            match event {
-                Event::KeyboardInput(_, _, Some(VirtualKeyCode::Escape)) |
-                Event::Closed => {
-                    break 'main;
-                }
-                Event::MouseInput(ElementState::Pressed, MouseButton::Left) => {
-                    let ray = camera.cast_ray(&context.window, &pointer);
-                    let mut edited = false;
-                    if let Some((_, mut cube)) = root.to_cube_mut()
-                        .at_ray_mut(&ray, LogWidth::min_value()) {
-                        if let Some(leaf) = cube.as_leaf_mut() {
-                            leaf.geometry = Geometry::empty();
-                            edited = true;
-                        }
-                    }
-                    if edited {
-                        mesh = root.to_cube().to_mesh_buffer();
-                    }
-                }
-                Event::MouseMoved(x, y) => {
-                    pointer = UPoint2::new(x as UScalar, y as UScalar);
-                }
-                _ => {}
-            }
-        }
-        context.clear();
-        context.set_transform(&transform).unwrap();
-        context.draw_mesh_buffer(&mesh);
-        context.flush().unwrap();
-    }
+    harness.start::<Bismuth>();
 }
