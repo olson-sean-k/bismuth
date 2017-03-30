@@ -15,7 +15,7 @@ pub trait InputState<E>
     fn state(&self, element: E) -> ElementState;
 }
 
-pub struct ElementTransition<E, T>
+pub struct Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
           E: Copy
@@ -24,13 +24,13 @@ pub struct ElementTransition<E, T>
     state: T::State,
 }
 
-impl<E, T> ElementTransition<E, T>
+impl<E, T> Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
           E: Copy
 {
     pub fn new(input: T) -> Self {
-        ElementTransition {
+        Snapshot {
             state: input.to_state(),
             input: input,
         }
@@ -49,7 +49,7 @@ impl<E, T> ElementTransition<E, T>
     }
 }
 
-impl<E, T> Deref for ElementTransition<E, T>
+impl<E, T> Deref for Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
           E: Copy
@@ -61,7 +61,7 @@ impl<E, T> Deref for ElementTransition<E, T>
     }
 }
 
-impl<E, T> DerefMut for ElementTransition<E, T>
+impl<E, T> DerefMut for Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
           E: Copy
@@ -71,7 +71,7 @@ impl<E, T> DerefMut for ElementTransition<E, T>
     }
 }
 
-impl<E, T> Reactor for ElementTransition<E, T>
+impl<E, T> Reactor for Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
           E: Copy

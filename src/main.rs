@@ -5,7 +5,7 @@ extern crate nalgebra;
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, Reactor};
 use bismuth::framework::{Application, Harness};
-use bismuth::input::{ElementTransition, Mouse};
+use bismuth::input::{Snapshot, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, MeshBuffer, MetaContext, Projection,
                       ToMeshBuffer, Transform};
@@ -15,7 +15,7 @@ struct Bismuth {
     root: Root,
     mesh: MeshBuffer,
     camera: Camera,
-    mouse: ElementTransition<MouseButton, Mouse>,
+    mouse: Snapshot<MouseButton, Mouse>,
 }
 
 impl<C> Application<C> for Bismuth
@@ -29,7 +29,7 @@ impl<C> Application<C> for Bismuth
             root: root,
             mesh: mesh,
             camera: camera,
-            mouse: ElementTransition::new(Mouse::new()),
+            mouse: Snapshot::new(Mouse::new()),
         }
     }
 
