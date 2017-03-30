@@ -10,11 +10,11 @@ lazy_static! {
 }
 
 pub trait AspectRatio {
-    fn dimensions(&self) -> (UScalar, UScalar);
+    fn dimensions(&self) -> (u32, u32);
 
-    fn aspect_ratio(&self) -> FScalar {
+    fn aspect_ratio(&self) -> f32 {
         let (width, height) = self.dimensions();
-        width as FScalar / height as FScalar
+        width as f32 / height as f32
     }
 }
 
@@ -95,7 +95,7 @@ impl Reactor for Camera {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::Resized(width, height) => {
-                let ratio = (width as FScalar) / (height as FScalar);
+                let ratio = (width as f32) / (height as f32);
                 self.projection = Perspective3::new(ratio,
                                                     self.projection.fovy(),
                                                     self.projection.znear(),

@@ -1,14 +1,13 @@
 use glutin::Window;
 
 use event::{Event, PollEvents, Reactor};
-use math::UScalar;
 use render::{AspectRatio, Context, GlutinContext, MetaContext};
 
 pub struct Harness<C>
     where C: MetaContext
 {
     context: Context<C>,
-    dimensions: (UScalar, UScalar),
+    dimensions: (u32, u32),
 }
 
 impl Harness<GlutinContext> {
