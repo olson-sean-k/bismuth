@@ -5,7 +5,7 @@ extern crate nalgebra;
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, Reactor};
 use bismuth::framework::{Application, Harness};
-use bismuth::input::Mouse;
+use bismuth::input::{ElementTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, MeshBuffer, MetaContext, Projection,
                       ToMeshBuffer, Transform};
@@ -15,7 +15,7 @@ struct Bismuth {
     root: Root,
     mesh: MeshBuffer,
     camera: Camera,
-    mouse: Mouse,
+    mouse: ElementTransition<MouseButton, Mouse>,
 }
 
 impl<C> Application<C> for Bismuth
@@ -29,14 +29,14 @@ impl<C> Application<C> for Bismuth
             root: root,
             mesh: mesh,
             camera: camera,
-            mouse: Mouse::new(),
+            mouse: ElementTransition::new(Mouse::new()),
         }
     }
 
     fn update(&mut self, context: &mut Context<C>) {
         let mut dirty = false;
-        match self.mouse.button(MouseButton::Left) {
-            ElementState::Pressed => {
+        match self.mouse.transition(MouseButton::Left) {
+            Some(ElementState::Pressed) => {
                 let ray = self.camera.cast_ray(&context.window, self.mouse.position());
                 let mut cube = self.root.to_cube_mut();
                 if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
@@ -51,6 +51,7 @@ impl<C> Application<C> for Bismuth
         if dirty {
             self.mesh = self.root.to_cube().to_mesh_buffer();
         }
+        self.mouse.snapshot();
     }
 
     fn draw(&mut self, context: &mut Context<C>) {
