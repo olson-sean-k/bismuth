@@ -15,6 +15,20 @@ pub trait InputState<E>
     fn state(&self, element: E) -> ElementState;
 }
 
+pub trait ElementStateTransition: Sized {
+    fn transition(old: &Self, new: &Self) -> Option<Self>;
+}
+
+impl ElementStateTransition for ElementState {
+    fn transition(old: &Self, new: &Self) -> Option<Self> {
+        match (*old, *new) {
+            (ElementState::Released, ElementState::Pressed) => Some(ElementState::Pressed),
+            (ElementState::Pressed, ElementState::Released) => Some(ElementState::Released),
+            _ => None
+        }
+    }
+}
+
 pub struct Snapshot<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
           T::State: InputState<E>,
