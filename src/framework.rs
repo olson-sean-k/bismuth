@@ -1,17 +1,20 @@
 use glutin::Window;
 
 use event::{Event, PollEvents, Reactor};
-use render::{Context, GlutinContext, MetaContext};
+use math::UScalar;
+use render::{AspectRatio, Context, GlutinContext, MetaContext};
 
 pub struct Harness<C>
     where C: MetaContext
 {
     context: Context<C>,
+    dimensions: (UScalar, UScalar),
 }
 
 impl Harness<GlutinContext> {
     pub fn from_glutin_window(window: Window) -> Self {
         Harness {
+            dimensions: window.dimensions(),
             context: Context::from_glutin_window(window),
         }
     }
@@ -31,8 +34,10 @@ impl<C> Harness<C>
                     Event::Closed => {
                         break 'main;
                     }
-                    Event::Resized(..) => {
-                        self.context.update_frame_buffer_view();
+                    Event::Resized(width, height) => {
+                        if self.dimensions.0 != width || self.dimensions.1 != height {
+                            self.context.update_frame_buffer_view();
+                        }
                     }
                     _ => {}
                 }
@@ -40,6 +45,7 @@ impl<C> Harness<C>
             }
             application.update(&mut self.context);
             application.draw(&mut self.context);
+            self.dimensions = self.context.window.dimensions();
             self.context.flush().unwrap();
         }
         application.stop();
