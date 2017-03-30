@@ -2,7 +2,11 @@ use nalgebra::Point2;
 use std::collections::HashSet;
 
 use event::{ElementState, Event, MouseButton, Reactor};
-use super::state::{InputState, ToInputState};
+use super::state::{Element, InputState, ToInputState};
+
+impl Element for MouseButton {
+    type State = ElementState;
+}
 
 pub struct Mouse {
     position: Point2<u32>,
@@ -47,9 +51,9 @@ impl Reactor for Mouse {
 
 impl ToInputState for Mouse {
     type Element = MouseButton;
-    type State = MouseState;
+    type InputState = MouseState;
 
-    fn to_state(&self) -> Self::State {
+    fn to_state(&self) -> Self::InputState {
         self.buttons.clone()
     }
 }
