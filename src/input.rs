@@ -28,13 +28,13 @@ pub struct ElementTransition<E, T>
 
 impl<E, T> ElementTransition<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::State: Default + InputState<E>,
+          T::State: InputState<E>,
           E: Copy
 {
     pub fn new(input: T) -> Self {
         ElementTransition {
+            state: input.to_state(),
             input: input,
-            state: T::State::default(),
         }
     }
 
@@ -53,7 +53,7 @@ impl<E, T> ElementTransition<E, T>
 
 impl<E, T> Deref for ElementTransition<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::State: Default + InputState<E>,
+          T::State: InputState<E>,
           E: Copy
 {
     type Target = T;
@@ -65,7 +65,7 @@ impl<E, T> Deref for ElementTransition<E, T>
 
 impl<E, T> DerefMut for ElementTransition<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::State: Default + InputState<E>,
+          T::State: InputState<E>,
           E: Copy
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -75,7 +75,7 @@ impl<E, T> DerefMut for ElementTransition<E, T>
 
 impl<E, T> Reactor for ElementTransition<E, T>
     where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::State: Default + InputState<E>,
+          T::State: InputState<E>,
           E: Copy
 {
     fn react(&mut self, event: &Event) {
@@ -139,12 +139,6 @@ pub struct MouseState(HashSet<MouseButton>);
 impl MouseState {
     pub fn new() -> Self {
         MouseState(HashSet::new())
-    }
-}
-
-impl Default for MouseState {
-    fn default() -> Self {
-        MouseState::new()
     }
 }
 
