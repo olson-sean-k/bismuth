@@ -35,18 +35,15 @@ impl<C> Application<C> for Bismuth
 
     fn update(&mut self, context: &mut Context<C>) {
         let mut dirty = false;
-        match self.mouse.transition(MouseButton::Left) {
-            Some(ElementState::Pressed) => {
-                let ray = self.camera.cast_ray(&context.window, self.mouse.position());
-                let mut cube = self.root.to_cube_mut();
-                if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
-                    if let Some(leaf) = cube.as_leaf_mut() {
-                        leaf.geometry = Geometry::empty();
-                        dirty = true;
-                    }
+        if let Some(ElementState::Pressed) = self.mouse.transition(MouseButton::Left) {
+            let ray = self.camera.cast_ray(&context.window, self.mouse.position());
+            let mut cube = self.root.to_cube_mut();
+            if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
+                if let Some(leaf) = cube.as_leaf_mut() {
+                    leaf.geometry = Geometry::empty();
+                    dirty = true;
                 }
             }
-            _ => {}
         }
         if dirty {
             self.mesh = self.root.to_cube().to_mesh_buffer();
