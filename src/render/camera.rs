@@ -2,7 +2,7 @@ use glutin::Window;
 use nalgebra::{Isometry3, Perspective3};
 use num::traits::FloatConst;
 
-use event::{Event, Reactor};
+use event::{Event, React};
 use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
 lazy_static! {
@@ -91,7 +91,7 @@ impl Camera {
     }
 }
 
-impl Reactor for Camera {
+impl React for Camera {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::Resized(width, height) => {

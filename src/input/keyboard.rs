@@ -1,6 +1,6 @@
 use bit_vec::BitVec;
 
-use event::{ElementState, Event, Reactor, VirtualKeyCode};
+use event::{ElementState, Event, React, VirtualKeyCode};
 use super::state::{Element, InputState, InputStateSnapshot};
 
 impl Element for VirtualKeyCode {
@@ -39,7 +39,7 @@ impl InputStateSnapshot for Keyboard {
     }
 }
 
-impl Reactor for Keyboard {
+impl React for Keyboard {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::KeyboardInput(state, _, key) => {

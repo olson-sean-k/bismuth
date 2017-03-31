@@ -1,6 +1,6 @@
 use glutin::Window;
 
-use event::{Event, PollEvents, Reactor};
+use event::{Event, PollEvents, React};
 use render::{AspectRatio, Context, GlutinContext, MetaContext};
 
 pub struct Harness<C>
@@ -53,7 +53,7 @@ impl<C> Harness<C>
 
 // TODO: Many of `Application`s methods accept a rendering `Context`, but it
 //       would be better to provide more targeted and limited parameters.
-pub trait Application<C>: Reactor + Sized
+pub trait Application<C>: React + Sized
     where C: MetaContext
 {
     fn start(context: &mut Context<C>) -> Self;

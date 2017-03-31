@@ -17,6 +17,6 @@ impl PollEvents for Window {
     }
 }
 
-pub trait Reactor {
+pub trait React {
     fn react(&mut self, event: &Event);
 }

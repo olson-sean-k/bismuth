@@ -3,7 +3,7 @@ extern crate glutin;
 extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
-use bismuth::event::{ElementState, Event, MouseButton, Reactor};
+use bismuth::event::{ElementState, Event, MouseButton, React};
 use bismuth::framework::{Application, Harness};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
@@ -60,7 +60,7 @@ impl<C> Application<C> for Bismuth
     fn stop(self) {}
 }
 
-impl Reactor for Bismuth {
+impl React for Bismuth {
     fn react(&mut self, event: &Event) {
         self.camera.react(event);
         self.mouse.react(event);

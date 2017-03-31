@@ -1,7 +1,7 @@
 use nalgebra::Point2;
 use std::collections::HashSet;
 
-use event::{ElementState, Event, MouseButton, Reactor};
+use event::{ElementState, Event, MouseButton, React};
 use super::state::{Element, InputState, InputStateSnapshot};
 
 impl Element for MouseButton {
@@ -47,7 +47,7 @@ impl InputState<MouseProximity> for Mouse {
     }
 }
 
-impl Reactor for Mouse {
+impl React for Mouse {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::MouseEntered => {
