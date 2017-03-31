@@ -41,6 +41,12 @@ impl InputState<MouseButton> for Mouse {
     }
 }
 
+impl InputState<MouseProximity> for Mouse {
+    fn state(&self, proximity: MouseProximity) -> bool {
+        self.state.state(proximity)
+    }
+}
+
 impl Reactor for Mouse {
     fn react(&mut self, event: &Event) {
         match *event {
