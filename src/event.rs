@@ -1,7 +1,7 @@
 use glutin::Window;
 
-pub use winit::{ElementState, Event, MouseButton, MouseCursor, MouseScrollDelta, TouchPhase,
-                VirtualKeyCode};
+pub use winit::{ElementState, Event, MouseButton, MouseCursor, MouseScrollDelta, ScanCode,
+                TouchPhase, VirtualKeyCode};
 
 pub trait PollEvents {
     type Output: IntoIterator<Item = Event>;
