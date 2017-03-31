@@ -89,7 +89,7 @@ pub struct MouseState {
 }
 
 impl MouseState {
-    pub fn new() -> Self {
+    fn new() -> Self {
         MouseState {
             buttons: HashSet::new(),
             proximity: false,
