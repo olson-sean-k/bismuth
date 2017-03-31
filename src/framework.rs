@@ -51,13 +51,13 @@ impl<C> Harness<C>
     }
 }
 
+// TODO: Many of `Application`s methods accept a rendering `Context`, but it
+//       would be better to provide more targeted and limited parameters.
 pub trait Application<C>: Reactor + Sized
     where C: MetaContext
 {
     fn start(context: &mut Context<C>) -> Self;
     fn update(&mut self, context: &mut Context<C>);
-    // TODO: Do not accept the entire `Context`. Maybe `Context` can emit a
-    //       more limited type that can be used for rendering.
     fn draw(&mut self, context: &mut Context<C>);
     fn stop(self);
 }
