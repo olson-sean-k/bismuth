@@ -1,14 +1,13 @@
-use std::ops::{Deref, DerefMut};
-
-use event::{ElementState, Event, Reactor};
+use event::ElementState;
 
 pub trait Element: Copy + Sized {
     type State;
 }
 
-pub trait ToInputState {
-    type Element: Element;
-    type InputState: InputState<Self::Element>;
+pub trait ToInputState<E>
+    where E: Element
+{
+    type InputState: InputState<E>;
 
     fn to_state(&self) -> Self::InputState;
 }
@@ -43,69 +42,30 @@ impl ElementStateTransition for ElementState {
     }
 }
 
-pub struct Snapshot<E, T>
-    where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::InputState: InputState<E>,
-          E: Element,
-          E::State: ElementStateTransition
-{
-    input: T,
-    state: T::InputState,
+pub trait InputStateSnapshot {
+    type Snapshot;
+
+    fn snapshot(&mut self);
+    fn as_snapshot_state(&self) -> &Self::Snapshot;
 }
 
-impl<E, T> Snapshot<E, T>
-    where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::InputState: InputState<E>,
-          E: Element,
+pub trait InputStateTransition<E>
+    where E: Element,
           E::State: ElementStateTransition
 {
-    pub fn new(input: T) -> Self {
-        Snapshot {
-            state: input.to_state(),
-            input: input,
-        }
-    }
-
-    pub fn transition(&self, element: E) -> Option<E::State> {
-        E::State::transition(self.state.state(element), self.input.state(element))
-    }
-
-    pub fn snapshot(&mut self) {
-        self.state = self.input.to_state();
-    }
+    fn transition(&self, element: E) -> Option<E::State>
+        where Self: InputState<E> + ToInputState<E>,
+              Self::InputState: InputState<E>;
 }
 
-impl<E, T> Deref for Snapshot<E, T>
-    where T: InputState<E> + Reactor + ToInputState<Element = E>,
+impl<E, T> InputStateTransition<E> for T
+    where T: InputState<E> + InputStateSnapshot + ToInputState<E>,
           T::InputState: InputState<E>,
+          T::Snapshot: InputState<E>,
           E: Element,
           E::State: ElementStateTransition
 {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.input
-    }
-}
-
-impl<E, T> DerefMut for Snapshot<E, T>
-    where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::InputState: InputState<E>,
-          E: Element,
-          E::State: ElementStateTransition
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.input
-    }
-}
-
-impl<E, T> Reactor for Snapshot<E, T>
-    where T: InputState<E> + Reactor + ToInputState<Element = E>,
-          T::InputState: InputState<E>,
-          E: Element,
-          E::State: ElementStateTransition
-{
-    fn react(&mut self, event: &Event) {
-        self.input.react(event);
+    fn transition(&self, element: E) -> Option<E::State> {
+        E::State::transition(self.as_snapshot_state().state(element), self.state(element))
     }
 }

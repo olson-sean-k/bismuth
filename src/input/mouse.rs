@@ -2,7 +2,7 @@ use nalgebra::Point2;
 use std::collections::HashSet;
 
 use event::{ElementState, Event, MouseButton, Reactor};
-use super::state::{Element, InputState, ToInputState};
+use super::state::{Element, InputState, InputStateSnapshot, ToInputState};
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -18,6 +18,7 @@ impl Element for MouseProximity {
 pub struct Mouse {
     position: Point2<u32>,
     state: MouseState,
+    snapshot: MouseState,
 }
 
 impl Mouse {
@@ -25,6 +26,7 @@ impl Mouse {
         Mouse {
             position: Point2::origin(),
             state: MouseState::new(),
+            snapshot: MouseState::new(),
         }
     }
 
@@ -62,8 +64,19 @@ impl Reactor for Mouse {
     }
 }
 
-impl ToInputState for Mouse {
-    type Element = MouseButton;
+impl InputStateSnapshot for Mouse {
+    type Snapshot = MouseState;
+
+    fn snapshot(&mut self) {
+        self.snapshot = self.to_state();
+    }
+
+    fn as_snapshot_state(&self) -> &Self::Snapshot {
+        &self.snapshot
+    }
+}
+
+impl ToInputState<MouseButton> for Mouse {
     type InputState = MouseState;
 
     fn to_state(&self) -> Self::InputState {
