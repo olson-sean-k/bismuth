@@ -16,24 +16,6 @@ use super::texture::Texture;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
-pub trait UpdateFrameBufferView<R>
-    where R: Resources
-{
-    fn update_frame_buffer_view(&mut self,
-                                color: &mut RenderTargetView<R, Rgba8>,
-                                depth: &mut DepthStencilView<R, DepthStencil>);
-}
-
-impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
-    fn update_frame_buffer_view(
-        &mut self,
-        color: &mut RenderTargetView<gfx_device_gl::Resources, Rgba8>,
-        depth: &mut DepthStencilView<gfx_device_gl::Resources, DepthStencil>)
-    {
-        gfx_window_glutin::update_views(&*self, color, depth);
-    }
-}
-
 pub trait SwapBuffers {
     fn swap_buffers(&mut self) -> Result<(), RenderError>;
 }
@@ -49,8 +31,26 @@ impl SwapBuffers for Window {
     }
 }
 
+pub trait UpdateFrameBufferView<R>
+    where R: Resources
+{
+    fn update_frame_buffer_view(&self,
+                                color: &mut RenderTargetView<R, Rgba8>,
+                                depth: &mut DepthStencilView<R, DepthStencil>);
+}
+
+impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
+    fn update_frame_buffer_view(
+        &self,
+        color: &mut RenderTargetView<gfx_device_gl::Resources, Rgba8>,
+        depth: &mut DepthStencilView<gfx_device_gl::Resources, DepthStencil>)
+    {
+        gfx_window_glutin::update_views(self, color, depth);
+    }
+}
+
 pub trait MetaContext {
-    type Window: AspectRatio + PollEvents + UpdateFrameBufferView<Self::Resources> + SwapBuffers;
+    type Window: AspectRatio + PollEvents + SwapBuffers + UpdateFrameBufferView<Self::Resources>;
     type Resources: Resources;
     type Factory: Factory<Self::Resources>;
     type CommandBuffer: CommandBuffer<Self::Resources>;
