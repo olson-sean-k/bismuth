@@ -2,7 +2,7 @@ use nalgebra::Point2;
 use std::collections::HashSet;
 
 use event::{ElementState, Event, MouseButton, Reactor};
-use super::state::{Element, InputState, InputStateSnapshot, ToInputState};
+use super::state::{Element, InputState, InputStateSnapshot};
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -74,19 +74,11 @@ impl InputStateSnapshot for Mouse {
     type Snapshot = MouseState;
 
     fn snapshot(&mut self) {
-        self.snapshot = self.to_state();
+        self.snapshot = self.state.clone();
     }
 
-    fn as_snapshot_state(&self) -> &Self::Snapshot {
+    fn as_snapshot(&self) -> &Self::Snapshot {
         &self.snapshot
-    }
-}
-
-impl ToInputState<MouseButton> for Mouse {
-    type InputState = MouseState;
-
-    fn to_state(&self) -> Self::InputState {
-        self.state.clone()
     }
 }
 

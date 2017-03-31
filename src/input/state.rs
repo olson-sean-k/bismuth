@@ -4,27 +4,13 @@ pub trait Element: Copy + Sized {
     type State;
 }
 
-pub trait ToInputState<E>
-    where E: Element
-{
-    type InputState: InputState<E>;
-
-    fn to_state(&self) -> Self::InputState;
-}
-
-pub trait InputState<E>
-    where E: Element
-{
-    fn state(&self, element: E) -> E::State;
-}
-
 pub trait ElementStateTransition: Copy + Sized {
-    fn transition(old: Self, new: Self) -> Option<Self>;
+    fn transition(snapshot: Self, state: Self) -> Option<Self>;
 }
 
 impl ElementStateTransition for bool {
-    fn transition(old: Self, new: Self) -> Option<Self> {
-        match (old, new) {
+    fn transition(snapshot: Self, state: Self) -> Option<Self> {
+        match (snapshot, state) {
             (false, true) => Some(true),
             (true, false) => Some(false),
             _ => None
@@ -33,8 +19,8 @@ impl ElementStateTransition for bool {
 }
 
 impl ElementStateTransition for ElementState {
-    fn transition(old: Self, new: Self) -> Option<Self> {
-        match (old, new) {
+    fn transition(snapshot: Self, state: Self) -> Option<Self> {
+        match (snapshot, state) {
             (ElementState::Released, ElementState::Pressed) => Some(ElementState::Pressed),
             (ElementState::Pressed, ElementState::Released) => Some(ElementState::Released),
             _ => None
@@ -42,11 +28,17 @@ impl ElementStateTransition for ElementState {
     }
 }
 
+pub trait InputState<E>
+    where E: Element
+{
+    fn state(&self, element: E) -> E::State;
+}
+
 pub trait InputStateSnapshot {
     type Snapshot;
 
     fn snapshot(&mut self);
-    fn as_snapshot_state(&self) -> &Self::Snapshot;
+    fn as_snapshot(&self) -> &Self::Snapshot;
 }
 
 pub trait InputStateTransition<E>
@@ -54,18 +46,17 @@ pub trait InputStateTransition<E>
           E::State: ElementStateTransition
 {
     fn transition(&self, element: E) -> Option<E::State>
-        where Self: InputState<E> + ToInputState<E>,
-              Self::InputState: InputState<E>;
+        where Self: InputState<E> + InputStateSnapshot,
+              Self::Snapshot: InputState<E>;
 }
 
 impl<E, T> InputStateTransition<E> for T
-    where T: InputState<E> + InputStateSnapshot + ToInputState<E>,
-          T::InputState: InputState<E>,
+    where T: InputState<E> + InputStateSnapshot,
           T::Snapshot: InputState<E>,
           E: Element,
           E::State: ElementStateTransition
 {
     fn transition(&self, element: E) -> Option<E::State> {
-        E::State::transition(self.as_snapshot_state().state(element), self.state(element))
+        E::State::transition(self.as_snapshot().state(element), self.state(element))
     }
 }
