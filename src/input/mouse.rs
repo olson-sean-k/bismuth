@@ -59,6 +59,18 @@ impl InputStateDifference<MouseButton> for Mouse {
     }
 }
 
+impl InputStateSnapshot for Mouse {
+    type Snapshot = MouseState;
+
+    fn snapshot(&mut self) {
+        self.snapshot = self.state.clone();
+    }
+
+    fn as_snapshot(&self) -> &Self::Snapshot {
+        &self.snapshot
+    }
+}
+
 impl React for Mouse {
     fn react(&mut self, event: &Event) {
         match *event {
@@ -79,18 +91,6 @@ impl React for Mouse {
             }
             _ => {}
         }
-    }
-}
-
-impl InputStateSnapshot for Mouse {
-    type Snapshot = MouseState;
-
-    fn snapshot(&mut self) {
-        self.snapshot = self.state.clone();
-    }
-
-    fn as_snapshot(&self) -> &Self::Snapshot {
-        &self.snapshot
     }
 }
 

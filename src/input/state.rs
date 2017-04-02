@@ -1,5 +1,3 @@
-use event::ElementState;
-
 pub trait Element: Copy + Sized {
     type State;
 }
@@ -8,22 +6,15 @@ pub trait ElementStateTransition: Copy + Sized {
     fn transition(snapshot: Self, state: Self) -> Option<Self>;
 }
 
-impl ElementStateTransition for bool {
+impl<T> ElementStateTransition for T
+    where T: Copy + Eq
+{
     fn transition(snapshot: Self, state: Self) -> Option<Self> {
-        match (snapshot, state) {
-            (false, true) => Some(true),
-            (true, false) => Some(false),
-            _ => None
+        if snapshot == state {
+            None
         }
-    }
-}
-
-impl ElementStateTransition for ElementState {
-    fn transition(snapshot: Self, state: Self) -> Option<Self> {
-        match (snapshot, state) {
-            (ElementState::Released, ElementState::Pressed) => Some(ElementState::Pressed),
-            (ElementState::Pressed, ElementState::Released) => Some(ElementState::Released),
-            _ => None
+        else {
+            Some(state)
         }
     }
 }
