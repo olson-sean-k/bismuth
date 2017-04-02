@@ -2,7 +2,7 @@ use nalgebra::Point2;
 use std::collections::HashSet;
 
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{Element, InputState, InputStateSnapshot};
+use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot};
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -44,6 +44,24 @@ impl InputState<MouseButton> for Mouse {
 impl InputState<MouseProximity> for Mouse {
     fn state(&self, proximity: MouseProximity) -> bool {
         self.state.state(proximity)
+    }
+}
+
+impl InputStateDifference<MouseButton> for Mouse {
+    type Difference = Vec<(MouseButton, ElementState)>;
+
+    fn difference(&self) -> Self::Difference {
+        let mut difference = vec![];
+        for button in self.state.buttons.symmetric_difference(&self.snapshot.buttons) {
+            let state = if self.state.buttons.contains(button) {
+                ElementState::Pressed
+            }
+            else {
+                ElementState::Released
+            };
+            difference.push((*button, state));
+        }
+        difference
     }
 }
 

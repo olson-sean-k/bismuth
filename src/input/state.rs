@@ -60,3 +60,11 @@ impl<E, T> InputStateTransition<E> for T
         E::State::transition(self.as_snapshot().state(element), self.state(element))
     }
 }
+
+pub trait InputStateDifference<E>: InputState<E>
+    where E: Element
+{
+    type Difference: IntoIterator<Item = (E, E::State)>;
+
+    fn difference(&self) -> Self::Difference;
+}
