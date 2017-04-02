@@ -1,7 +1,7 @@
-use bit_vec::BitVec;
+use std::collections::HashSet;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{Element, InputState, InputStateSnapshot};
+use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
@@ -27,6 +27,18 @@ impl InputState<VirtualKeyCode> for Keyboard {
     }
 }
 
+impl InputStateDifference<VirtualKeyCode> for Keyboard {
+    type Difference = Vec<(VirtualKeyCode, ElementState)>;
+
+    fn difference(&self) -> Self::Difference {
+        let mut difference = vec![];
+        for key in self.state.keys.symmetric_difference(&self.snapshot.keys) {
+            difference.push((*key, self.state.state(*key)));
+        }
+        difference
+    }
+}
+
 impl InputStateSnapshot for Keyboard {
     type Snapshot = KeyboardState;
 
@@ -44,8 +56,14 @@ impl React for Keyboard {
         match *event {
             Event::KeyboardInput(state, _, key) => {
                 if let Some(key) = key {
-                    let state = if let ElementState::Pressed = state { true } else { false };
-                    self.state.keys.set(key as usize, state);
+                    match state {
+                        ElementState::Pressed => {
+                            self.state.keys.insert(key);
+                        }
+                        ElementState::Released => {
+                            self.state.keys.remove(&key);
+                        }
+                    }
                 }
             }
             _ => {}
@@ -55,21 +73,20 @@ impl React for Keyboard {
 
 #[derive(Clone)]
 pub struct KeyboardState {
-    keys: BitVec,
+    keys: HashSet<VirtualKeyCode>,
 }
 
 impl KeyboardState {
     fn new() -> Self {
         KeyboardState {
-            keys: BitVec::from_elem(150, false), // There are 150 virtual key codes.
+            keys: HashSet::new(),
         }
     }
 }
 
 impl InputState<VirtualKeyCode> for KeyboardState {
     fn state(&self, key: VirtualKeyCode) -> ElementState {
-        // `key` should never be out of bounds, so just `unwrap` the `Option`.
-        if self.keys.get(key as usize).unwrap() {
+        if self.keys.contains(&key) {
             ElementState::Pressed
         }
         else {

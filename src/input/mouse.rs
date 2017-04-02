@@ -53,13 +53,7 @@ impl InputStateDifference<MouseButton> for Mouse {
     fn difference(&self) -> Self::Difference {
         let mut difference = vec![];
         for button in self.state.buttons.symmetric_difference(&self.snapshot.buttons) {
-            let state = if self.state.buttons.contains(button) {
-                ElementState::Pressed
-            }
-            else {
-                ElementState::Released
-            };
-            difference.push((*button, state));
+            difference.push((*button, self.state.state(*button)));
         }
         difference
     }
