@@ -10,6 +10,7 @@ extern crate lazy_static;
 extern crate nalgebra;
 extern crate num;
 extern crate rand;
+extern crate time;
 extern crate winit;
 
 pub mod clamp;

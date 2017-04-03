@@ -4,7 +4,7 @@ extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
-use bismuth::framework::{Application, Harness};
+use bismuth::framework::{Application, FixedUpdate, Harness};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, Context, MeshBuffer, MetaContext, Projection,
@@ -97,5 +97,5 @@ fn main() {
         .with_vsync()
         .build()
         .unwrap());
-    harness.start::<Bismuth>();
+    harness.start::<Bismuth, _>(FixedUpdate::default());
 }
