@@ -1,6 +1,6 @@
 use alga::general::{Real, SupersetOf};
 use nalgebra::{self, Matrix4, Point2, Point3, Scalar, Unit, Vector3, Vector4};
-use num::Float;
+use num::{Float, Integer};
 use std::cmp;
 use std::ops;
 
@@ -248,6 +248,12 @@ pub fn partial_max<T>(a: T, b: T) -> T
     where T: PartialOrd
 {
     if a > b { a } else { b }
+}
+
+pub fn umod<T>(n: T, m: T) -> T
+    where T: Copy + Integer
+{
+    ((n % m) + m) % m
 }
 
 #[cfg(test)]

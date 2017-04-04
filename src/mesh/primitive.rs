@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::mem;
 
+use math;
+
 pub trait Primitive<T>: Sized {
     fn into_points<F>(self, f: F) where F: FnMut(T);
     fn into_lines<F>(self, f: F) where F: FnMut(Line<T>);
@@ -275,7 +277,7 @@ impl<T> RotatePrimitive for Triangle<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
-        let n = ((n % 3) + 3) % 3;
+        let n = math::umod(n, 3);
         if n == 1 {
             mem::swap(&mut self.a, &mut self.b);
             mem::swap(&mut self.b, &mut self.c);
@@ -356,7 +358,7 @@ impl<T> RotatePrimitive for Quad<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
-        let n = ((n % 4) + 4) % 4;
+        let n = math::umod(n, 4);
         if n == 1 {
             mem::swap(&mut self.a, &mut self.b);
             mem::swap(&mut self.b, &mut self.c);
