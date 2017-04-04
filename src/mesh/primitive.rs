@@ -274,21 +274,15 @@ impl<T> Polygonal<T> for Triangle<T>
 impl<T> RotatePrimitive for Triangle<T>
     where T: Clone
 {
-    // TODO: This seems a bit odd. For `Triangle`, there are only two possible
-    //       mutations, and the loops and additional swaps aren't necessary.
     fn rotate(&mut self, n: isize) {
-        let n = (n % 3);
-        if n >= 0 {
-            for _ in 0..n {
-                mem::swap(&mut self.a, &mut self.b);
-                mem::swap(&mut self.b, &mut self.c);
-            }
+        let n = ((n % 3) + 3) % 3;
+        if n == 1 {
+            mem::swap(&mut self.a, &mut self.b);
+            mem::swap(&mut self.b, &mut self.c);
         }
-        else {
-            for _ in n..0 {
-                mem::swap(&mut self.c, &mut self.b);
-                mem::swap(&mut self.b, &mut self.a);
-            }
+        else if n == 2 {
+            mem::swap(&mut self.c, &mut self.b);
+            mem::swap(&mut self.b, &mut self.a);
         }
     }
 }
@@ -362,20 +356,20 @@ impl<T> RotatePrimitive for Quad<T>
     where T: Clone
 {
     fn rotate(&mut self, n: isize) {
-        let n = (n % 4);
-        if n >= 0 {
-            for _ in 0..n {
-                mem::swap(&mut self.a, &mut self.b);
-                mem::swap(&mut self.b, &mut self.c);
-                mem::swap(&mut self.c, &mut self.d);
-            }
+        let n = ((n % 4) + 4) % 4;
+        if n == 1 {
+            mem::swap(&mut self.a, &mut self.b);
+            mem::swap(&mut self.b, &mut self.c);
+            mem::swap(&mut self.c, &mut self.d);
         }
-        else {
-            for _ in n..0 {
-                mem::swap(&mut self.d, &mut self.c);
-                mem::swap(&mut self.c, &mut self.b);
-                mem::swap(&mut self.b, &mut self.a);
-            }
+        else if n == 2 {
+            mem::swap(&mut self.a, &mut self.c);
+            mem::swap(&mut self.b, &mut self.d);
+        }
+        else if n == 3 {
+            mem::swap(&mut self.d, &mut self.c);
+            mem::swap(&mut self.c, &mut self.b);
+            mem::swap(&mut self.b, &mut self.a);
         }
     }
 }
