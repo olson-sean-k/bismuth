@@ -48,6 +48,7 @@
 mod edit;
 mod geometry;
 mod space;
+mod split;
 #[macro_use]
 mod traverse;
 mod tree;

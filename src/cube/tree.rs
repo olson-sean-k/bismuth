@@ -339,6 +339,18 @@ impl Hint {
     }
 }
 
+pub trait Load {
+    fn load(&self) -> usize;
+}
+
+impl<'a, N> Load for Vec<Cube<'a, N>>
+    where N: AsRef<Node>
+{
+    fn load(&self) -> usize {
+        self.iter().map(|cube| cube.load()).sum()
+    }
+}
+
 pub struct Root {
     node: Box<Node>,
     partition: Partition,
@@ -727,6 +739,14 @@ impl<'a, N> ops::DerefMut for Cube<'a, N>
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.node.as_mut()
+    }
+}
+
+impl<'a, N> Load for Cube<'a, N>
+    where N: AsRef<Node>
+{
+    fn load(&self) -> usize {
+        self.hint().load
     }
 }
 
