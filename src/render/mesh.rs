@@ -1,8 +1,4 @@
-use OptionExt;
-use cube::{CubeRef, OrphanCubeRef, Spatial};
-use math::{IntoSpace, FScalar, FVector3};
-use mesh::{DecomposePolygon, DecomposePrimitive, MapPrimitive, Textured, Triangle, UCube};
-use super::{Color, Index};
+use super::Index;
 use super::pipeline::Vertex;
 
 pub struct MeshBuffer {
@@ -43,42 +39,4 @@ impl MeshBuffer {
 
 pub trait ToMeshBuffer {
     fn to_mesh_buffer(&self) -> MeshBuffer;
-}
-
-impl<'a, 'b> ToMeshBuffer for CubeRef<'a, 'b> {
-    fn to_mesh_buffer(&self) -> MeshBuffer {
-        let mut buffer = MeshBuffer::new();
-        for cube in self.iter() {
-            buffer.append(&mut cube.to_orphan().to_mesh_buffer());
-        }
-        buffer
-    }
-}
-
-impl<'a, 'b> ToMeshBuffer for OrphanCubeRef<'a, 'b> {
-    fn to_mesh_buffer(&self) -> MeshBuffer {
-        let mut buffer = MeshBuffer::new();
-        if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
-            let origin: FVector3 = self.partition().origin().coords.into_space();
-            let width = self.partition().width().exp() as FScalar;
-            buffer.extend(UCube::with_unit_width()
-                              .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
-                              .map_points(|point| (point * width) + origin)
-                              .triangulate()
-                              .zip(UCube::with_unit_width().textured_polygons().triangulate())
-                              .map(|(triangle, texture)| {
-                                  let color = Color::random();
-                                  Triangle::new(Vertex::new(&triangle.a, &texture.a, &color),
-                                                Vertex::new(&triangle.b, &texture.b, &color),
-                                                Vertex::new(&triangle.c, &texture.c, &color))
-                              })
-                              .points(),
-                          UCube::with_unit_width()
-                              .triangulate()
-                              .points()
-                              .enumerate()
-                              .map(|(index, _)| index as Index));
-        }
-        buffer
-    }
 }

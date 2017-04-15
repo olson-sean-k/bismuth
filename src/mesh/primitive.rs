@@ -177,6 +177,12 @@ impl<T> Line<T> {
     pub fn new(a: T, b: T) -> Self {
         Line { a: a, b: b }
     }
+
+    pub fn converged(value: T) -> Self
+        where T: Clone
+    {
+        Line::new(value.clone(), value)
+    }
 }
 
 impl<T, U> MapPrimitiveInto<T, U> for Line<T> {
@@ -227,6 +233,12 @@ pub struct Triangle<T> {
 impl<T> Triangle<T> {
     pub fn new(a: T, b: T, c: T) -> Self {
         Triangle { a: a, b: b, c: c }
+    }
+
+    pub fn converged(value: T) -> Self
+        where T: Clone
+    {
+        Triangle::new(value.clone(), value.clone(), value)
     }
 }
 
@@ -304,6 +316,12 @@ impl<T> Quad<T> {
             c: c,
             d: d,
         }
+    }
+
+    pub fn converged(value: T) -> Self
+        where T: Clone
+    {
+        Quad::new(value.clone(), value.clone(), value.clone(), value)
     }
 }
 

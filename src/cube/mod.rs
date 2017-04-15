@@ -47,6 +47,7 @@
 
 mod edit;
 mod geometry;
+mod mesh;
 mod space;
 #[macro_use]
 mod traverse;

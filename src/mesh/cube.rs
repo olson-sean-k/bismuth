@@ -1,8 +1,7 @@
 use nalgebra::{Point2, Point3, Scalar};
 use std::ops::Range;
 
-use super::generate::{ConjointGenerator, IndexedGenerator, PolygonGenerator,
-                      TexturedGenerator};
+use super::generate::{ConjointGenerator, IndexedGenerator, PolygonGenerator, TexturedGenerator};
 use super::primitive::{MapPrimitiveInto, Quad};
 
 pub trait Unit: Scalar {
@@ -43,6 +42,16 @@ macro_rules! unit {
 unit!(integer => i8, i16, i32, i64, u8, u16, u32, u64);
 unit!(real => f32, f64);
 
+#[derive(Clone, Copy)]
+pub enum FacePlane {
+    XY,
+    NXY,
+    ZY,
+    NZY,
+    XZ,
+    XNZ,
+}
+
 #[derive(Clone)]
 pub struct Cube<T>
     where T: Unit
@@ -73,6 +82,10 @@ impl<T> Cube<T>
         Cube::new(lower, upper)
     }
 
+    pub fn planar_polygons(&self) -> PlanarPolygonIter {
+        PlanarPolygonIter::new(0..self.polygon_count())
+    }
+
     fn point(&self, index: usize) -> Point3<T> {
         point(index, self.lower, self.upper)
     }
@@ -89,6 +102,26 @@ impl<T> Iterator for Cube<T>
 
     fn next(&mut self) -> Option<Self::Item> {
         self.faces.next().map(|index| self.face(index))
+    }
+}
+
+pub struct PlanarPolygonIter {
+    polygons: Range<usize>,
+}
+
+impl PlanarPolygonIter {
+    fn new(polygons: Range<usize>) -> Self {
+        PlanarPolygonIter {
+            polygons: polygons,
+        }
+    }
+}
+
+impl Iterator for PlanarPolygonIter {
+    type Item = Quad<FacePlane>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.polygons.next().map(|index| planar_face(index))
     }
 }
 
@@ -161,6 +194,18 @@ fn textured_face(index: usize) -> Quad<Point2<f32>> {
         3 => Quad::new(lu, uu, ul, ll), // left
         4 => Quad::new(uu, ul, ll, lu), // bottom
         5 => Quad::new(uu, ul, ll, lu), // back
+        _ => panic!(),
+    }
+}
+
+fn planar_face(index: usize) -> Quad<FacePlane> {
+    match index {
+        0 => Quad::converged(FacePlane::XY),  // front
+        1 => Quad::converged(FacePlane::NZY), // right
+        2 => Quad::converged(FacePlane::XNZ), // top
+        3 => Quad::converged(FacePlane::ZY),  // left
+        4 => Quad::converged(FacePlane::XZ),  // bottom
+        5 => Quad::converged(FacePlane::NXY), // back
         _ => panic!(),
     }
 }
