@@ -4,11 +4,12 @@ extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
-use bismuth::framework::{Application, Harness};
+use bismuth::framework::{Application, Context, ContextView, Harness, RenderContextView,
+                         UpdateContextView};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{AspectRatio, Camera, Context, MeshBuffer, MetaContext, Projection,
-                      ToMeshBuffer, Transform};
+use bismuth::render::{AspectRatio, Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer,
+                      Transform};
 use glutin::WindowBuilder;
 
 struct Bismuth {
@@ -18,10 +19,10 @@ struct Bismuth {
     mouse: Mouse,
 }
 
-impl<C> Application<C> for Bismuth
-    where C: MetaContext
+impl<R> Application<R> for Bismuth
+    where R: MetaRenderer
 {
-    fn start(context: &mut Context<C>) -> Self {
+    fn start(context: &mut Context<R>) -> Self {
         let root = new_root(LogWidth::new(8));
         let mesh = root.to_cube().to_mesh_buffer();
         let camera = new_camera(&context.window, &root);
@@ -33,10 +34,12 @@ impl<C> Application<C> for Bismuth
         }
     }
 
-    fn update(&mut self, context: &mut Context<C>) {
+    fn update<C>(&mut self, context: &mut C)
+        where C: UpdateContextView
+    {
         let mut dirty = false;
         if let Some(ElementState::Pressed) = self.mouse.transition(MouseButton::Left) {
-            let ray = self.camera.cast_ray(&context.window, self.mouse.position());
+            let ray = self.camera.cast_ray(context.window(), self.mouse.position());
             let mut cube = self.root.to_cube_mut();
             if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
                 if let Some(leaf) = cube.as_leaf_mut() {
@@ -51,7 +54,9 @@ impl<C> Application<C> for Bismuth
         self.mouse.snapshot();
     }
 
-    fn draw(&mut self, context: &mut Context<C>) {
+    fn draw<C>(&mut self, context: &mut C)
+        where C: RenderContextView<R>
+    {
         context.set_transform(&Transform::new(&self.camera.transform(),
                                               &FMatrix4::identity())).unwrap();
         context.draw_mesh_buffer(&self.mesh);

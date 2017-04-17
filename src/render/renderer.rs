@@ -49,7 +49,7 @@ impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
     }
 }
 
-pub trait MetaContext {
+pub trait MetaRenderer {
     type Window: AspectRatio + PollEvents + SwapBuffers + UpdateFrameBufferView<Self::Resources>;
     type Resources: Resources;
     type Factory: Factory<Self::Resources>;
@@ -57,9 +57,9 @@ pub trait MetaContext {
     type Device: Device<Resources = Self::Resources, CommandBuffer = Self::CommandBuffer>;
 }
 
-pub struct GlutinContext {}
+pub struct GlutinRenderer {}
 
-impl MetaContext for GlutinContext {
+impl MetaRenderer for GlutinRenderer {
     type Window = Window;
     type Resources = gfx_device_gl::Resources;
     type Factory = gfx_device_gl::Factory;
@@ -67,35 +67,35 @@ impl MetaContext for GlutinContext {
     type Device = gfx_device_gl::Device;
 }
 
-pub struct Context<C>
-    where C: MetaContext
+pub struct Renderer<R>
+    where R: MetaRenderer
 {
-    pub window: C::Window,
-    pub factory: C::Factory,
-    device: C::Device,
-    encoder: Encoder<C::Resources, C::CommandBuffer>,
-    state: PipelineState<C::Resources, Meta>,
-    data: Data<C::Resources>,
+    pub window: R::Window,
+    pub factory: R::Factory,
+    device: R::Device,
+    encoder: Encoder<R::Resources, R::CommandBuffer>,
+    state: PipelineState<R::Resources, Meta>,
+    data: Data<R::Resources>,
 }
 
-impl Context<GlutinContext> {
+impl Renderer<GlutinRenderer> {
     pub fn from_glutin_window(window: Window) -> Self {
         let (device, mut factory, color, depth) = gfx_window_glutin::init_existing(&window);
         let encoder = factory.create_command_buffer().into();
-        Context::new(window, factory, device, encoder, color, depth)
+        Renderer::new(window, factory, device, encoder, color, depth)
     }
 }
 
-impl<C> Context<C>
-    where C: MetaContext
+impl<R> Renderer<R>
+    where R: MetaRenderer
 {
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn new(window: C::Window,
-           mut factory: C::Factory,
-           device: C::Device,
-           encoder: Encoder<C::Resources, C::CommandBuffer>,
-           color: RenderTargetView<C::Resources, Rgba8>,
-           depth: DepthStencilView<C::Resources, DepthStencil>)
+    fn new(window: R::Window,
+           mut factory: R::Factory,
+           device: R::Device,
+           encoder: Encoder<R::Resources, R::CommandBuffer>,
+           color: RenderTargetView<R::Resources, Rgba8>,
+           depth: DepthStencilView<R::Resources, DepthStencil>)
            -> Self {
         let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
                                                    include_bytes!("../shader/cube.f.glsl"),
@@ -112,7 +112,7 @@ impl<C> Context<C>
             color: color,
             depth: depth,
         };
-        Context {
+        Renderer {
             window: window,
             factory: factory,
             device: device,
