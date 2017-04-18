@@ -4,8 +4,7 @@ extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
-use bismuth::framework::{Application, Context, ContextView, Harness, RenderContextView,
-                         UpdateContextView};
+use bismuth::framework::{Application, Context, Harness, RenderContextView, UpdateContextView};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer,
@@ -25,7 +24,7 @@ impl<R> Application<R> for Bismuth
     fn start(context: &mut Context<R>) -> Self {
         let root = new_root(LogWidth::new(8));
         let mesh = root.to_cube().to_mesh_buffer();
-        let camera = new_camera(&context.window, &root);
+        let camera = new_camera(&context.renderer.window, &root);
         Bismuth {
             root: root,
             mesh: mesh,
