@@ -10,17 +10,15 @@ use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer,
                       Transform};
 use glutin::WindowBuilder;
-
-struct Bismuth {
-    root: Root,
-    mesh: MeshBuffer,
-    camera: Camera,
-    mouse: Mouse,
-}
+use std::error;
+use std::fmt;
 
 impl<R> Application<R> for Bismuth
     where R: MetaRenderer
 {
+    type UpdateError = BismuthError;
+    type RenderError = BismuthError;
+
     fn start(context: &mut Context<R>) -> Self {
         let root = new_root(LogWidth::new(8));
         let mesh = root.to_cube().to_mesh_buffer();
@@ -33,7 +31,7 @@ impl<R> Application<R> for Bismuth
         }
     }
 
-    fn update<C>(&mut self, context: &mut C)
+    fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
         where C: UpdateContextView
     {
         let mut dirty = false;
@@ -51,14 +49,16 @@ impl<R> Application<R> for Bismuth
             self.mesh = self.root.to_cube().to_mesh_buffer();
         }
         self.mouse.snapshot();
+        Ok(())
     }
 
-    fn draw<C>(&mut self, context: &mut C)
+    fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
         where C: RenderContextView<R>
     {
         context.set_transform(&Transform::new(&self.camera.transform(),
                                               &FMatrix4::identity())).unwrap();
         context.draw_mesh_buffer(&self.mesh);
+        Ok(())
     }
 
     fn stop(self) {}
@@ -69,6 +69,30 @@ impl React for Bismuth {
         self.camera.react(event);
         self.mouse.react(event);
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct BismuthError;
+
+impl fmt::Display for BismuthError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use std::error::Error;
+
+        write!(formatter, "{}", self.description())
+    }
+}
+
+impl error::Error for BismuthError {
+    fn description(&self) -> &str {
+        ""
+    }
+}
+
+struct Bismuth {
+    root: Root,
+    mesh: MeshBuffer,
+    camera: Camera,
+    mouse: Mouse,
 }
 
 fn new_root(width: LogWidth) -> Root {

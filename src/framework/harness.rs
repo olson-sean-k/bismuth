@@ -44,8 +44,12 @@ impl<R> Harness<R>
                 }
                 application.react(&event);
             }
-            application.update(&mut self.context);
-            application.draw(&mut self.context);
+            if let Err(..) = application.update(&mut self.context) {
+                break 'main;
+            }
+            if let Err(..) = application.render(&mut self.context) {
+                break 'main;
+            }
             self.dimensions = self.context.renderer.window.dimensions();
             self.context.renderer.flush().unwrap();
         }
