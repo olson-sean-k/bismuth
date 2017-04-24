@@ -13,13 +13,13 @@ use glutin::WindowBuilder;
 use std::error;
 use std::fmt;
 
-impl<R> Application<R> for Bismuth
-    where R: MetaRenderer
-{
+impl Application for Bismuth {
     type UpdateError = BismuthError;
     type RenderError = BismuthError;
 
-    fn start(context: &mut Context<R>) -> Self {
+    fn start<R>(context: &mut Context<R>) -> Self
+        where R: MetaRenderer
+    {
         let root = new_root(LogWidth::new(8));
         let mesh = root.to_cube().to_mesh_buffer();
         let camera = new_camera(&context.renderer.window, &root);
@@ -52,12 +52,16 @@ impl<R> Application<R> for Bismuth
         Ok(())
     }
 
-    fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R>
+    fn render<C, R>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
+        where C: RenderContextView<R>,
+              R: MetaRenderer
     {
-        context.set_transform(&Transform::new(&self.camera.transform(),
-                                              &FMatrix4::identity())).unwrap();
-        context.draw_mesh_buffer(&self.mesh);
+        let mut renderer = context.renderer_mut();
+        renderer.clear();
+        renderer.set_transform(&Transform::new(&self.camera.transform(),
+                                               &FMatrix4::identity())).unwrap();
+        renderer.draw_mesh_buffer(&self.mesh);
+        renderer.flush().unwrap();
         Ok(())
     }
 

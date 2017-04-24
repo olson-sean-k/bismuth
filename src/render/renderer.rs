@@ -8,7 +8,7 @@ use glutin::{ContextError, Window};
 use std::error::{self, Error};
 use std::fmt;
 
-use event::PollEvents;
+use event::{Event, PollEvents, React};
 use super::camera::AspectRatio;
 use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
@@ -131,10 +131,6 @@ impl<R> Renderer<R>
         })
     }
 
-    pub fn update_frame_buffer_view(&mut self) {
-        self.window.update_frame_buffer_view(&mut self.data.color, &mut self.data.depth);
-    }
-
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {
         let (buffer, slice) = self.factory
             .create_vertex_buffer_with_slice(buffer.vertices(), buffer.indices());
@@ -153,6 +149,26 @@ impl<R> Renderer<R>
             self.device.cleanup();
             Ok(())
         })
+    }
+
+    fn update_frame_buffer_view(&mut self) {
+        self.window.update_frame_buffer_view(&mut self.data.color, &mut self.data.depth);
+    }
+}
+
+impl<R> React for Renderer<R>
+    where R: MetaRenderer
+{
+    fn react(&mut self, event: &Event) {
+        match *event {
+            // TODO: Compare the dimensions from the event to the previous
+            //       dimensions of the window and only update the frame buffer
+            //       view if they differ. This should avoid spurious updates.
+            Event::Resized(..) => {
+                self.update_frame_buffer_view();
+            }
+            _ => {}
+        }
     }
 }
 

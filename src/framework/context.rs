@@ -1,7 +1,6 @@
 use glutin::Window;
 
-use render::{AspectRatio, GlutinRenderer, MeshBuffer, MetaRenderer, Renderer, RenderError,
-             Transform};
+use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
 
 pub trait ContextView {
     type Window: AspectRatio;
@@ -15,8 +14,8 @@ pub trait UpdateContextView: ContextView {
 pub trait RenderContextView<R>: ContextView
     where R: MetaRenderer
 {
-    fn set_transform(&mut self, transform: &Transform) -> Result<(), RenderError>;
-    fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer);
+    fn renderer(&self) -> &Renderer<R>;
+    fn renderer_mut(&mut self) -> &mut Renderer<R>;
 }
 
 pub struct Context<R>
@@ -59,11 +58,11 @@ impl<R> UpdateContextView for Context<R>
 impl<R> RenderContextView<R> for Context<R>
     where R: MetaRenderer
 {
-    fn set_transform(&mut self, transform: &Transform) -> Result<(), RenderError> {
-        self.renderer.set_transform(transform)
+    fn renderer(&self) -> &Renderer<R> {
+        &self.renderer
     }
 
-    fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {
-        self.renderer.draw_mesh_buffer(buffer)
+    fn renderer_mut(&mut self) -> &mut Renderer<R> {
+        &mut self.renderer
     }
 }
