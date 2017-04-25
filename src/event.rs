@@ -20,3 +20,7 @@ impl PollEvents for Window {
 pub trait React {
     fn react(&mut self, event: &Event);
 }
+
+impl React for () {
+    fn react(&mut self, _: &Event) {}
+}

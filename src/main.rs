@@ -14,10 +14,12 @@ use std::error;
 use std::fmt;
 
 impl Application for Bismuth {
+    type Data = ();
+
     type UpdateError = BismuthError;
     type RenderError = BismuthError;
 
-    fn start<R>(context: &mut Context<R>) -> Self
+    fn start<R>(context: &mut Context<Self::Data, R>) -> Self
         where R: MetaRenderer
     {
         let root = new_root(LogWidth::new(8));
@@ -123,7 +125,7 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
 }
 
 fn main() {
-    let mut harness = Harness::from_glutin_window(WindowBuilder::new()
+    let mut harness = Harness::from_glutin_window((), WindowBuilder::new()
         .with_title("Bismuth")
         .with_dimensions(1024, 576)
         .with_vsync()

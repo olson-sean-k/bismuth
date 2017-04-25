@@ -5,25 +5,29 @@ use render::{GlutinRenderer, MetaRenderer};
 use super::application::Application;
 use super::context::Context;
 
-pub struct Harness<R>
-    where R: MetaRenderer
+pub struct Harness<T, R>
+    where T: React,
+          R: MetaRenderer
 {
-    context: Context<R>,
+    context: Context<T, R>,
 }
 
-impl Harness<GlutinRenderer> {
-    pub fn from_glutin_window(window: Window) -> Self {
+impl<T> Harness<T, GlutinRenderer>
+    where T: React
+{
+    pub fn from_glutin_window(data: T, window: Window) -> Self {
         Harness {
-            context: Context::from_glutin_window(window),
+            context: Context::from_glutin_window(data, window),
         }
     }
 }
 
-impl<R> Harness<R>
-    where R: MetaRenderer
+impl<T, R> Harness<T, R>
+    where T: React,
+          R: MetaRenderer
 {
     pub fn start<A>(&mut self)
-        where A: Application
+        where A: Application<Data = T>
     {
         let mut application = A::start(&mut self.context);
         'main: loop {
@@ -34,7 +38,7 @@ impl<R> Harness<R>
                     }
                     _ => {}
                 }
-                self.context.renderer.react(&event);
+                self.context.react(&event);
                 application.react(&event);
             }
             if let Err(..) = application.update(&mut self.context) {
