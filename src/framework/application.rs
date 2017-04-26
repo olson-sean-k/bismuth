@@ -13,9 +13,9 @@ pub trait Application: React + Sized {
     fn start<R>(context: &mut Context<Self::Data, R>) -> Self
         where R: MetaRenderer;
     fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
-        where C: UpdateContextView;
+        where C: UpdateContextView<Data = Self::Data>;
     fn render<C, R>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R>,
+        where C: RenderContextView<R, Data = Self::Data>,
               R: MetaRenderer;
     fn stop(self);
 }

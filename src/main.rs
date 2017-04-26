@@ -34,7 +34,7 @@ impl Application for Bismuth {
     }
 
     fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
-        where C: UpdateContextView
+        where C: UpdateContextView<Data = Self::Data>
     {
         let mut dirty = false;
         if let Some(ElementState::Pressed) = self.mouse.transition(MouseButton::Left) {
@@ -55,7 +55,7 @@ impl Application for Bismuth {
     }
 
     fn render<C, R>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R>,
+        where C: RenderContextView<R, Data = Self::Data>,
               R: MetaRenderer
     {
         let mut renderer = context.renderer_mut();
