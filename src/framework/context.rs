@@ -12,6 +12,7 @@ pub trait ContextView {
 }
 
 pub trait UpdateContextView: ContextView {
+    fn data_mut(&mut self) -> &mut Self::Data;
 }
 
 pub trait RenderContextView<R>: ContextView
@@ -69,6 +70,9 @@ impl<T, R> UpdateContextView for Context<T, R>
     where T: React,
           R: MetaRenderer
 {
+    fn data_mut(&mut self) -> &mut Self::Data {
+        &mut self.data
+    }
 }
 
 impl<T, R> RenderContextView<R> for Context<T, R>
