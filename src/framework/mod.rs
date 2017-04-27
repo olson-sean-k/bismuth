@@ -1,3 +1,4 @@
+pub mod activity;
 mod application;
 mod context;
 mod harness;

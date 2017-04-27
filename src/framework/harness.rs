@@ -27,7 +27,7 @@ impl<T, R> Harness<T, R>
           R: MetaRenderer
 {
     pub fn start<A>(&mut self)
-        where A: Application<Data = T>
+        where A: Application<T, R>
     {
         let mut application = A::start(&mut self.context);
         'main: loop {

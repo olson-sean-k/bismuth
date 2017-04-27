@@ -8,6 +8,11 @@ pub trait ContextView {
     type Window: AspectRatio;
 
     fn data(&self) -> &Self::Data;
+
+    // TODO: Consider using a trait object here instead. Using an associated
+    //       type requires naming a particular type which may implement traits
+    //       that should not be directly accessible to `update` (for example,
+    //       `poll_events`).
     fn window(&self) -> &Self::Window;
 }
 

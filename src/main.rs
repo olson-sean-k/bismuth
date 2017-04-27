@@ -13,15 +13,13 @@ use glutin::WindowBuilder;
 use std::error;
 use std::fmt;
 
-impl Application for Bismuth {
-    type Data = ();
-
+impl<R> Application<(), R> for Bismuth
+    where R: MetaRenderer
+{
     type UpdateError = BismuthError;
     type RenderError = BismuthError;
 
-    fn start<R>(context: &mut Context<Self::Data, R>) -> Self
-        where R: MetaRenderer
-    {
+    fn start(context: &mut Context<(), R>) -> Self {
         let root = new_root(LogWidth::new(8));
         let mesh = root.to_cube().to_mesh_buffer();
         let camera = new_camera(&context.renderer.window, &root);
@@ -34,7 +32,7 @@ impl Application for Bismuth {
     }
 
     fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
-        where C: UpdateContextView<Data = Self::Data>
+        where C: UpdateContextView<Data = ()>
     {
         let mut dirty = false;
         if let Some(ElementState::Pressed) = self.mouse.transition(MouseButton::Left) {
@@ -54,9 +52,8 @@ impl Application for Bismuth {
         Ok(())
     }
 
-    fn render<C, R>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R, Data = Self::Data>,
-              R: MetaRenderer
+    fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
+        where C: RenderContextView<R, Data = ()>
     {
         let mut renderer = context.renderer_mut();
         renderer.clear();
