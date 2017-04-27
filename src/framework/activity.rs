@@ -19,20 +19,20 @@ pub enum Transition<T, R>
 }
 
 pub trait Activity<T, R>: React
-    where T: ActivityData<R>,
+    where T: ActivityState<R>,
           R: MetaRenderer
 {
     // TODO: What sort of `Result` (if any) should these functions yield?
-    fn update(&mut self, context: &mut UpdateContextView<Data = T, Window = R::Window>)
+    fn update(&mut self, context: &mut UpdateContextView<State = T, Window = R::Window>)
               -> Transition<T, R>;
-    fn render(&mut self, context: &mut RenderContextView<R, Data = T, Window = R::Window>);
+    fn render(&mut self, context: &mut RenderContextView<R, State = T, Window = R::Window>);
 
     fn pause(&mut self) {}
     fn resume(&mut self) {}
     fn stop(&mut self) {}
 }
 
-pub trait ActivityData<R>: React + Sized
+pub trait ActivityState<R>: React + Sized
     where R: MetaRenderer
 {
     // TODO: This seems like a hacky way to get an initial `Activity` onto the
@@ -41,14 +41,14 @@ pub trait ActivityData<R>: React + Sized
 }
 
 pub struct ActivityStack<T, R>
-    where T: ActivityData<R>,
+    where T: ActivityState<R>,
           R: MetaRenderer
 {
     stack: Vec<BoxActivity<T, R>>,
 }
 
 impl<T, R> ActivityStack<T, R>
-    where T: ActivityData<R>,
+    where T: ActivityState<R>,
           R: MetaRenderer
 {
     fn peek_mut(&mut self) -> Option<&mut Activity<T, R>> {
@@ -82,7 +82,7 @@ impl<T, R> ActivityStack<T, R>
 }
 
 impl<T, R> Application<T, R> for ActivityStack<T, R>
-    where T: ActivityData<R>,
+    where T: ActivityState<R>,
           R: MetaRenderer
 {
     type UpdateError = ActivityStackError;
@@ -95,7 +95,7 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
     }
 
     fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
-        where C: UpdateContextView<Data = T, Window = R::Window>
+        where C: UpdateContextView<State = T, Window = R::Window>
     {
         let transition = if let Some(activity) = self.peek_mut() {
             activity.update(context)
@@ -114,7 +114,7 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
     }
 
     fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R, Data = T, Window = R::Window>
+        where C: RenderContextView<R, State = T, Window = R::Window>
     {
         if let Some(activity) = self.peek_mut() {
             activity.render(context);
@@ -128,7 +128,7 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
 }
 
 impl<T, R> React for ActivityStack<T, R>
-    where T: ActivityData<R>,
+    where T: ActivityState<R>,
           R: MetaRenderer
 {
     fn react(&mut self, event: &Event) {

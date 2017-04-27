@@ -13,8 +13,8 @@ pub trait Application<T, R>: React + Sized
 
     fn start(context: &mut Context<T, R>) -> Self;
     fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
-        where C: UpdateContextView<Data = T, Window = R::Window>;
+        where C: UpdateContextView<State = T, Window = R::Window>;
     fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R, Data = T, Window = R::Window>;
+        where C: RenderContextView<R, State = T, Window = R::Window>;
     fn stop(self);
 }

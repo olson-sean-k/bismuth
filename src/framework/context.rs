@@ -4,10 +4,10 @@ use event::{Event, React};
 use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
 
 pub trait ContextView {
-    type Data: React;
+    type State: React;
     type Window: AspectRatio;
 
-    fn data(&self) -> &Self::Data;
+    fn state(&self) -> &Self::State;
 
     // TODO: Consider using a trait object here instead. Using an associated
     //       type requires naming a particular type which may implement traits
@@ -17,7 +17,7 @@ pub trait ContextView {
 }
 
 pub trait UpdateContextView: ContextView {
-    fn data_mut(&mut self) -> &mut Self::Data;
+    fn state_mut(&mut self) -> &mut Self::State;
 }
 
 pub trait RenderContextView<R>: ContextView
@@ -31,7 +31,7 @@ pub struct Context<T, R>
     where T: React,
           R: MetaRenderer
 {
-    pub data: T,
+    pub state: T,
     pub renderer: Renderer<R>,
 }
 
@@ -39,9 +39,9 @@ impl<T, R> Context<T, R>
     where T: React,
           R: MetaRenderer
 {
-    pub fn new(data: T, renderer: Renderer<R>) -> Self {
+    pub fn new(state: T, renderer: Renderer<R>) -> Self {
         Context {
-            data: data,
+            state: state,
             renderer: renderer,
         }
     }
@@ -50,8 +50,8 @@ impl<T, R> Context<T, R>
 impl<T> Context<T, GlutinRenderer>
     where T: React
 {
-    pub fn from_glutin_window(data: T, window: Window) -> Self {
-        Context::new(data, Renderer::from_glutin_window(window))
+    pub fn from_glutin_window(state: T, window: Window) -> Self {
+        Context::new(state, Renderer::from_glutin_window(window))
     }
 }
 
@@ -59,11 +59,11 @@ impl<T, R> ContextView for Context<T, R>
     where T: React,
           R: MetaRenderer
 {
-    type Data = T;
+    type State = T;
     type Window = R::Window;
 
-    fn data(&self) -> &Self::Data {
-        &self.data
+    fn state(&self) -> &Self::State {
+        &self.state
     }
 
     fn window(&self) -> &Self::Window {
@@ -75,8 +75,8 @@ impl<T, R> UpdateContextView for Context<T, R>
     where T: React,
           R: MetaRenderer
 {
-    fn data_mut(&mut self) -> &mut Self::Data {
-        &mut self.data
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
     }
 }
 
@@ -98,7 +98,7 @@ impl<T, R> React for Context<T, R>
           R: MetaRenderer
 {
     fn react(&mut self, event: &Event) {
-        self.data.react(event);
+        self.state.react(event);
         self.renderer.react(event);
     }
 }
