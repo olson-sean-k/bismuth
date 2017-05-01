@@ -2,7 +2,7 @@ use glutin::Window;
 
 use event::{Event, PollEvents, React};
 use render::{GlutinRenderer, MetaRenderer};
-use super::application::Application;
+use super::application::{Application, Execution};
 use super::context::Context;
 
 pub struct Harness<T, R>
@@ -41,8 +41,11 @@ impl<T, R> Harness<T, R>
                 self.context.react(&event);
                 application.react(&event);
             }
-            if let Err(..) = application.update(&mut self.context) {
-                break 'main;
+            match application.update(&mut self.context) {
+                Ok(Execution::Abort) | Err(..) => {
+                    break 'main;
+                }
+                _ => {}
             }
             if let Err(..) = application.render(&mut self.context) {
                 break 'main;

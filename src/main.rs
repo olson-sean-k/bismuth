@@ -4,7 +4,8 @@ extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
-use bismuth::framework::{Application, Context, Harness, RenderContextView, UpdateContextView};
+use bismuth::framework::{Application, Context, Execution, Harness, RenderContextView,
+                         UpdateContextView};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{AspectRatio, Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer,
@@ -31,7 +32,7 @@ impl<R> Application<(), R> for Bismuth
         }
     }
 
-    fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
+    fn update<C>(&mut self, context: &mut C) -> Result<Execution, Self::UpdateError>
         where C: UpdateContextView<State = ()>
     {
         let mut dirty = false;
@@ -49,7 +50,7 @@ impl<R> Application<(), R> for Bismuth
             self.mesh = self.root.to_cube().to_mesh_buffer();
         }
         self.mouse.snapshot();
-        Ok(())
+        Ok(Execution::Continue)
     }
 
     fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>

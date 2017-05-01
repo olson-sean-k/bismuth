@@ -3,7 +3,7 @@ use std::fmt;
 
 use event::{Event, React};
 use render::MetaRenderer;
-use super::application::Application;
+use super::application::{Application, Execution};
 use super::context::{Context, RenderContextView, UpdateContextView};
 
 pub type BoxActivity<T, R> = Box<Activity<T, R>>;
@@ -16,6 +16,18 @@ pub enum Transition<T, R>
     Push(BoxActivity<T, R>),
     Pop,
     Abort,
+}
+
+impl<T, R> Transition<T, R>
+    where T: React,
+          R: MetaRenderer
+{
+    fn to_execution(&self) -> Execution {
+        match *self {
+            Transition::None | Transition::Push(..) | Transition::Pop => Execution::Continue,
+            Transition::Abort => Execution::Abort,
+        }
+    }
 }
 
 pub trait Activity<T, R>: React
@@ -94,23 +106,23 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
         }
     }
 
-    fn update<C>(&mut self, context: &mut C) -> Result<(), Self::UpdateError>
+    fn update<C>(&mut self, context: &mut C) -> Result<Execution, Self::UpdateError>
         where C: UpdateContextView<State = T, Window = R::Window>
     {
         let transition = if let Some(activity) = self.peek_mut() {
             activity.update(context)
         }
         else {
-            // TODO: At this point, we should stop the game loop.
-            Transition::None
+            Transition::Abort
         };
+        let execution = transition.to_execution();
         match transition {
             Transition::None => {}
             Transition::Push(activity) => { self.push(activity); }
             Transition::Pop => { self.pop(); }
             Transition::Abort => { self.abort(); }
         }
-        Ok(())
+        Ok(execution)
     }
 
     fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
