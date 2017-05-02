@@ -1,3 +1,4 @@
+use std::convert::From;
 use std::error;
 use std::fmt;
 
@@ -34,10 +35,10 @@ pub trait Activity<T, R>: React
     where T: ActivityState<R>,
           R: MetaRenderer
 {
-    // TODO: What sort of `Result` (if any) should these functions yield?
     fn update(&mut self, context: &mut UpdateContextView<State = T, Window = R::Window>)
-              -> Transition<T, R>;
-    fn render(&mut self, context: &mut RenderContextView<R, State = T, Window = R::Window>);
+              -> Result<Transition<T, R>, ActivityError>;
+    fn render(&mut self, context: &mut RenderContextView<R, State = T, Window = R::Window>)
+              -> Result<(), ActivityError>;
 
     fn pause(&mut self) {}
     fn resume(&mut self) {}
@@ -110,7 +111,7 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
         where C: UpdateContextView<State = T, Window = R::Window>
     {
         let transition = if let Some(activity) = self.peek_mut() {
-            activity.update(context)
+            activity.update(context)?
         }
         else {
             Transition::Abort
@@ -128,10 +129,9 @@ impl<T, R> Application<T, R> for ActivityStack<T, R>
     fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
         where C: RenderContextView<R, State = T, Window = R::Window>
     {
-        if let Some(activity) = self.peek_mut() {
-            activity.render(context);
-        }
-        Ok(())
+        self.peek_mut().map_or(Ok(()), |activity| {
+            activity.render(context).map_err(|error| error.into())
+        })
     }
 
     fn stop(mut self) {
@@ -151,8 +151,7 @@ impl<T, R> React for ActivityStack<T, R>
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum ActivityError {
-}
+pub struct ActivityError;
 
 impl fmt::Display for ActivityError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -169,8 +168,7 @@ impl error::Error for ActivityError {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum ActivityStackError {
-}
+pub struct ActivityStackError;
 
 impl fmt::Display for ActivityStackError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -183,5 +181,11 @@ impl fmt::Display for ActivityStackError {
 impl error::Error for ActivityStackError {
     fn description(&self) -> &str {
         ""
+    }
+}
+
+impl From<ActivityError> for ActivityStackError {
+    fn from(_: ActivityError) -> Self {
+        ActivityStackError
     }
 }
