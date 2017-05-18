@@ -4,40 +4,67 @@ extern crate nalgebra;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
-use bismuth::framework::{Application, Context, Execution, Harness, RenderContextView,
-                         UpdateContextView};
+use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, RenderResult,
+                         Transition, UpdateContextView, UpdateResult, WindowView};
 use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{AspectRatio, Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer,
-                      Transform};
+use bismuth::render::{Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer, Transform};
 use glutin::WindowBuilder;
-use std::error;
-use std::fmt;
+use std::marker::PhantomData;
 
-impl<R> Application<(), R> for Bismuth
-    where R: MetaRenderer
-{
-    type UpdateError = BismuthError;
-    type RenderError = BismuthError;
+struct State {
+    pub mouse: Mouse,
+}
 
-    fn start(context: &mut Context<(), R>) -> Self {
-        let root = new_root(LogWidth::new(8));
-        let mesh = root.to_cube().to_mesh_buffer();
-        let camera = new_camera(&context.renderer.window, &root);
-        Bismuth {
-            root: root,
-            mesh: mesh,
-            camera: camera,
+impl State {
+    pub fn new() -> Self {
+        State {
             mouse: Mouse::new(),
         }
     }
+}
 
-    fn update<C>(&mut self, context: &mut C) -> Result<Execution, Self::UpdateError>
-        where C: UpdateContextView<State = ()>
-    {
+impl framework::State for State {
+}
+
+impl React for State {
+    fn react(&mut self, event: &Event) {
+        self.mouse.react(event);
+    }
+}
+
+struct MainActivity<R>
+    where R: MetaRenderer
+{
+    root: Root,
+    mesh: MeshBuffer,
+    camera: Camera,
+    phantom: PhantomData<R>,
+}
+
+impl<R> MainActivity<R>
+    where R: MetaRenderer
+{
+    pub fn new(context: &mut Context<State, R>) -> Self {
+        let root = new_root(LogWidth::new(8));
+        let mesh = root.to_cube().to_mesh_buffer();
+        let camera = new_camera(&context.renderer.window, &root);
+        MainActivity {
+            root: root,
+            mesh: mesh,
+            camera: camera,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<R> Activity<State, R> for MainActivity<R>
+    where R: MetaRenderer
+{
+    fn update(&mut self, context: &mut UpdateContextView<State = State>) -> UpdateResult<State, R> {
         let mut dirty = false;
-        if let Some(ElementState::Pressed) = self.mouse.transition(MouseButton::Left) {
-            let ray = self.camera.cast_ray(context.window(), self.mouse.position());
+        if let Some(ElementState::Pressed) = context.state().mouse.transition(MouseButton::Left) {
+            let ray = self.camera.cast_ray(context.window(), context.state().mouse.position());
             let mut cube = self.root.to_cube_mut();
             if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
                 if let Some(leaf) = cube.as_leaf_mut() {
@@ -49,13 +76,11 @@ impl<R> Application<(), R> for Bismuth
         if dirty {
             self.mesh = self.root.to_cube().to_mesh_buffer();
         }
-        self.mouse.snapshot();
-        Ok(Execution::Continue)
+        context.state_mut().mouse.snapshot();
+        Ok(Transition::None)
     }
 
-    fn render<C>(&mut self, context: &mut C) -> Result<(), Self::RenderError>
-        where C: RenderContextView<R, State = ()>
-    {
+    fn render(&mut self, context: &mut RenderContextView<R, State = State>) -> RenderResult {
         let mut renderer = context.renderer_mut();
         renderer.clear();
         renderer.set_transform(&Transform::new(&self.camera.transform(),
@@ -64,39 +89,14 @@ impl<R> Application<(), R> for Bismuth
         renderer.flush().unwrap();
         Ok(())
     }
-
-    fn stop(self) {}
 }
 
-impl React for Bismuth {
+impl<R> React for MainActivity<R>
+    where R: MetaRenderer
+{
     fn react(&mut self, event: &Event) {
         self.camera.react(event);
-        self.mouse.react(event);
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct BismuthError;
-
-impl fmt::Display for BismuthError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use std::error::Error;
-
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl error::Error for BismuthError {
-    fn description(&self) -> &str {
-        ""
-    }
-}
-
-struct Bismuth {
-    root: Root,
-    mesh: MeshBuffer,
-    camera: Camera,
-    mouse: Mouse,
 }
 
 fn new_root(width: LogWidth) -> Root {
@@ -106,9 +106,8 @@ fn new_root(width: LogWidth) -> Root {
     root
 }
 
-fn new_camera<W, C>(window: &W, cube: &C) -> Camera
-    where W: AspectRatio,
-          C: Spatial
+fn new_camera<C>(window: &WindowView, cube: &C) -> Camera
+    where C: Spatial
 {
     let midpoint: FPoint3 = cube.partition().midpoint().into_space();
     let projection = {
@@ -123,11 +122,11 @@ fn new_camera<W, C>(window: &W, cube: &C) -> Camera
 }
 
 fn main() {
-    let mut harness = Harness::from_glutin_window((), WindowBuilder::new()
+    let mut harness = Harness::from_glutin_window(State::new(), WindowBuilder::new()
         .with_title("Bismuth")
         .with_dimensions(1024, 576)
         .with_vsync()
         .build()
         .unwrap());
-    harness.start::<Bismuth>();
+    harness.start(|context| Box::new(MainActivity::new(context)));
 }

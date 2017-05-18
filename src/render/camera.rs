@@ -3,6 +3,7 @@ use nalgebra::{Isometry3, Perspective3};
 use num::traits::FloatConst;
 
 use event::{Event, React};
+use framework::WindowView;
 use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
 
 lazy_static! {
@@ -58,9 +59,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new<W>(window: &W, projection: &Projection) -> Self
-        where W: AspectRatio
-    {
+    pub fn new(window: &WindowView, projection: &Projection) -> Self {
         Camera {
             projection: Perspective3::new(window.aspect_ratio(),
                                           projection.fov,
@@ -74,9 +73,7 @@ impl Camera {
         self.view = Isometry3::look_at_rh(from, to, &UP);
     }
 
-    pub fn cast_ray<W>(&self, window: &W, point: &UPoint2) -> FRay3
-        where W: AspectRatio
-    {
+    pub fn cast_ray(&self, window: &WindowView, point: &UPoint2) -> FRay3 {
         let (width, height) = window.dimensions();
         let point = FPoint2::new(((2.0 * point.x as FScalar) / width as FScalar) - 1.0,
                                  1.0 - ((2.0 * point.y as FScalar) / height as FScalar));

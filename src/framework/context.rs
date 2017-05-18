@@ -1,19 +1,45 @@
 use glutin::Window;
+use std::error::Error;
 
 use event::{Event, React};
 use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
 
+pub trait WindowView: AspectRatio {
+}
+
+impl<T> WindowView for T
+    where T: AspectRatio
+{
+}
+
+pub trait State: Sized + React {
+}
+
+pub trait Update<T>
+    where T: State
+{
+    type Output;
+    type Error: Error;
+
+    fn update(&mut self, context: &mut UpdateContextView<State = T>)
+              -> Result<Self::Output, Self::Error>;
+}
+
+pub trait Render<T, R>
+    where T: State,
+          R: MetaRenderer
+{
+    type Error: Error;
+
+    fn render(&mut self, context: &mut RenderContextView<R, State = T>)
+              -> Result<(), Self::Error>;
+}
+
 pub trait ContextView {
-    type State: React;
-    type Window: AspectRatio;
+    type State;
 
     fn state(&self) -> &Self::State;
-
-    // TODO: Consider using a trait object here instead. Using an associated
-    //       type requires naming a particular type which may implement traits
-    //       that should not be directly accessible to `update` (for example,
-    //       `poll_events`).
-    fn window(&self) -> &Self::Window;
+    fn window(&self) -> &WindowView;
 }
 
 pub trait UpdateContextView: ContextView {
@@ -28,7 +54,7 @@ pub trait RenderContextView<R>: ContextView
 }
 
 pub struct Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     pub state: T,
@@ -36,7 +62,7 @@ pub struct Context<T, R>
 }
 
 impl<T, R> Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     pub fn new(state: T, renderer: Renderer<R>) -> Self {
@@ -48,7 +74,7 @@ impl<T, R> Context<T, R>
 }
 
 impl<T> Context<T, GlutinRenderer>
-    where T: React
+    where T: State
 {
     pub fn from_glutin_window(state: T, window: Window) -> Self {
         Context::new(state, Renderer::from_glutin_window(window))
@@ -56,23 +82,22 @@ impl<T> Context<T, GlutinRenderer>
 }
 
 impl<T, R> ContextView for Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     type State = T;
-    type Window = R::Window;
 
     fn state(&self) -> &Self::State {
         &self.state
     }
 
-    fn window(&self) -> &Self::Window {
+    fn window(&self) -> &WindowView {
         &self.renderer.window
     }
 }
 
 impl<T, R> UpdateContextView for Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     fn state_mut(&mut self) -> &mut Self::State {
@@ -81,7 +106,7 @@ impl<T, R> UpdateContextView for Context<T, R>
 }
 
 impl<T, R> RenderContextView<R> for Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     fn renderer(&self) -> &Renderer<R> {
@@ -94,7 +119,7 @@ impl<T, R> RenderContextView<R> for Context<T, R>
 }
 
 impl<T, R> React for Context<T, R>
-    where T: React,
+    where T: State,
           R: MetaRenderer
 {
     fn react(&mut self, event: &Event) {
