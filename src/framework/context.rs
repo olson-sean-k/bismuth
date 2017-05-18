@@ -1,5 +1,4 @@
 use glutin::Window;
-use std::error::Error;
 
 use event::{Event, React};
 use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
@@ -13,26 +12,6 @@ impl<T> WindowView for T
 }
 
 pub trait State: Sized + React {
-}
-
-pub trait Update<T>
-    where T: State
-{
-    type Output;
-    type Error: Error;
-
-    fn update(&mut self, context: &mut UpdateContextView<State = T>)
-              -> Result<Self::Output, Self::Error>;
-}
-
-pub trait Render<T, R>
-    where T: State,
-          R: MetaRenderer
-{
-    type Error: Error;
-
-    fn render(&mut self, context: &mut RenderContextView<R, State = T>)
-              -> Result<(), Self::Error>;
 }
 
 pub trait ContextView {

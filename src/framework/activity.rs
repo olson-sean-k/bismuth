@@ -4,7 +4,7 @@ use std::fmt;
 
 use event::{Event, React};
 use render::MetaRenderer;
-use super::context::{Render, RenderContextView, State, Update, UpdateContextView};
+use super::context::{RenderContextView, State, UpdateContextView};
 
 pub enum Transition<T, R>
     where T: State,
@@ -28,33 +28,6 @@ impl<T, R> Transition<T, R>
     }
 }
 
-// It would be natural to define `Activity` such that it must implement `Render`
-// and `Update` as follows:
-//
-//   pub trait Activity<T, R>: React + Render<T, R, Error = ActivityError> +
-//                             Update<T, Output = Transition<T, R>, Error = ActivityError>
-//
-// This doesn't work very well though. Rust does not respect or propogate
-// constraints on associated types (as it does for input type parameters), so
-// these types must be redeclared everywhere they are used. See the following
-// issues:
-//
-//   https://github.com/rust-lang/rust/issues/23856
-//   https://github.com/rust-lang/rust/issues/24010
-//
-// This redudancy also means that client code must repeat itself. A lot.
-// Moreover, there is currently no way to define `Activity` as listed above
-// because there is no way to disambiguate the associated types of `Render` and
-// `Update` when redeclaring them elsewhere:
-//
-//   // Which `Error`?
-//   pub type BoxActivity<T, R> = Activity<T, R, Error = ActivityError,
-//                                         Output = Transition<T, R>>;
-//
-// Instead, `Activity` defines its own `render` and `update` functions and
-// implements the `Render` and `Update` traits (for trait objects) by calling
-// into those.
-
 pub type BoxActivity<T, R> = Box<Activity<T, R>>;
 pub type UpdateResult<T, R> = Result<Transition<T, R>, ActivityError>;
 pub type RenderResult = Result<(), ActivityError>;
@@ -68,33 +41,6 @@ pub trait Activity<T, R>: React
     fn pause(&mut self) {}
     fn resume(&mut self) {}
     fn stop(&mut self) {}
-}
-
-impl<T, R> Render<T, R> for Activity<T, R>
-    where T: State,
-          R: MetaRenderer
-{
-    type Error = ActivityError;
-
-    fn render(&mut self, context: &mut RenderContextView<R, State = T>)
-              -> Result<(), Self::Error>
-    {
-        <Self as Activity<T, R>>::render(self, context)
-    }
-}
-
-impl<T, R> Update<T> for Activity<T, R>
-    where T: State,
-          R: MetaRenderer
-{
-    type Output = Transition<T, R>;
-    type Error = ActivityError;
-
-    fn update(&mut self, context: &mut UpdateContextView<State = T>)
-              -> Result<Self::Output, Self::Error>
-    {
-        <Self as Activity<T, R>>::update(self, context)
-    }
 }
 
 pub struct ActivityStack<T, R>
@@ -112,6 +58,29 @@ impl<T, R> ActivityStack<T, R>
         ActivityStack {
             stack: vec![activity],
         }
+    }
+
+    pub fn update<C>(&mut self, context: &mut C) -> Result<bool, ActivityStackError>
+        where C: UpdateContextView<State = T>
+    {
+        let transition = self.peek_mut().map_or(
+            Ok(Transition::Abort), |activity| activity.update(context))?;
+        let signal = !transition.is_abort();
+        match transition {
+            Transition::Push(activity) => { self.push(activity); }
+            Transition::Pop => { self.pop(); }
+            Transition::Abort => { self.abort(); }
+            _ => {}
+        }
+        Ok(signal)
+    }
+
+    pub fn render<C>(&mut self, context: &mut C) -> Result<(), ActivityStackError>
+        where C: RenderContextView<R, State = T>
+    {
+        self.peek_mut().map_or(Ok(()), |activity| {
+            activity.render(context).map_err(|error| error.into())
+        })
     }
 
     fn peek_mut(&mut self) -> Option<&mut Activity<T, R>> {
@@ -150,44 +119,6 @@ impl<T, R> Drop for ActivityStack<T, R>
 {
     fn drop(&mut self) {
         self.abort();
-    }
-}
-
-impl<T, R> Update<T> for ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
-{
-    type Output = bool;
-    type Error = ActivityStackError;
-
-    fn update(&mut self, context: &mut UpdateContextView<State = T>)
-              -> Result<Self::Output, Self::Error>
-    {
-        let transition = self.peek_mut().map_or(
-            Ok(Transition::Abort), |activity| activity.update(context))?;
-        let signal = !transition.is_abort();
-        match transition {
-            Transition::Push(activity) => { self.push(activity); }
-            Transition::Pop => { self.pop(); }
-            Transition::Abort => { self.abort(); }
-            _ => {}
-        }
-        Ok(signal)
-    }
-}
-
-impl<T, R> Render<T, R> for ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
-{
-    type Error = ActivityStackError;
-
-    fn render(&mut self, context: &mut RenderContextView<R, State = T>)
-              -> Result<(), Self::Error>
-    {
-        self.peek_mut().map_or(Ok(()), |activity| {
-            activity.render(context).map_err(|error| error.into())
-        })
     }
 }
 

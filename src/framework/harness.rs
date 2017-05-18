@@ -3,7 +3,7 @@ use glutin::Window;
 use event::{Event, PollEvents, React};
 use render::{GlutinRenderer, MetaRenderer};
 use super::activity::{ActivityStack, BoxActivity};
-use super::context::{Context, Render, State, Update};
+use super::context::{Context, State};
 
 pub struct Harness<T, R>
     where T: State,
