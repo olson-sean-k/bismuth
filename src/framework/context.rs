@@ -25,6 +25,12 @@ pub trait UpdateContextView: ContextView {
     fn state_mut(&mut self) -> &mut Self::State;
 }
 
+// TODO: Rather than having client code interact directly with a `Renderer`, it
+//       may be better to introduce some higher level (though redundant) types
+//       in Bismuth, such as targets, layers, etc. and pass those to client
+//       code instead. This may also avoid the need to plumb a `MetaRenderer`
+//       type into framework and client code. (It's unfortunate that activities
+//       must provide a `MetaRenderer` type parameter.)
 pub trait RenderContextView<R>: ContextView
     where R: MetaRenderer
 {

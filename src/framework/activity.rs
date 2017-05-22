@@ -36,6 +36,10 @@ pub trait Activity<T, R>: React
     where T: State,
           R: MetaRenderer
 {
+    // TODO: It could be useful to extract `update` and `render` into generic
+    //       traits of their own, but this would require associated types and
+    //       there is currently no good way to bind those (until trait aliases
+    //       land). Consider refactoring this once that is possible and clean.
     fn update(&mut self, context: &mut UpdateContextView<State = T>) -> UpdateResult<T, R>;
     fn render(&mut self, context: &mut RenderContextView<R, State = T>) -> RenderResult;
     fn pause(&mut self) {}
