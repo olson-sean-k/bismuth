@@ -15,7 +15,7 @@ pub trait State: Sized + React {
 }
 
 pub trait ContextView {
-    type State;
+    type State: State;
 
     fn state(&self) -> &Self::State;
     fn window(&self) -> &WindowView;
