@@ -1,5 +1,29 @@
+use nalgebra::{Point2, Scalar, Vector2};
+use std::fmt::Debug;
+
+use event::ElementState;
+
+pub trait State: Copy {
+    // TODO: Use a default type (`Self`) here once that feature stabilizes.
+    type Difference/* = Self*/;
+}
+
+impl State for bool {
+    type Difference = Self;
+}
+
+impl State for ElementState {
+    type Difference = Self;
+}
+
+impl<T> State for Point2<T>
+    where T: Scalar
+{
+    type Difference = Vector2<T>;
+}
+
 pub trait Element: Copy + Sized {
-    type State;
+    type State: State;
 }
 
 pub trait ElementStateTransition: Copy + Sized {
@@ -55,7 +79,7 @@ impl<E, T> InputStateTransition<E> for T
 pub trait InputStateDifference<E>: InputState<E>
     where E: Element
 {
-    type Difference: IntoIterator<Item = (E, E::State)>;
+    type Difference: IntoIterator<Item = (E, <E::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference;
 }

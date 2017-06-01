@@ -1,11 +1,21 @@
-use nalgebra::Point2;
+use boolinator::Boolinator;
+use nalgebra::{Point2, Vector2};
+use num::Zero;
 use std::collections::HashSet;
 
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot};
+use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot,
+                   InputStateTransition, State};
 
 impl Element for MouseButton {
     type State = ElementState;
+}
+
+#[derive(Clone, Copy)]
+pub struct MousePosition;
+
+impl Element for MousePosition {
+    type State = Point2<i32>;
 }
 
 #[derive(Clone, Copy)]
@@ -16,7 +26,6 @@ impl Element for MouseProximity {
 }
 
 pub struct Mouse {
-    position: Point2<u32>,
     state: MouseState,
     snapshot: MouseState,
 }
@@ -24,31 +33,32 @@ pub struct Mouse {
 impl Mouse {
     pub fn new() -> Self {
         Mouse {
-            position: Point2::origin(),
             state: MouseState::new(),
             snapshot: MouseState::new(),
         }
     }
-
-    pub fn position(&self) -> &Point2<u32> {
-        &self.position
-    }
 }
 
 impl InputState<MouseButton> for Mouse {
-    fn state(&self, button: MouseButton) -> ElementState {
+    fn state(&self, button: MouseButton) -> <MouseButton as Element>::State {
         self.state.state(button)
     }
 }
 
+impl InputState<MousePosition> for Mouse {
+    fn state(&self, position: MousePosition) -> <MousePosition as Element>::State {
+        self.state.state(position)
+    }
+}
+
 impl InputState<MouseProximity> for Mouse {
-    fn state(&self, proximity: MouseProximity) -> bool {
+    fn state(&self, proximity: MouseProximity) -> <MouseProximity as Element>::State {
         self.state.state(proximity)
     }
 }
 
 impl InputStateDifference<MouseButton> for Mouse {
-    type Difference = Vec<(MouseButton, ElementState)>;
+    type Difference = Vec<(MouseButton, <<MouseButton as Element>::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
         let mut difference = vec![];
@@ -56,6 +66,31 @@ impl InputStateDifference<MouseButton> for Mouse {
             difference.push((*button, self.state.state(*button)));
         }
         difference
+    }
+}
+
+impl InputStateDifference<MousePosition> for Mouse {
+    type Difference = Option<(MousePosition,
+                              <<MousePosition as Element>::State as State>::Difference)>;
+
+    // This is distinct from `InputStateTransition::transition`. That function
+    // indicates whether or not a change has occurred and yields the current
+    // state. This function instead yields a *difference*, for which the type
+    // representing the change in state can be entirely different than the type
+    // of the state itself. For mouse position, `transition` yields a point and
+    // `difference` yields a vector.
+    fn difference(&self) -> Self::Difference {
+        let difference = self.state.state(MousePosition) - self.snapshot.state(MousePosition);
+        (!difference.is_zero()).as_some((MousePosition, difference))
+    }
+}
+
+impl InputStateDifference<MouseProximity> for Mouse {
+    type Difference = Option<(MouseProximity,
+                              <<MouseProximity as Element>::State as State>::Difference)>;
+
+    fn difference(&self) -> Self::Difference {
+        self.transition(MouseProximity).map(|state| (MouseProximity, state))
     }
 }
 
@@ -87,7 +122,7 @@ impl React for Mouse {
                 self.state.proximity = false;
             }
             Event::MouseMoved(x, y) => {
-                self.position = Point2::new(x as u32, y as u32);
+                self.state.position = Point2::new(x, y);
             }
             _ => {}
         }
@@ -97,6 +132,7 @@ impl React for Mouse {
 #[derive(Clone)]
 pub struct MouseState {
     buttons: HashSet<MouseButton>,
+    position: Point2<i32>,
     proximity: bool,
 }
 
@@ -104,13 +140,14 @@ impl MouseState {
     fn new() -> Self {
         MouseState {
             buttons: HashSet::new(),
+            position: Point2::origin(),
             proximity: false,
         }
     }
 }
 
 impl InputState<MouseButton> for MouseState {
-    fn state(&self, button: MouseButton) -> ElementState {
+    fn state(&self, button: MouseButton) -> <MouseButton as Element>::State {
         if self.buttons.contains(&button) {
             ElementState::Pressed
         }
@@ -120,8 +157,14 @@ impl InputState<MouseButton> for MouseState {
     }
 }
 
+impl InputState<MousePosition> for MouseState {
+    fn state(&self, _: MousePosition) -> <MousePosition as Element>::State {
+        self.position
+    }
+}
+
 impl InputState<MouseProximity> for MouseState {
-    fn state(&self, _: MouseProximity) -> bool {
+    fn state(&self, _: MouseProximity) -> <MouseProximity as Element>::State {
         self.proximity
     }
 }

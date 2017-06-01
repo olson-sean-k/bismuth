@@ -6,7 +6,7 @@ use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
 use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, RenderResult,
                          Transition, UpdateContextView, UpdateResult, WindowView};
-use bismuth::input::{InputStateSnapshot, InputStateTransition, Mouse};
+use bismuth::input::{InputState, InputStateSnapshot, InputStateTransition, Mouse, MousePosition};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer, Transform};
 use glutin::WindowBuilder;
@@ -64,7 +64,8 @@ impl<R> Activity<State, R> for MainActivity<R>
     fn update(&mut self, context: &mut UpdateContextView<State = State>) -> UpdateResult<State, R> {
         let mut dirty = false;
         if let Some(ElementState::Pressed) = context.state().mouse.transition(MouseButton::Left) {
-            let ray = self.camera.cast_ray(context.window(), context.state().mouse.position());
+            let ray = self.camera.cast_ray(context.window(),
+                                           &context.state().mouse.state(MousePosition));
             let mut cube = self.root.to_cube_mut();
             if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
                 if let Some(leaf) = cube.as_leaf_mut() {

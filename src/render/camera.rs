@@ -1,10 +1,10 @@
 use glutin::Window;
-use nalgebra::{Isometry3, Perspective3};
+use nalgebra::{Isometry3, Perspective3, Point2};
 use num::traits::FloatConst;
 
 use event::{Event, React};
 use framework::WindowView;
-use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UPoint2, UScalar};
+use math::{FMatrix4, FPoint2, FPoint3, FRay3, FScalar, FVector3, UScalar};
 
 lazy_static! {
     static ref UP: FVector3 = FVector3::y();
@@ -73,7 +73,7 @@ impl Camera {
         self.view = Isometry3::look_at_rh(from, to, &UP);
     }
 
-    pub fn cast_ray(&self, window: &WindowView, point: &UPoint2) -> FRay3 {
+    pub fn cast_ray(&self, window: &WindowView, point: &Point2<i32>) -> FRay3 {
         let (width, height) = window.dimensions();
         let point = FPoint2::new(((2.0 * point.x as FScalar) / width as FScalar) - 1.0,
                                  1.0 - ((2.0 * point.y as FScalar) / height as FScalar));

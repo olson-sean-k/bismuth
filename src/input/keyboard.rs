@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot};
+use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot, State};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
@@ -22,13 +22,14 @@ impl Keyboard {
 }
 
 impl InputState<VirtualKeyCode> for Keyboard {
-    fn state(&self, key: VirtualKeyCode) -> ElementState {
+    fn state(&self, key: VirtualKeyCode) -> <VirtualKeyCode as Element>::State {
         self.state.state(key)
     }
 }
 
 impl InputStateDifference<VirtualKeyCode> for Keyboard {
-    type Difference = Vec<(VirtualKeyCode, ElementState)>;
+    type Difference = Vec<(VirtualKeyCode,
+                           <<VirtualKeyCode as Element>::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
         let mut difference = vec![];
@@ -85,7 +86,7 @@ impl KeyboardState {
 }
 
 impl InputState<VirtualKeyCode> for KeyboardState {
-    fn state(&self, key: VirtualKeyCode) -> ElementState {
+    fn state(&self, key: VirtualKeyCode) -> <VirtualKeyCode as Element>::State {
         if self.keys.contains(&key) {
             ElementState::Pressed
         }
