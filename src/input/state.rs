@@ -1,5 +1,5 @@
 use nalgebra::{Point2, Scalar, Vector2};
-use std::fmt::Debug;
+use std::ops::Deref;
 
 use event::ElementState;
 
@@ -47,6 +47,16 @@ pub trait InputState<E>
     where E: Element
 {
     fn state(&self, element: E) -> E::State;
+}
+
+impl<E, T> InputState<E> for T
+    where T: Deref,
+          T::Target: InputState<E>,
+          E: Element
+{
+    fn state(&self, element: E) -> E::State {
+        self.deref().state(element)
+    }
 }
 
 pub trait InputStateSnapshot {

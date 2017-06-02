@@ -1,7 +1,8 @@
 use boolinator::Boolinator;
-use nalgebra::{Point2, Vector2};
+use nalgebra::Point2;
 use num::Zero;
 use std::collections::HashSet;
+use std::ops::Deref;
 
 use event::{ElementState, Event, MouseButton, React};
 use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot,
@@ -39,21 +40,11 @@ impl Mouse {
     }
 }
 
-impl InputState<MouseButton> for Mouse {
-    fn state(&self, button: MouseButton) -> <MouseButton as Element>::State {
-        self.state.state(button)
-    }
-}
+impl Deref for Mouse {
+    type Target = MouseState;
 
-impl InputState<MousePosition> for Mouse {
-    fn state(&self, position: MousePosition) -> <MousePosition as Element>::State {
-        self.state.state(position)
-    }
-}
-
-impl InputState<MouseProximity> for Mouse {
-    fn state(&self, proximity: MouseProximity) -> <MouseProximity as Element>::State {
-        self.state.state(proximity)
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 

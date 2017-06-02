@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
 use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot, State};
@@ -21,9 +22,11 @@ impl Keyboard {
     }
 }
 
-impl InputState<VirtualKeyCode> for Keyboard {
-    fn state(&self, key: VirtualKeyCode) -> <VirtualKeyCode as Element>::State {
-        self.state.state(key)
+impl Deref for Keyboard {
+    type Target = KeyboardState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
