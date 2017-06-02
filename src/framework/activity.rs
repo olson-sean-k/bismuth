@@ -42,7 +42,7 @@ pub trait Activity<T, R>: React
     //       land). Consider refactoring this once that is possible and clean.
     fn update(&mut self, context: &mut UpdateContextView<State = T>) -> UpdateResult<T, R>;
     fn render(&mut self, context: &mut RenderContextView<R, State = T>) -> RenderResult;
-    fn pause(&mut self) {}
+    fn suspend(&mut self) {}
     fn resume(&mut self) {}
     fn stop(&mut self) {}
 }
@@ -98,7 +98,7 @@ impl<T, R> ActivityStack<T, R>
 
     fn push(&mut self, activity: BoxActivity<T, R>) {
         if let Some(activity) = self.peek_mut() {
-            activity.pause();
+            activity.suspend();
         }
         self.stack.push(activity);
     }
