@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot,
-                   InputStateTransition, State};
+use super::state::{Element, InputSnapshot, InputState, InputDifference, InputTransition,
+                   State};
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -48,7 +48,7 @@ impl Deref for Mouse {
     }
 }
 
-impl InputStateDifference<MouseButton> for Mouse {
+impl InputDifference<MouseButton> for Mouse {
     type Difference = Vec<(MouseButton, <<MouseButton as Element>::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
@@ -60,11 +60,11 @@ impl InputStateDifference<MouseButton> for Mouse {
     }
 }
 
-impl InputStateDifference<MousePosition> for Mouse {
+impl InputDifference<MousePosition> for Mouse {
     type Difference = Option<(MousePosition,
                               <<MousePosition as Element>::State as State>::Difference)>;
 
-    // This is distinct from `InputStateTransition::transition`. That function
+    // This is distinct from `InputTransition::transition`. That function
     // indicates whether or not a change has occurred and yields the current
     // state. This function instead yields a *difference*, for which the type
     // representing the change in state can be entirely different than the type
@@ -76,7 +76,7 @@ impl InputStateDifference<MousePosition> for Mouse {
     }
 }
 
-impl InputStateDifference<MouseProximity> for Mouse {
+impl InputDifference<MouseProximity> for Mouse {
     type Difference = Option<(MouseProximity,
                               <<MouseProximity as Element>::State as State>::Difference)>;
 
@@ -85,7 +85,7 @@ impl InputStateDifference<MouseProximity> for Mouse {
     }
 }
 
-impl InputStateSnapshot for Mouse {
+impl InputSnapshot for Mouse {
     type Snapshot = MouseState;
 
     fn snapshot(&mut self) {

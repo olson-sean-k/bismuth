@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{Element, InputState, InputStateDifference, InputStateSnapshot, State};
+use super::state::{Element, InputSnapshot, InputState, InputDifference, State};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
@@ -30,7 +30,7 @@ impl Deref for Keyboard {
     }
 }
 
-impl InputStateDifference<VirtualKeyCode> for Keyboard {
+impl InputDifference<VirtualKeyCode> for Keyboard {
     type Difference = Vec<(VirtualKeyCode,
                            <<VirtualKeyCode as Element>::State as State>::Difference)>;
 
@@ -43,7 +43,7 @@ impl InputStateDifference<VirtualKeyCode> for Keyboard {
     }
 }
 
-impl InputStateSnapshot for Keyboard {
+impl InputSnapshot for Keyboard {
     type Snapshot = KeyboardState;
 
     fn snapshot(&mut self) {

@@ -6,7 +6,7 @@ use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
 use bismuth::event::{ElementState, Event, MouseButton, React};
 use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, RenderResult,
                          Transition, UpdateContextView, UpdateResult, WindowView};
-use bismuth::input::{InputState, InputStateSnapshot, InputStateTransition, Mouse, MousePosition};
+use bismuth::input::{InputState, InputSnapshot, InputTransition, Mouse, MousePosition};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
 use bismuth::render::{Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer, Transform};
 use glutin::WindowBuilder;
