@@ -94,11 +94,8 @@ impl<E, S, T> InputDifference<E> for T
     type Difference = Vec<(E, <E::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
-        let mut difference = vec![];
-        for element in self.now().composite().symmetric_difference(self.previous().composite()) {
-            difference.push((*element, self.state(*element)));
-        }
-        difference
+        self.now().composite().symmetric_difference(self.previous().composite())
+            .map(|element| (*element, self.state(*element))).collect()
     }
 }
 
