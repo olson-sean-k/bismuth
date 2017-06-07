@@ -1,8 +1,7 @@
 use std::collections::HashSet;
-use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{Element, InputSnapshot, InputState, InputDifference, State};
+use super::state::{Element, Input, InputComposite, InputState};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
@@ -22,36 +21,19 @@ impl Keyboard {
     }
 }
 
-impl Deref for Keyboard {
-    type Target = KeyboardState;
+impl Input for Keyboard {
+    type State = KeyboardState;
 
-    fn deref(&self) -> &Self::Target {
+    fn now(&self) -> &Self::State {
         &self.state
     }
-}
 
-impl InputDifference<VirtualKeyCode> for Keyboard {
-    type Difference = Vec<(VirtualKeyCode,
-                           <<VirtualKeyCode as Element>::State as State>::Difference)>;
-
-    fn difference(&self) -> Self::Difference {
-        let mut difference = vec![];
-        for key in self.state.keys.symmetric_difference(&self.snapshot.keys) {
-            difference.push((*key, self.state.state(*key)));
-        }
-        difference
+    fn previous(&self) -> &Self::State {
+        &self.snapshot
     }
-}
-
-impl InputSnapshot for Keyboard {
-    type Snapshot = KeyboardState;
 
     fn snapshot(&mut self) {
         self.snapshot = self.state.clone();
-    }
-
-    fn as_snapshot(&self) -> &Self::Snapshot {
-        &self.snapshot
     }
 }
 
@@ -85,6 +67,14 @@ impl KeyboardState {
         KeyboardState {
             keys: HashSet::new(),
         }
+    }
+}
+
+impl InputComposite<VirtualKeyCode> for KeyboardState {
+    type Composite = HashSet<VirtualKeyCode>;
+
+    fn composite(&self) -> &Self::Composite {
+        &self.keys
     }
 }
 

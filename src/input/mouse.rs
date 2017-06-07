@@ -2,10 +2,9 @@ use boolinator::Boolinator;
 use nalgebra::Point2;
 use num::Zero;
 use std::collections::HashSet;
-use std::ops::Deref;
 
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{Element, InputSnapshot, InputState, InputDifference, InputTransition,
+use super::state::{Element, Input, InputComposite, InputState, InputDifference, InputTransition,
                    State};
 
 impl Element for MouseButton {
@@ -40,23 +39,19 @@ impl Mouse {
     }
 }
 
-impl Deref for Mouse {
-    type Target = MouseState;
+impl Input for Mouse {
+    type State = MouseState;
 
-    fn deref(&self) -> &Self::Target {
+    fn now(&self) -> &Self::State {
         &self.state
     }
-}
 
-impl InputDifference<MouseButton> for Mouse {
-    type Difference = Vec<(MouseButton, <<MouseButton as Element>::State as State>::Difference)>;
+    fn previous(&self) -> &Self::State {
+        &self.snapshot
+    }
 
-    fn difference(&self) -> Self::Difference {
-        let mut difference = vec![];
-        for button in self.state.buttons.symmetric_difference(&self.snapshot.buttons) {
-            difference.push((*button, self.state.state(*button)));
-        }
-        difference
+    fn snapshot(&mut self) {
+        self.snapshot = self.state.clone();
     }
 }
 
@@ -82,18 +77,6 @@ impl InputDifference<MouseProximity> for Mouse {
 
     fn difference(&self) -> Self::Difference {
         self.transition(MouseProximity).map(|state| (MouseProximity, state))
-    }
-}
-
-impl InputSnapshot for Mouse {
-    type Snapshot = MouseState;
-
-    fn snapshot(&mut self) {
-        self.snapshot = self.state.clone();
-    }
-
-    fn as_snapshot(&self) -> &Self::Snapshot {
-        &self.snapshot
     }
 }
 
@@ -134,6 +117,14 @@ impl MouseState {
             position: Point2::origin(),
             proximity: false,
         }
+    }
+}
+
+impl InputComposite<MouseButton> for MouseState {
+    type Composite = HashSet<MouseButton>;
+
+    fn composite(&self) -> &Self::Composite {
+        &self.buttons
     }
 }
 

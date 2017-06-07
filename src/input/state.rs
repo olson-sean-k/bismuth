@@ -1,7 +1,8 @@
 use nalgebra::{Point2, Scalar, Vector2};
-use std::ops::Deref;
+use std::collections::HashSet;
+use std::hash::Hash;
 
-use event::ElementState;
+use event::{ElementState, React};
 
 pub trait State: Copy + Eq {
     // TODO: Use a default type (`Self`) here once that feature stabilizes.
@@ -43,57 +44,79 @@ impl<T> StateTransition for T
     }
 }
 
+pub trait InputComposite<E>
+    where E: Element
+{
+    // TODO: Use a default type (`E::State`) here once that feature stabilizes.
+    type Composite/* = E::State*/;
+
+    fn composite(&self) -> &Self::Composite;
+}
+
 pub trait InputState<E>
     where E: Element
 {
     fn state(&self, element: E) -> E::State;
 }
 
-// This is dubious. It allows input device types to implement `InputState` in
-// terms of a state member that already implements `InputState` (by yielding it
-// in a `Deref` implementation). The alternative is to re-implement
-// `InputState` for each input device type.
-impl<E, T> InputState<E> for T
-    where T: Deref,
-          T::Target: InputState<E>,
-          E: Element
-{
-    fn state(&self, element: E) -> E::State {
-        self.deref().state(element)
-    }
-}
-
-pub trait InputSnapshot {
-    type Snapshot;
-
-    fn snapshot(&mut self);
-    fn as_snapshot(&self) -> &Self::Snapshot;
-}
-
 pub trait InputTransition<E>
     where E: Element,
           E::State: StateTransition
 {
-    fn transition(&self, element: E) -> Option<E::State>
-        where Self: InputState<E> + InputSnapshot,
-              Self::Snapshot: InputState<E>;
+    fn transition(&self, element: E) -> Option<E::State>;
 }
 
 impl<E, T> InputTransition<E> for T
-    where T: InputState<E> + InputSnapshot,
-          T::Snapshot: InputState<E>,
+    where T: Input,
+          T::State: InputState<E>,
           E: Element,
           E::State: StateTransition
 {
     fn transition(&self, element: E) -> Option<E::State> {
-        E::State::transition(self.as_snapshot().state(element), self.state(element))
+        E::State::transition(self.previous().state(element), self.now().state(element))
     }
 }
 
-pub trait InputDifference<E>: InputState<E>
+pub trait InputDifference<E>
     where E: Element
 {
     type Difference: IntoIterator<Item = (E, <E::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference;
+}
+
+impl<E, S, T> InputDifference<E> for T
+    where T: Input,
+          T::State: InputComposite<E, Composite = HashSet<E>> + InputState<E>,
+          E: Element<State = S> + Eq + Hash,
+          S: State<Difference = S>
+{
+    type Difference = Vec<(E, <E::State as State>::Difference)>;
+
+    fn difference(&self) -> Self::Difference {
+        let mut difference = vec![];
+        for element in self.now().composite().symmetric_difference(self.previous().composite()) {
+            difference.push((*element, self.state(*element)));
+        }
+        difference
+    }
+}
+
+pub trait Input: React {
+    type State;
+
+    fn now(&self) -> &Self::State;
+    fn previous(&self) -> &Self::State;
+
+    fn snapshot(&mut self);
+}
+
+impl<E, T> InputState<E> for T
+    where T: Input,
+          T::State: InputState<E>,
+          E: Element
+{
+    fn state(&self, element: E) -> E::State {
+        self.now().state(element)
+    }
 }
