@@ -7,6 +7,15 @@ use event::{ElementState, React};
 pub trait State: Copy + Eq {
     // TODO: Use a default type (`Self`) here once that feature stabilizes.
     type Difference/* = Self*/;
+
+    fn transition(state: Self, snapshot: Self) -> Option<Self> {
+        if state == snapshot {
+            None
+        }
+        else {
+            Some(state)
+        }
+    }
 }
 
 impl State for bool {
@@ -27,24 +36,7 @@ pub trait Element: Copy + Sized {
     type State: State;
 }
 
-pub trait StateTransition: Copy + Sized {
-    fn transition(snapshot: Self, state: Self) -> Option<Self>;
-}
-
-impl<T> StateTransition for T
-    where T: State
-{
-    fn transition(snapshot: Self, state: Self) -> Option<Self> {
-        if snapshot == state {
-            None
-        }
-        else {
-            Some(state)
-        }
-    }
-}
-
-pub trait InputComposite<E>
+pub trait CompositeState<E>
     where E: Element
 {
     // TODO: Use a default type (`E::State`) here once that feature stabilizes.
@@ -59,9 +51,22 @@ pub trait InputState<E>
     fn state(&self, element: E) -> E::State;
 }
 
+impl<E, T> InputState<E> for T
+    where T: CompositeState<E, Composite = HashSet<E>>,
+          E: Element<State = ElementState> + Eq + Hash
+{
+    fn state(&self, element: E) -> E::State {
+        if self.composite().contains(&element) {
+            ElementState::Pressed
+        }
+        else {
+            ElementState::Released
+        }
+    }
+}
+
 pub trait InputTransition<E>
-    where E: Element,
-          E::State: StateTransition
+    where E: Element
 {
     fn transition(&self, element: E) -> Option<E::State>;
 }
@@ -69,11 +74,10 @@ pub trait InputTransition<E>
 impl<E, T> InputTransition<E> for T
     where T: Input,
           T::State: InputState<E>,
-          E: Element,
-          E::State: StateTransition
+          E: Element
 {
     fn transition(&self, element: E) -> Option<E::State> {
-        E::State::transition(self.previous().state(element), self.now().state(element))
+        E::State::transition(self.now().state(element), self.previous().state(element))
     }
 }
 
@@ -87,7 +91,7 @@ pub trait InputDifference<E>
 
 impl<E, S, T> InputDifference<E> for T
     where T: Input,
-          T::State: InputComposite<E, Composite = HashSet<E>> + InputState<E>,
+          T::State: CompositeState<E, Composite = HashSet<E>> + InputState<E>,
           E: Element<State = S> + Eq + Hash,
           S: State<Difference = S>
 {
@@ -95,7 +99,8 @@ impl<E, S, T> InputDifference<E> for T
 
     fn difference(&self) -> Self::Difference {
         self.now().composite().symmetric_difference(self.previous().composite())
-            .map(|element| (*element, self.state(*element))).collect()
+            .map(|element| (*element, self.now().state(*element)))
+            .collect()
     }
 }
 
@@ -106,14 +111,4 @@ pub trait Input: React {
     fn previous(&self) -> &Self::State;
 
     fn snapshot(&mut self);
-}
-
-impl<E, T> InputState<E> for T
-    where T: Input,
-          T::State: InputState<E>,
-          E: Element
-{
-    fn state(&self, element: E) -> E::State {
-        self.now().state(element)
-    }
 }

@@ -2,9 +2,10 @@ use boolinator::Boolinator;
 use nalgebra::Point2;
 use num::Zero;
 use std::collections::HashSet;
+use std::ops::Deref;
 
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{Element, Input, InputComposite, InputState, InputDifference, InputTransition,
+use super::state::{CompositeState, Element, Input, InputState, InputDifference, InputTransition,
                    State};
 
 impl Element for MouseButton {
@@ -36,6 +37,14 @@ impl Mouse {
             state: MouseState::new(),
             snapshot: MouseState::new(),
         }
+    }
+}
+
+impl Deref for Mouse {
+    type Target = MouseState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
@@ -120,22 +129,11 @@ impl MouseState {
     }
 }
 
-impl InputComposite<MouseButton> for MouseState {
+impl CompositeState<MouseButton> for MouseState {
     type Composite = HashSet<MouseButton>;
 
     fn composite(&self) -> &Self::Composite {
         &self.buttons
-    }
-}
-
-impl InputState<MouseButton> for MouseState {
-    fn state(&self, button: MouseButton) -> <MouseButton as Element>::State {
-        if self.buttons.contains(&button) {
-            ElementState::Pressed
-        }
-        else {
-            ElementState::Released
-        }
     }
 }
 

@@ -1,7 +1,8 @@
 use std::collections::HashSet;
+use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{Element, Input, InputComposite, InputState};
+use super::state::{CompositeState, Element, Input};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
@@ -18,6 +19,14 @@ impl Keyboard {
             state: KeyboardState::new(),
             snapshot: KeyboardState::new(),
         }
+    }
+}
+
+impl Deref for Keyboard {
+    type Target = KeyboardState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
@@ -70,21 +79,10 @@ impl KeyboardState {
     }
 }
 
-impl InputComposite<VirtualKeyCode> for KeyboardState {
+impl CompositeState<VirtualKeyCode> for KeyboardState {
     type Composite = HashSet<VirtualKeyCode>;
 
     fn composite(&self) -> &Self::Composite {
         &self.keys
-    }
-}
-
-impl InputState<VirtualKeyCode> for KeyboardState {
-    fn state(&self, key: VirtualKeyCode) -> <VirtualKeyCode as Element>::State {
-        if self.keys.contains(&key) {
-            ElementState::Pressed
-        }
-        else {
-            ElementState::Released
-        }
     }
 }
