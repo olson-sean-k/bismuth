@@ -31,7 +31,7 @@ impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
                               .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
                               .map_points(|point| (point * width) + origin)
                               .triangulate()
-                              .zip(UCube::with_unit_width().planar_polygons().triangulate())
+                              .zip(UCube::with_unit_width().plane_polygons().triangulate())
                               .map(|(position, plane)| {
                                   let color = Color::white();
                                   Triangle::new(

@@ -1,7 +1,8 @@
 use nalgebra::{Point2, Point3, Scalar};
 use std::ops::Range;
 
-use super::generate::{ConjointGenerator, IndexedGenerator, PolygonGenerator, TexturedGenerator};
+use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, PolygonGenerator,
+                      TexturePolygonGenerator};
 use super::primitive::{MapPrimitiveInto, Quad};
 
 pub trait Unit: Scalar {
@@ -82,8 +83,8 @@ impl<T> Cube<T>
         Cube::new(lower, upper)
     }
 
-    pub fn planar_polygons(&self) -> PlanarPolygonIter {
-        PlanarPolygonIter::new(0..self.polygon_count())
+    pub fn plane_polygons(&self) -> PlanePolygonIter {
+        PlanePolygonIter::new(0..self.polygon_count())
     }
 
     fn point(&self, index: usize) -> Point3<T> {
@@ -91,7 +92,7 @@ impl<T> Cube<T>
     }
 
     fn face(&self, index: usize) -> Quad<Point3<T>> {
-        indexed_face(index).map_points_into(|index| self.point(index))
+        index_face(index).map_points_into(|index| self.point(index))
     }
 }
 
@@ -105,27 +106,27 @@ impl<T> Iterator for Cube<T>
     }
 }
 
-pub struct PlanarPolygonIter {
+pub struct PlanePolygonIter {
     polygons: Range<usize>,
 }
 
-impl PlanarPolygonIter {
+impl PlanePolygonIter {
     fn new(polygons: Range<usize>) -> Self {
-        PlanarPolygonIter {
+        PlanePolygonIter {
             polygons: polygons,
         }
     }
 }
 
-impl Iterator for PlanarPolygonIter {
+impl Iterator for PlanePolygonIter {
     type Item = Quad<FacePlane>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.polygons.next().map(|index| planar_face(index))
+        self.polygons.next().map(|index| plane_face(index))
     }
 }
 
-impl<T> ConjointGenerator<Point3<T>> for Cube<T>
+impl<T> ConjointPointGenerator<Point3<T>> for Cube<T>
     where T: Unit
 {
     fn conjoint_point(&self, index: usize) -> Point3<T> {
@@ -145,19 +146,19 @@ impl<T> PolygonGenerator for Cube<T>
     }
 }
 
-impl<T> IndexedGenerator<Quad<usize>> for Cube<T>
+impl<T> IndexPolygonGenerator<Quad<usize>> for Cube<T>
     where T: Unit
 {
-    fn indexed_polygon(&self, index: usize) -> Quad<usize> {
-        indexed_face(index)
+    fn index_polygon(&self, index: usize) -> Quad<usize> {
+        index_face(index)
     }
 }
 
-impl<T> TexturedGenerator<Quad<Point2<f32>>> for Cube<T>
+impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
     where T: Unit
 {
-    fn textured_polygon(&self, index: usize) -> Quad<Point2<f32>> {
-        textured_face(index)
+    fn texture_polygon(&self, index: usize) -> Quad<Point2<f32>> {
+        texture_face(index)
     }
 }
 
@@ -170,7 +171,7 @@ fn point<T>(index: usize, lower: T, upper: T) -> Point3<T>
     Point3::new(x, y, z)
 }
 
-fn indexed_face(index: usize) -> Quad<usize> {
+fn index_face(index: usize) -> Quad<usize> {
     match index {
         0 => Quad::new(5, 7, 3, 1), // front
         1 => Quad::new(6, 7, 5, 4), // right
@@ -182,7 +183,7 @@ fn indexed_face(index: usize) -> Quad<usize> {
     }
 }
 
-fn textured_face(index: usize) -> Quad<Point2<f32>> {
+fn texture_face(index: usize) -> Quad<Point2<f32>> {
     let uu = Point2::new(1.0, 1.0);
     let ul = Point2::new(1.0, 0.0);
     let ll = Point2::new(0.0, 0.0);
@@ -198,7 +199,7 @@ fn textured_face(index: usize) -> Quad<Point2<f32>> {
     }
 }
 
-fn planar_face(index: usize) -> Quad<FacePlane> {
+fn plane_face(index: usize) -> Quad<FacePlane> {
     match index {
         0 => Quad::converged(FacePlane::XY),  // front
         1 => Quad::converged(FacePlane::NZY), // right
