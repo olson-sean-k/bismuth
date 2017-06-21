@@ -1,5 +1,37 @@
-use std::marker::PhantomData;
 use std::ops::Range;
+
+pub struct Generate<'a, S, T, F>
+    where S: 'a,
+          F: Fn(&'a S, usize) -> T
+{
+    source: &'a S,
+    range: Range<usize>,
+    f: F,
+}
+
+impl<'a, S, T, F> Generate<'a, S, T, F>
+    where S: 'a,
+          F: Fn(&'a S, usize) -> T
+{
+    pub(super) fn new(source: &'a S, range: Range<usize>, f: F) -> Self {
+        Generate {
+            source: source,
+            range: range,
+            f: f,
+        }
+    }
+}
+
+impl<'a, S, T, F> Iterator for Generate<'a, S, T, F>
+    where S: 'a,
+          F: Fn(&'a S, usize) -> T
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next().map(|index| (self.f)(&self.source, index))
+    }
+}
 
 pub trait ConjointPointGenerator<T> {
     fn conjoint_point(&self, index: usize) -> T;
@@ -7,127 +39,67 @@ pub trait ConjointPointGenerator<T> {
 }
 
 pub trait ConjointPoints<T>: Sized {
-    fn conjoint_points<'a>(&'a self) -> ConjointPointIter<'a, Self, T>;
+    fn conjoint_points<'a>(&'a self) -> Generate<'a, Self, T, fn(&'a Self, usize) -> T>;
 }
 
 impl<T, U> ConjointPoints<U> for T
     where T: ConjointPointGenerator<U>
 {
-    fn conjoint_points<'a>(&'a self) -> ConjointPointIter<'a, Self, U> {
-        ConjointPointIter::new(self, 0..self.conjoint_point_count())
+    fn conjoint_points<'a>(&'a self) -> Generate<'a, Self, U, fn(&'a Self, usize) -> U> {
+        Generate::new(self, 0..self.conjoint_point_count(), map_conjoint_point)
     }
 }
 
-pub struct ConjointPointIter<'a, G: 'a, T> {
-    generator: &'a G,
-    points: Range<usize>,
-    phantom: PhantomData<T>,
-}
-
-impl<'a, G, T> ConjointPointIter<'a, G, T> {
-    fn new(generator: &'a G, points: Range<usize>) -> Self {
-        ConjointPointIter {
-            generator: generator,
-            points: points,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a, G, T> Iterator for ConjointPointIter<'a, G, T>
-    where G: ConjointPointGenerator<T>
+fn map_conjoint_point<S, T>(source: &S, index: usize) -> T
+    where S: ConjointPointGenerator<T>
 {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.points.next().map(|index| self.generator.conjoint_point(index))
-    }
+    source.conjoint_point(index)
 }
 
 pub trait PolygonGenerator {
     fn polygon_count(&self) -> usize;
 }
 
-pub trait IndexPolygonGenerator<P>: PolygonGenerator {
-    fn index_polygon(&self, index: usize) -> P;
+pub trait IndexPolygonGenerator<T>: PolygonGenerator {
+    fn index_polygon(&self, index: usize) -> T;
 }
 
-pub trait IndexPolygons<P>: Sized {
-    fn index_polygons<'a>(&'a self) -> IndexPolygonIter<'a, Self, P>;
+pub trait IndexPolygons<T>: Sized {
+    fn index_polygons<'a>(&'a self) -> Generate<'a, Self, T, fn(&'a Self, usize) -> T>;
 }
 
-impl<T, P> IndexPolygons<P> for T
-    where T: IndexPolygonGenerator<P> + PolygonGenerator
+impl<T, U> IndexPolygons<U> for T
+    where T: IndexPolygonGenerator<U> + PolygonGenerator
 {
-    fn index_polygons<'a>(&'a self) -> IndexPolygonIter<'a, Self, P> {
-        IndexPolygonIter::new(self, 0..self.polygon_count())
+    fn index_polygons<'a>(&'a self) -> Generate<'a, Self, U, fn(&'a Self, usize) -> U> {
+        Generate::new(self, 0..self.polygon_count(), map_index_polygon)
     }
 }
 
-pub struct IndexPolygonIter<'a, G: 'a, P> {
-    generator: &'a G,
-    polygons: Range<usize>,
-    phantom: PhantomData<P>,
-}
-
-impl<'a, G, P> IndexPolygonIter<'a, G, P> {
-    fn new(generator: &'a G, polygons: Range<usize>) -> Self {
-        IndexPolygonIter {
-            generator: generator,
-            polygons: polygons,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a, G, P> Iterator for IndexPolygonIter<'a, G, P>
-    where G: IndexPolygonGenerator<P> + PolygonGenerator
+fn map_index_polygon<S, T>(source: &S, index: usize) -> T
+    where S: IndexPolygonGenerator<T>
 {
-    type Item = P;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.polygons.next().map(|index| self.generator.index_polygon(index))
-    }
+    source.index_polygon(index)
 }
 
-pub trait TexturePolygonGenerator<P>: PolygonGenerator {
-    fn texture_polygon(&self, index: usize) -> P;
+pub trait TexturePolygonGenerator<T>: PolygonGenerator {
+    fn texture_polygon(&self, index: usize) -> T;
 }
 
-pub trait TexturePolygons<P>: Sized {
-    fn texture_polygons<'a>(&'a self) -> TexturePolygonIter<'a, Self, P>;
+pub trait TexturePolygons<T>: Sized {
+    fn texture_polygons<'a>(&'a self) -> Generate<'a, Self, T, fn(&'a Self, usize) -> T>;
 }
 
-impl<T, P> TexturePolygons<P> for T
-    where T: PolygonGenerator + TexturePolygonGenerator<P>
+impl<T, U> TexturePolygons<U> for T
+    where T: PolygonGenerator + TexturePolygonGenerator<U>
 {
-    fn texture_polygons<'a>(&'a self) -> TexturePolygonIter<'a, Self, P> {
-        TexturePolygonIter::new(self, 0..self.polygon_count())
+    fn texture_polygons<'a>(&'a self) -> Generate<'a, Self, U, fn(&'a Self, usize) -> U> {
+        Generate::new(self, 0..self.polygon_count(), map_texture_polygon)
     }
 }
-
-pub struct TexturePolygonIter<'a, G: 'a, P> {
-    generator: &'a G,
-    polygons: Range<usize>,
-    phantom: PhantomData<P>,
-}
-
-impl<'a, G, P> TexturePolygonIter<'a, G, P> {
-    fn new(generator: &'a G, polygons: Range<usize>) -> Self {
-        TexturePolygonIter {
-            generator: generator,
-            polygons: polygons,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a, G, P> Iterator for TexturePolygonIter<'a, G, P>
-    where G: PolygonGenerator + TexturePolygonGenerator<P>
+fn map_texture_polygon<S, T>(source: &S, index: usize) -> T
+    where S: TexturePolygonGenerator<T>
 {
-    type Item = P;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.polygons.next().map(|index| self.generator.texture_polygon(index))
-    }
+    source.texture_polygon(index)
 }
+

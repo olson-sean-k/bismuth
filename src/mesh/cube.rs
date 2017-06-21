@@ -1,7 +1,7 @@
 use nalgebra::{Point2, Point3, Scalar};
 use std::ops::Range;
 
-use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, PolygonGenerator,
+use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, Generate, PolygonGenerator,
                       TexturePolygonGenerator};
 use super::primitive::{MapPrimitiveInto, Quad};
 
@@ -83,8 +83,8 @@ impl<T> Cube<T>
         Cube::new(lower, upper)
     }
 
-    pub fn plane_polygons(&self) -> PlanePolygonIter {
-        PlanePolygonIter::new(0..self.polygon_count())
+    pub fn plane_polygons<'a>(&'a self) -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>> {
+        Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
     }
 
     fn point(&self, index: usize) -> Point3<T> {
@@ -103,26 +103,6 @@ impl<T> Iterator for Cube<T>
 
     fn next(&mut self) -> Option<Self::Item> {
         self.faces.next().map(|index| self.face(index))
-    }
-}
-
-pub struct PlanePolygonIter {
-    polygons: Range<usize>,
-}
-
-impl PlanePolygonIter {
-    fn new(polygons: Range<usize>) -> Self {
-        PlanePolygonIter {
-            polygons: polygons,
-        }
-    }
-}
-
-impl Iterator for PlanePolygonIter {
-    type Item = Quad<FacePlane>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.polygons.next().map(|index| plane_face(index))
     }
 }
 
@@ -160,6 +140,12 @@ impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
     fn texture_polygon(&self, index: usize) -> Quad<Point2<f32>> {
         texture_face(index)
     }
+}
+
+fn map_plane_polygon<T>(_: &Cube<T>, index: usize) -> Quad<FacePlane>
+    where T: Unit
+{
+    plane_face(index)
 }
 
 fn point<T>(index: usize, lower: T, upper: T) -> Point3<T>
