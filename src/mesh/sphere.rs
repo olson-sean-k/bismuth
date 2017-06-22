@@ -2,21 +2,17 @@ use nalgebra::{Point3, Scalar};
 use num::Float;
 use num::traits::FloatConst;
 use std::cmp;
-use std::iter::Peekable;
-use std::ops::Range;
 use std::marker::PhantomData;
 
-use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, PolygonGenerator};
+use super::generate::{ConjointPointGenerator, Generate, IndexPolygonGenerator, PolygonGenerator};
 use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
 pub struct UVSphere<T>
     where T: Float + FloatConst + Scalar
 {
-    nu: usize,
-    nv: usize,
-    us: Range<usize>, // Meridians.
-    vs: Peekable<Range<usize>>, // Parallels.
+    nu: usize, // Meridians.
+    nv: usize, // Parallels.
     phantom_t: PhantomData<T>,
 }
 
@@ -29,17 +25,23 @@ impl<T> UVSphere<T>
         UVSphere {
             nu: nu,
             nv: nv,
-            us: 0..nu,
-            vs: (0..nv).peekable(),
             phantom_t: PhantomData,
         }
     }
 
-    fn point(&self, u: usize, v: usize) -> Point3<T> {
-        point(u, v, self.nu, self.nv)
+    pub fn polygons<'a>(&'a self)
+        -> Generate<'a, Self, Polygon<Point3<T>>, fn(&'a Self, usize) -> Polygon<Point3<T>>>
+    {
+        Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 
-    fn indexed_point(&self, u: usize, v: usize) -> usize {
+    fn point(&self, u: usize, v: usize) -> Point3<T> {
+        let u = (T::from(u).unwrap() / T::from(self.nu).unwrap()) * T::PI() * (T::one() + T::one());
+        let v = (T::from(v).unwrap() / T::from(self.nv).unwrap()) * T::PI();
+        Point3::new(u.cos() * v.sin(), u.sin() * v.sin(), v.cos())
+    }
+
+    fn index_point(&self, u: usize, v: usize) -> usize {
         if v == 0 {
             0
         }
@@ -49,6 +51,30 @@ impl<T> UVSphere<T>
         else {
             ((v - 1) * self.nu) + (u % self.nu) + 1
         }
+    }
+
+    fn face(&self, index: usize) -> Polygon<Point3<T>> {
+        let (u, v) = self.map_polygon_index(index);
+
+        // Generate the points at the current meridian and parallel. The upper
+        // and lower bounds of (u, v) are always used, so generate them in
+        // advance (`low` and `high`). Emit triangles at the poles, otherwise
+        // quads.
+        let low = self.point(u, v);
+        let high = self.point(u + 1, v + 1);
+        if v == 0 {
+            Polygon::Triangle(Triangle::new(low, self.point(u, v + 1), high))
+        }
+        else if v == self.nv - 1 {
+            Polygon::Triangle(Triangle::new(high, self.point(u + 1, v), low))
+        }
+        else {
+            Polygon::Quad(Quad::new(low, self.point(u, v + 1), high, self.point(u + 1, v)))
+        }
+    }
+
+    fn map_polygon_index(&self, index: usize) -> (usize, usize) {
+        (index % self.nu, index / self.nv)
     }
 }
 
@@ -85,75 +111,27 @@ impl<T> IndexPolygonGenerator<Polygon<usize>> for UVSphere<T>
     where T: Float + FloatConst + Scalar
 {
     fn index_polygon(&self, index: usize) -> Polygon<usize> {
-        let u = index % self.nu;
-        let v = index / self.nu;
+        let (u, v) = self.map_polygon_index(index);
 
-        let low = self.indexed_point(u, v);
-        let high = self.indexed_point(u + 1, v + 1);
+        let low = self.index_point(u, v);
+        let high = self.index_point(u + 1, v + 1);
         if v == 0 {
-            Polygon::Triangle(Triangle::new(low, self.indexed_point(u, v + 1), high))
+            Polygon::Triangle(Triangle::new(low, self.index_point(u, v + 1), high))
         }
         else if v == self.nv - 1 {
-            Polygon::Triangle(Triangle::new(high, self.indexed_point(u + 1, v), low))
+            Polygon::Triangle(Triangle::new(high, self.index_point(u + 1, v), low))
         }
         else {
             Polygon::Quad(Quad::new(low,
-                                    self.indexed_point(u, v + 1),
+                                    self.index_point(u, v + 1),
                                     high,
-                                    self.indexed_point(u + 1, v)))
+                                    self.index_point(u + 1, v)))
         }
     }
 }
 
-impl<T> Iterator for UVSphere<T>
+fn map_polygon<T>(source: &UVSphere<T>, index: usize) -> Polygon<Point3<T>>
     where T: Float + FloatConst + Scalar
 {
-    type Item = Polygon<Point3<T>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let nu = self.nu;
-        let nv = self.nv;
-
-        // Iterate over meridians (`self.us`). When meridians are exhausted,
-        // reset the iteration and advance iteration over parallels (`self.vs`).
-        // Continue until parallels are exhausted.
-        let u = match self.us.next() {
-            Some(u) => u,
-            None => {
-                self.vs.next();
-                self.us = 1..nu;
-                0
-            }
-        };
-        self.vs.peek().map(|v| {
-            let v = *v;
-
-            // Generate the points at the current meridian and parallel. The
-            // upper and lower bounds of (u, v) are always used, so generate
-            // them in advance (`low` and `high`). Emit triangles at the poles,
-            // otherwise quads.
-            let low = point(u, v, nu, nv);
-            let high = point(u + 1, v + 1, nu, nv);
-            if v == 0 {
-                Polygon::Triangle(Triangle::new(low, point(u, v + 1, nu, nv), high))
-            }
-            else if v == nv - 1 {
-                Polygon::Triangle(Triangle::new(high, point(u + 1, v, nu, nv), low))
-            }
-            else {
-                Polygon::Quad(Quad::new(low,
-                                        point(u, v + 1, nu, nv),
-                                        high,
-                                        point(u + 1, v, nu, nv)))
-            }
-        })
-    }
-}
-
-fn point<T>(u: usize, v: usize, nu: usize, nv: usize) -> Point3<T>
-    where T: Float + FloatConst + Scalar
-{
-    let u = (T::from(u).unwrap() / T::from(nu).unwrap()) * T::PI() * (T::one() + T::one());
-    let v = (T::from(v).unwrap() / T::from(nv).unwrap()) * T::PI();
-    Point3::new(u.cos() * v.sin(), u.sin() * v.sin(), v.cos())
+    source.face(index)
 }

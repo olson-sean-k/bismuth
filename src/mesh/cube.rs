@@ -1,5 +1,4 @@
 use nalgebra::{Point2, Point3, Scalar};
-use std::ops::Range;
 
 use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, Generate, PolygonGenerator,
                       TexturePolygonGenerator};
@@ -57,7 +56,6 @@ pub enum FacePlane {
 pub struct Cube<T>
     where T: Unit
 {
-    faces: Range<usize>,
     lower: T,
     upper: T,
 }
@@ -67,7 +65,6 @@ impl<T> Cube<T>
 {
     fn new(lower: T, upper: T) -> Self {
         Cube {
-            faces: 0..6,
             lower: lower,
             upper: upper,
         }
@@ -83,26 +80,27 @@ impl<T> Cube<T>
         Cube::new(lower, upper)
     }
 
-    pub fn plane_polygons<'a>(&'a self) -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>> {
+    pub fn polygons<'a>(&'a self)
+        -> Generate<'a, Self, Quad<Point3<T>>, fn(&'a Self, usize) -> Quad<Point3<T>>>
+    {
+        Generate::new(self, 0..self.polygon_count(), map_polygon)
+    }
+
+    pub fn plane_polygons<'a>(&'a self)
+        -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>>
+    {
         Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
     }
 
     fn point(&self, index: usize) -> Point3<T> {
-        point(index, self.lower, self.upper)
+        let x = if index & 0b100 == 0b100 { self.upper } else { self.lower };
+        let y = if index & 0b010 == 0b010 { self.upper } else { self.lower };
+        let z = if index & 0b001 == 0b001 { self.upper } else { self.lower };
+        Point3::new(x, y, z)
     }
 
     fn face(&self, index: usize) -> Quad<Point3<T>> {
         index_face(index).map_points_into(|index| self.point(index))
-    }
-}
-
-impl<T> Iterator for Cube<T>
-    where T: Unit
-{
-    type Item = Quad<Point3<T>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.faces.next().map(|index| self.face(index))
     }
 }
 
@@ -142,19 +140,16 @@ impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
     }
 }
 
+fn map_polygon<T>(source: &Cube<T>, index: usize) -> Quad<Point3<T>>
+    where T: Unit
+{
+    source.face(index)
+}
+
 fn map_plane_polygon<T>(_: &Cube<T>, index: usize) -> Quad<FacePlane>
     where T: Unit
 {
     plane_face(index)
-}
-
-fn point<T>(index: usize, lower: T, upper: T) -> Point3<T>
-    where T: Unit
-{
-    let x = if index & 0b100 == 0b100 { upper } else { lower };
-    let y = if index & 0b010 == 0b010 { upper } else { lower };
-    let z = if index & 0b001 == 0b001 { upper } else { lower };
-    Point3::new(x, y, z)
 }
 
 fn index_face(index: usize) -> Quad<usize> {

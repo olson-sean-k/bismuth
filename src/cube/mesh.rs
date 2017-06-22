@@ -6,8 +6,6 @@ use render::{Color, Index, MeshBuffer, ToMeshBuffer, Vertex};
 use super::space::{LogWidth, Spatial};
 use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
-type UCube = mesh::cube::Cube<UScalar>;
-
 impl<'a, 'b> ToMeshBuffer for Cube<'a, &'b Node> {
     fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
@@ -27,11 +25,12 @@ impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
         if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().coords.into_space();
             let width = self.partition().width().exp() as FScalar;
-            buffer.extend(UCube::with_unit_width()
+            let ucube = mesh::cube::Cube::<UScalar>::with_unit_width();
+            buffer.extend(ucube.polygons()
                               .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
                               .map_points(|point| (point * width) + origin)
                               .triangulate()
-                              .zip(UCube::with_unit_width().plane_polygons().triangulate())
+                              .zip(ucube.plane_polygons().triangulate())
                               .map(|(position, plane)| {
                                   let color = Color::white();
                                   Triangle::new(
@@ -46,7 +45,7 @@ impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
                                                   &color))
                               })
                               .points(),
-                          UCube::with_unit_width()
+                          ucube.polygons()
                               .triangulate()
                               .points()
                               .enumerate()
