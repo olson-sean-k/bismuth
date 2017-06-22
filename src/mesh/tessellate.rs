@@ -1,7 +1,60 @@
 use std::collections::VecDeque;
+use std::iter::IntoIterator;
+use std::marker::PhantomData;
 
 use math::{self, FScalar};
 use super::primitive::{Polygon, Polygonal, Triangle, Quad};
+
+pub struct Tessellate<I, P, Q, D, R, F>
+    where D: Copy,
+          F: Fn(P, D) -> R,
+          R: IntoIterator<Item = Q>
+{
+    source: I,
+    sink: VecDeque<Q>,
+    parameter: D,
+    f: F,
+    phantom: PhantomData<(P, R)>,
+}
+
+impl<I, P, Q, D, R, F> Tessellate<I, P, Q, D, R, F>
+    where D: Copy,
+          F: Fn(P, D) -> R,
+          R: IntoIterator<Item = Q>
+{
+    pub(super) fn new(source: I, parameter: D, f: F) -> Self {
+        Tessellate {
+            source: source,
+            sink: VecDeque::new(),
+            parameter: parameter,
+            f: f,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<I, P, Q, D, R, F> Iterator for Tessellate<I, P, Q, D, R, F>
+    where I: Iterator<Item = P>,
+          D: Copy,
+          F: Fn(P, D) -> R,
+          R: IntoIterator<Item = Q>
+{
+    type Item = Q;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(polygon) = self.sink.pop_front() {
+                return Some(polygon);
+            }
+            if let Some(polygon) = self.source.next() {
+                self.sink.extend((self.f)(polygon, self.parameter));
+            }
+            else {
+                return None;
+            }
+        }
+    }
+}
 
 pub trait Interpolate: math::Interpolate<FScalar> {}
 
@@ -88,103 +141,54 @@ impl<T> PolygonalExt<T> for Polygon<T>
     }
 }
 
-pub trait TessellatePolygon<T>: Sized {
-    fn subdivide(self, n: usize) -> SubdivisionIter<Self, T>;
+pub trait TessellatePolygon<P, Q>: Sized {
+    fn subdivide(self, n: usize) -> Tessellate<Self, P, Q, usize, Vec<Q>, fn(P, usize) -> Vec<Q>>;
 }
 
-impl<I, T, P> TessellatePolygon<T> for I
+impl<I, P, T> TessellatePolygon<P, Polygon<T>> for I
     where I: Iterator<Item = P>,
           T: Clone + Interpolate,
           P: PolygonalExt<T>
 {
-    fn subdivide(self, n: usize) -> SubdivisionIter<Self, T> {
-        SubdivisionIter::new(self, n)
+    fn subdivide(self, n: usize)
+        -> Tessellate<Self, P, Polygon<T>, usize, Vec<Polygon<T>>, fn(P, usize) -> Vec<Polygon<T>>> {
+        Tessellate::new(self, n, map_subdivisions)
     }
 }
 
-pub struct SubdivisionIter<I, T> {
-    polygons: I,
-    subdivisions: VecDeque<Polygon<T>>,
-    n: usize,
-}
-
-impl<I, T> SubdivisionIter<I, T> {
-    fn new(polygons: I, n: usize) -> Self {
-        SubdivisionIter {
-            polygons: polygons,
-            subdivisions: VecDeque::new(),
-            n: n,
-        }
-    }
-}
-
-impl<I, T, P> Iterator for SubdivisionIter<I, T>
-    where I: Iterator<Item = P>,
-          T: Clone + Interpolate,
-          P: PolygonalExt<T>
+fn map_subdivisions<P, T>(polygon: P, n: usize) -> Vec<Polygon<T>>
+    where P: PolygonalExt<T>,
+          T: Clone + Interpolate
 {
-    type Item = Polygon<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if let Some(subdivision) = self.subdivisions.pop_front() {
-                return Some(subdivision);
-            }
-            if let Some(polygon) = self.polygons.next() {
-                polygon.into_subdivisions(self.n, |polygon| self.subdivisions.push_back(polygon))
-            }
-            else {
-                return None;
-            }
-        }
-    }
+    let mut polygons = vec![];
+    polygon.into_subdivisions(n, |polygon| polygons.push(polygon));
+    polygons
 }
 
 pub trait TessellateQuad<T>: Sized {
-    fn tetrahedrons(self) -> TetrahedronIter<Self, T>;
+    fn tetrahedrons(self)
+        -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
+                     fn(Quad<T>, ()) -> Vec<Triangle<T>>>;
 }
 
 impl<I, T> TessellateQuad<T> for I
-    where I: Iterator<Item = Quad<T>>
-{
-    fn tetrahedrons(self) -> TetrahedronIter<Self, T> {
-        TetrahedronIter::new(self)
-    }
-}
-
-pub struct TetrahedronIter<I, T> {
-    quads: I,
-    triangles: VecDeque<Triangle<T>>,
-}
-
-impl<I, T> TetrahedronIter<I, T> {
-    fn new(quads: I) -> Self {
-        TetrahedronIter {
-            quads: quads,
-            triangles: VecDeque::new(),
-        }
-    }
-}
-
-impl<I, T> Iterator for TetrahedronIter<I, T>
     where I: Iterator<Item = Quad<T>>,
           T: Clone + Interpolate
 {
-    type Item = Triangle<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if let Some(triangle) = self.triangles.pop_front() {
-                return Some(triangle);
-            }
-            if let Some(quad) = self.quads.next() {
-                quad.into_tetrahedrons(|triangle| self.triangles.push_back(triangle))
-            }
-            else {
-                return None;
-            }
-        }
+    fn tetrahedrons(self)
+        -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
+                     fn(Quad<T>, ()) -> Vec<Triangle<T>>>
+    {
+        Tessellate::new(self, (), map_tetrahedrons)
     }
+}
+
+fn map_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
+    where T: Clone + Interpolate
+{
+    let mut triangles = vec![];
+    quad.into_tetrahedrons(|triangle| triangles.push(triangle));
+    triangles
 }
 
 fn n_map_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
