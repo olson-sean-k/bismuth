@@ -4,23 +4,31 @@ use std::mem;
 
 use math;
 
-pub trait Primitive<T>: Sized {
-    fn into_points<F>(self, f: F) where F: FnMut(T);
-    fn into_lines<F>(self, f: F) where F: FnMut(Line<T>);
+pub trait Primitive: Sized {
+    type Point: Clone;
+
+    fn into_points<F>(self, f: F) where F: FnMut(Self::Point);
+    fn into_lines<F>(self, f: F) where F: FnMut(Line<Self::Point>);
 }
 
-pub trait Polygonal<T>: Primitive<T> {
-    fn into_triangles<F>(self, f: F) where F: FnMut(Triangle<T>);
+pub trait Polygonal: Primitive {
+    fn into_triangles<F>(self, f: F) where F: FnMut(Triangle<Self::Point>);
 }
 
-pub trait MapPrimitiveInto<T, U> {
-    type Output;
+pub trait MapPrimitiveInto<T, U>: Primitive<Point = T>
+    where T: Clone,
+          U: Clone
+{
+    type Output: Primitive<Point = U>;
 
     fn map_points_into<F>(self, f: F) -> Self::Output where F: FnMut(T) -> U;
 }
 
-pub trait MapPrimitive<T, U>: Sized {
-    type Output;
+pub trait MapPrimitive<T, U>: Sized
+    where T: Clone,
+          U: Clone
+{
+    type Output: Primitive<Point = U>;
 
     fn map_points<F>(self, f: F) -> Map<Self, T, U, F> where F: FnMut(T) -> U;
 }
@@ -29,17 +37,24 @@ pub trait RotatePrimitive {
     fn rotate(&mut self, n: isize);
 }
 
-pub trait DecomposePrimitive<T>: Sized {
+pub trait DecomposePrimitive<T>: Sized
+    where T: Clone
+{
     fn points(self) -> PointIter<Self, T>;
 }
 
-pub trait DecomposePolygon<T>: Sized {
+pub trait DecomposePolygon<T>: Sized
+    where T: Clone
+{
     fn triangulate(self) -> TriangleIter<Self, T>;
 }
 
 impl<I, T, U, P, Q> MapPrimitive<T, U> for I
     where I: Iterator<Item = P>,
-          P: MapPrimitiveInto<T, U, Output = Q>
+          P: MapPrimitiveInto<T, U, Output = Q>,
+          Q: Primitive<Point = U>,
+          T: Clone,
+          U: Clone
 {
     type Output = Q;
 
@@ -69,7 +84,10 @@ impl<I, T, U, F> Map<I, T, U, F> {
 impl<I, T, U, F, P, Q> Iterator for Map<I, T, U, F>
     where I: Iterator<Item = P>,
           F: FnMut(T) -> U,
-          P: MapPrimitiveInto<T, U, Output = Q>
+          P: MapPrimitiveInto<T, U, Output = Q>,
+          Q: Primitive<Point = U>,
+          T: Clone,
+          U: Clone
 {
     type Item = Q;
 
@@ -80,7 +98,8 @@ impl<I, T, U, F, P, Q> Iterator for Map<I, T, U, F>
 
 impl<I, T, P> DecomposePrimitive<T> for I
     where I: Iterator<Item = P>,
-          P: Primitive<T>
+          P: Primitive<Point = T>,
+          T: Clone
 {
     fn points(self) -> PointIter<Self, T> {
         PointIter::new(self)
@@ -103,7 +122,8 @@ impl<I, T> PointIter<I, T> {
 
 impl<I, T, P> Iterator for PointIter<I, T>
     where I: Iterator<Item = P>,
-          P: Primitive<T>
+          P: Primitive<Point = T>,
+          T: Clone
 {
     type Item = T;
 
@@ -124,7 +144,8 @@ impl<I, T, P> Iterator for PointIter<I, T>
 
 impl<I, T, P> DecomposePolygon<T> for I
     where I: Iterator<Item = P>,
-          P: Polygonal<T>
+          P: Polygonal<Point = T>,
+          T: Clone
 {
     fn triangulate(self) -> TriangleIter<Self, T> {
         TriangleIter::new(self)
@@ -147,7 +168,8 @@ impl<I, T> TriangleIter<I, T> {
 
 impl<I, T, P> Iterator for TriangleIter<I, T>
     where I: Iterator<Item = P>,
-          P: Polygonal<T>
+          P: Polygonal<Point = T>,
+          T: Clone
 {
     type Item = Triangle<T>;
 
@@ -183,7 +205,10 @@ impl<T> Line<T> {
     }
 }
 
-impl<T, U> MapPrimitiveInto<T, U> for Line<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Line<T>
+    where T: Clone,
+          U: Clone
+{
     type Output = Line<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output
@@ -194,11 +219,13 @@ impl<T, U> MapPrimitiveInto<T, U> for Line<T> {
     }
 }
 
-impl<T> Primitive<T> for Line<T>
+impl<T> Primitive for Line<T>
     where T: Clone
 {
+    type Point = T;
+
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(T)
+        where F: FnMut(Self::Point)
     {
         let Line { a, b } = self;
         f(a);
@@ -206,7 +233,7 @@ impl<T> Primitive<T> for Line<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<T>)
+        where F: FnMut(Line<Self::Point>)
     {
         f(self);
     }
@@ -240,7 +267,10 @@ impl<T> Triangle<T> {
     }
 }
 
-impl<T, U> MapPrimitiveInto<T, U> for Triangle<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Triangle<T>
+    where T: Clone,
+          U: Clone
+{
     type Output = Triangle<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output
@@ -251,11 +281,13 @@ impl<T, U> MapPrimitiveInto<T, U> for Triangle<T> {
     }
 }
 
-impl<T> Primitive<T> for Triangle<T>
+impl<T> Primitive for Triangle<T>
     where T: Clone
 {
+    type Point = T;
+
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(T)
+        where F: FnMut(Self::Point)
     {
         let Triangle { a, b, c } = self;
         f(a);
@@ -264,7 +296,7 @@ impl<T> Primitive<T> for Triangle<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<T>)
+        where F: FnMut(Line<Self::Point>)
     {
         let Triangle { a, b, c } = self;
         f(Line::new(a.clone(), b.clone()));
@@ -273,11 +305,11 @@ impl<T> Primitive<T> for Triangle<T>
     }
 }
 
-impl<T> Polygonal<T> for Triangle<T>
+impl<T> Polygonal for Triangle<T>
     where T: Clone
 {
     fn into_triangles<F>(self, mut f: F)
-        where F: FnMut(Triangle<T>)
+        where F: FnMut(Triangle<Self::Point>)
     {
         f(self);
     }
@@ -323,7 +355,10 @@ impl<T> Quad<T> {
     }
 }
 
-impl<T, U> MapPrimitiveInto<T, U> for Quad<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Quad<T>
+    where T: Clone,
+          U: Clone
+{
     type Output = Quad<U>;
 
     fn map_points_into<F>(self, mut f: F) -> Self::Output
@@ -334,11 +369,13 @@ impl<T, U> MapPrimitiveInto<T, U> for Quad<T> {
     }
 }
 
-impl<T> Primitive<T> for Quad<T>
+impl<T> Primitive for Quad<T>
     where T: Clone
 {
+    type Point = T;
+
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(T)
+        where F: FnMut(Self::Point)
     {
         let Quad { a, b, c, d } = self;
         f(a);
@@ -348,7 +385,7 @@ impl<T> Primitive<T> for Quad<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<T>)
+        where F: FnMut(Line<Self::Point>)
     {
         let Quad { a, b, c, d } = self;
         f(Line::new(a.clone(), b.clone()));
@@ -358,11 +395,11 @@ impl<T> Primitive<T> for Quad<T>
     }
 }
 
-impl<T> Polygonal<T> for Quad<T>
+impl<T> Polygonal for Quad<T>
     where T: Clone
 {
     fn into_triangles<F>(self, mut f: F)
-        where F: FnMut(Triangle<T>)
+        where F: FnMut(Triangle<Self::Point>)
     {
         let Quad { a, b, c, d } = self;
         f(Triangle::new(a.clone(), b, c.clone()));
@@ -397,7 +434,10 @@ pub enum Polygon<T> {
     Quad(Quad<T>),
 }
 
-impl<T, U> MapPrimitiveInto<T, U> for Polygon<T> {
+impl<T, U> MapPrimitiveInto<T, U> for Polygon<T>
+    where T: Clone,
+          U: Clone
+{
     type Output = Polygon<U>;
 
     fn map_points_into<F>(self, f: F) -> Self::Output
@@ -410,11 +450,13 @@ impl<T, U> MapPrimitiveInto<T, U> for Polygon<T> {
     }
 }
 
-impl<T> Primitive<T> for Polygon<T>
+impl<T> Primitive for Polygon<T>
     where T: Clone
 {
+    type Point = T;
+
     fn into_points<F>(self, f: F)
-        where F: FnMut(T)
+        where F: FnMut(Self::Point)
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_points(f),
@@ -423,7 +465,7 @@ impl<T> Primitive<T> for Polygon<T>
     }
 
     fn into_lines<F>(self, f: F)
-        where F: FnMut(Line<T>)
+        where F: FnMut(Line<Self::Point>)
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_lines(f),
@@ -432,11 +474,11 @@ impl<T> Primitive<T> for Polygon<T>
     }
 }
 
-impl<T> Polygonal<T> for Polygon<T>
+impl<T> Polygonal for Polygon<T>
     where T: Clone
 {
     fn into_triangles<F>(self, f: F)
-        where F: FnMut(Triangle<T>)
+        where F: FnMut(Triangle<Self::Point>)
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_triangles(f),
