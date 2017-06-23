@@ -50,12 +50,6 @@ impl<T, U> ConjointPoints<U> for T
     }
 }
 
-fn map_conjoint_point<S, T>(source: &S, index: usize) -> T
-    where S: ConjointPointGenerator<T>
-{
-    source.conjoint_point(index)
-}
-
 pub trait PolygonGenerator {
     fn polygon_count(&self) -> usize;
 }
@@ -76,12 +70,6 @@ impl<T, U> IndexPolygons<U> for T
     }
 }
 
-fn map_index_polygon<S, T>(source: &S, index: usize) -> T
-    where S: IndexPolygonGenerator<T>
-{
-    source.index_polygon(index)
-}
-
 pub trait TexturePolygonGenerator<T>: PolygonGenerator {
     fn texture_polygon(&self, index: usize) -> T;
 }
@@ -97,9 +85,21 @@ impl<T, U> TexturePolygons<U> for T
         Generate::new(self, 0..self.polygon_count(), map_texture_polygon)
     }
 }
+
+fn map_conjoint_point<S, T>(source: &S, index: usize) -> T
+    where S: ConjointPointGenerator<T>
+{
+    source.conjoint_point(index)
+}
+
+fn map_index_polygon<S, T>(source: &S, index: usize) -> T
+    where S: IndexPolygonGenerator<T>
+{
+    source.index_polygon(index)
+}
+
 fn map_texture_polygon<S, T>(source: &S, index: usize) -> T
     where S: TexturePolygonGenerator<T>
 {
     source.texture_polygon(index)
 }
-

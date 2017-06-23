@@ -152,17 +152,8 @@ impl<I, P, T> TessellatePolygon<P, Polygon<T>> for I
 {
     fn subdivide(self, n: usize)
         -> Tessellate<Self, P, Polygon<T>, usize, Vec<Polygon<T>>, fn(P, usize) -> Vec<Polygon<T>>> {
-        Tessellate::new(self, n, map_subdivisions)
+        Tessellate::new(self, n, into_subdivisions)
     }
-}
-
-fn map_subdivisions<P, T>(polygon: P, n: usize) -> Vec<Polygon<T>>
-    where P: PolygonalExt<T>,
-          T: Clone + Interpolate
-{
-    let mut polygons = vec![];
-    polygon.into_subdivisions(n, |polygon| polygons.push(polygon));
-    polygons
 }
 
 pub trait TessellateQuad<T>: Sized {
@@ -179,11 +170,20 @@ impl<I, T> TessellateQuad<T> for I
         -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
                      fn(Quad<T>, ()) -> Vec<Triangle<T>>>
     {
-        Tessellate::new(self, (), map_tetrahedrons)
+        Tessellate::new(self, (), into_tetrahedrons)
     }
 }
 
-fn map_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
+fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<Polygon<T>>
+    where P: PolygonalExt<T>,
+          T: Clone + Interpolate
+{
+    let mut polygons = vec![];
+    polygon.into_subdivisions(n, |polygon| polygons.push(polygon));
+    polygons
+}
+
+fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
     where T: Clone + Interpolate
 {
     let mut triangles = vec![];
