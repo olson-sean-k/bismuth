@@ -1,6 +1,6 @@
 use OptionExt;
 use math::{IntoSpace, FPoint2, FPoint3, FScalar, FVector3, UScalar};
-use mesh::{self, DecomposePolygon, DecomposePrimitive, MapPrimitive, Triangle};
+use mesh::{self, MapPoints, Points, Triangle, Triangulate};
 use mesh::cube::FacePlane;
 use render::{Color, Index, MeshBuffer, ToMeshBuffer, Vertex};
 use super::space::{LogWidth, Spatial};

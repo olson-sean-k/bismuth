@@ -3,7 +3,7 @@ use std::iter::IntoIterator;
 use std::marker::PhantomData;
 
 use math::{self, FScalar};
-use super::primitive::{Polygon, Polygonal, Triangle, Quad};
+use super::primitive::{Polygon, Polygonal, Primitive, Triangle, Quad};
 
 pub struct Tessellate<I, P, Q, D, R, F>
     where D: Copy,
@@ -60,24 +60,23 @@ pub trait Interpolate: math::Interpolate<FScalar> {}
 
 impl<T> Interpolate for T where T: math::Interpolate<FScalar> {}
 
-pub trait PolygonalExt: Polygonal
+pub trait IntoSubdivisions: Polygonal
     where Self::Point: Clone + Interpolate
 {
-    fn into_subdivisions<F>(self, n: usize, f: F) where F: FnMut(Polygon<Self::Point>);
+    fn into_subdivisions<F>(self, n: usize, f: F) where F: FnMut(Self);
 }
 
-pub trait QuadExt: Polygonal
+pub trait IntoTetrahedrons: Polygonal
     where Self::Point: Clone + Interpolate
 {
     fn into_tetrahedrons<F>(self, f: F) where F: FnMut(Triangle<Self::Point>);
 }
 
-impl<T> PolygonalExt for Triangle<T>
+impl<T> IntoSubdivisions for Triangle<T>
     where T: Clone + Interpolate
 {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn into_subdivisions<F>(self, n: usize, mut f: F)
-        where F: FnMut(Polygon<T>)
+        where F: FnMut(Self)
     {
         for triangle in n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
@@ -85,16 +84,16 @@ impl<T> PolygonalExt for Triangle<T>
             vec![Triangle::new(b.clone(), ac.clone(), a),
                  Triangle::new(c, ac, b)]
         }) {
-            f(Polygon::Triangle(triangle));
+            f(triangle);
         }
     }
 }
 
-impl<T> PolygonalExt for Quad<T>
+impl<T> IntoSubdivisions for Quad<T>
     where T: Clone + Interpolate
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
-        where F: FnMut(Polygon<T>)
+        where F: FnMut(Self)
     {
         for quad in n_map_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
@@ -108,12 +107,12 @@ impl<T> PolygonalExt for Quad<T>
                  Quad::new(ac.clone(), bc, c, cd.clone()),
                  Quad::new(da, ac, cd, d)]
         }) {
-            f(Polygon::Quad(quad));
+            f(quad);
         }
     }
 }
 
-impl<T> QuadExt for Quad<T>
+impl<T> IntoTetrahedrons for Quad<T>
     where T: Clone + Interpolate
 {
     fn into_tetrahedrons<F>(self, mut f: F)
@@ -128,41 +127,84 @@ impl<T> QuadExt for Quad<T>
     }
 }
 
-impl<T> PolygonalExt for Polygon<T>
+impl<T> IntoSubdivisions for Polygon<T>
     where T: Clone + Interpolate
 {
-    fn into_subdivisions<F>(self, n: usize, f: F)
-        where F: FnMut(Polygon<T>)
+    fn into_subdivisions<F>(self, n: usize, mut f: F)
+        where F: FnMut(Self)
     {
         match self {
-            Polygon::Triangle(triangle) => triangle.into_subdivisions(n, f),
-            Polygon::Quad(quad) => quad.into_subdivisions(n, f),
+            Polygon::Triangle(triangle) => {
+                triangle.into_subdivisions(n, |triangle| f(triangle.into()));
+            }
+            Polygon::Quad(quad) => { quad.into_subdivisions(n, |quad| f(quad.into())); }
         }
     }
 }
 
-pub trait TessellatePolygon<P, Q>: Sized {
-    fn subdivide(self, n: usize) -> Tessellate<Self, P, Q, usize, Vec<Q>, fn(P, usize) -> Vec<Q>>;
+pub trait Points<P>: Sized
+    where P: Primitive
+{
+    fn points(self)
+        -> Tessellate<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
 }
 
-impl<I, P, T> TessellatePolygon<P, Polygon<T>> for I
+impl<I, T, P> Points<P> for I
     where I: Iterator<Item = P>,
-          T: Clone + Interpolate,
-          P: PolygonalExt<Point = T>
+          P: Primitive<Point = T>,
+          T: Clone
 {
-    fn subdivide(self, n: usize)
-        -> Tessellate<Self, P, Polygon<T>, usize, Vec<Polygon<T>>, fn(P, usize) -> Vec<Polygon<T>>> {
+    fn points(self)
+        -> Tessellate<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>
+    {
+        Tessellate::new(self, (), into_points)
+    }
+}
+
+pub trait Triangulate<P>: Sized
+    where P: Polygonal
+{
+    fn triangulate(self)
+        -> Tessellate<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
+                      fn(P, ()) -> Vec<Triangle<P::Point>>>;
+}
+
+impl<I, T, P> Triangulate<P> for I
+    where I: Iterator<Item = P>,
+          P: Polygonal<Point = T>,
+          T: Clone
+{
+    fn triangulate(self)
+        -> Tessellate<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
+                      fn(P, ()) -> Vec<Triangle<P::Point>>>
+    {
+        Tessellate::new(self, (), into_triangles)
+    }
+}
+
+pub trait Subdivide<P>: Sized
+    where P: Polygonal
+{
+    fn subdivide(self, n: usize) -> Tessellate<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>>;
+}
+
+impl<I, T, P> Subdivide<P> for I
+    where I: Iterator<Item = P>,
+          P: IntoSubdivisions<Point = T>,
+          T: Clone + Interpolate
+{
+    fn subdivide(self, n: usize) -> Tessellate<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>> {
         Tessellate::new(self, n, into_subdivisions)
     }
 }
 
-pub trait TessellateQuad<T>: Sized {
+pub trait Tetrahedrons<T>: Sized {
     fn tetrahedrons(self)
         -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
                      fn(Quad<T>, ()) -> Vec<Triangle<T>>>;
 }
 
-impl<I, T> TessellateQuad<T> for I
+impl<I, T> Tetrahedrons<T> for I
     where I: Iterator<Item = Quad<T>>,
           T: Clone + Interpolate
 {
@@ -174,8 +216,26 @@ impl<I, T> TessellateQuad<T> for I
     }
 }
 
-fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<Polygon<T>>
-    where P: PolygonalExt<Point = T>,
+fn into_points<P, T>(primitive: P, _: ()) -> Vec<T>
+    where P: Primitive<Point = T>,
+          T: Clone
+{
+    let mut points = vec![];
+    primitive.into_points(|point| points.push(point));
+    points
+}
+
+fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
+    where P: Polygonal<Point = T>,
+          T: Clone
+{
+    let mut triangles = vec![];
+    polygon.into_triangles(|triangle| triangles.push(triangle));
+    triangles
+}
+
+fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<P>
+    where P: IntoSubdivisions<Point = T>,
           T: Clone + Interpolate
 {
     let mut polygons = vec![];

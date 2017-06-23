@@ -2,7 +2,7 @@ use nalgebra::{Point2, Point3, Scalar};
 
 use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, Generate, PolygonGenerator,
                       TexturePolygonGenerator};
-use super::primitive::{MapPrimitiveInto, Quad};
+use super::primitive::{MapPrimitive, Quad};
 
 pub trait Unit: Scalar {
     fn unit_radius() -> (Self, Self);
@@ -100,7 +100,7 @@ impl<T> Cube<T>
     }
 
     fn face(&self, index: usize) -> Quad<Point3<T>> {
-        index_face(index).map_points_into(|index| self.point(index))
+        index_face(index).map_primitive(|index| self.point(index))
     }
 }
 
