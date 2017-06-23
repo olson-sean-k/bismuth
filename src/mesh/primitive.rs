@@ -53,8 +53,7 @@ impl<I, T, U, P, Q> MapPrimitive<T, U> for I
 pub struct Map<I, T, U, F> {
     primitives: I,
     f: F,
-    phantom_t: PhantomData<T>,
-    phantom_u: PhantomData<U>,
+    phantom: PhantomData<(T, U)>,
 }
 
 impl<I, T, U, F> Map<I, T, U, F> {
@@ -62,8 +61,7 @@ impl<I, T, U, F> Map<I, T, U, F> {
         Map {
             primitives: primitives,
             f: f,
-            phantom_t: PhantomData,
-            phantom_u: PhantomData,
+            phantom: PhantomData,
         }
     }
 }

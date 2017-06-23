@@ -13,7 +13,7 @@ pub struct UVSphere<T>
 {
     nu: usize, // Meridians.
     nv: usize, // Parallels.
-    phantom_t: PhantomData<T>,
+    phantom: PhantomData<T>,
 }
 
 impl<T> UVSphere<T>
@@ -25,7 +25,7 @@ impl<T> UVSphere<T>
         UVSphere {
             nu: nu,
             nv: nv,
-            phantom_t: PhantomData,
+            phantom: PhantomData,
         }
     }
 
