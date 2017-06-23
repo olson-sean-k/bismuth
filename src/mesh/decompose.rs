@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use math::{self, FScalar};
 use super::primitive::{Polygon, Polygonal, Primitive, Triangle, Quad};
 
-pub struct Tessellate<I, P, Q, D, R, F>
+pub struct Decompose<I, P, Q, D, R, F>
     where D: Copy,
           F: Fn(P, D) -> R,
           R: IntoIterator<Item = Q>
@@ -17,13 +17,13 @@ pub struct Tessellate<I, P, Q, D, R, F>
     phantom: PhantomData<(P, R)>,
 }
 
-impl<I, P, Q, D, R, F> Tessellate<I, P, Q, D, R, F>
+impl<I, P, Q, D, R, F> Decompose<I, P, Q, D, R, F>
     where D: Copy,
           F: Fn(P, D) -> R,
           R: IntoIterator<Item = Q>
 {
     pub(super) fn new(input: I, parameter: D, f: F) -> Self {
-        Tessellate {
+        Decompose {
             input: input,
             output: VecDeque::new(),
             parameter: parameter,
@@ -33,7 +33,7 @@ impl<I, P, Q, D, R, F> Tessellate<I, P, Q, D, R, F>
     }
 }
 
-impl<I, P, Q, D, R, F> Iterator for Tessellate<I, P, Q, D, R, F>
+impl<I, P, Q, D, R, F> Iterator for Decompose<I, P, Q, D, R, F>
     where I: Iterator<Item = P>,
           D: Copy,
           F: Fn(P, D) -> R,
@@ -146,7 +146,7 @@ pub trait Points<P>: Sized
     where P: Primitive
 {
     fn points(self)
-        -> Tessellate<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
+        -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
 }
 
 impl<I, T, P> Points<P> for I
@@ -155,9 +155,9 @@ impl<I, T, P> Points<P> for I
           T: Clone
 {
     fn points(self)
-        -> Tessellate<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>
+        -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>
     {
-        Tessellate::new(self, (), into_points)
+        Decompose::new(self, (), into_points)
     }
 }
 
@@ -165,7 +165,7 @@ pub trait Triangulate<P>: Sized
     where P: Polygonal
 {
     fn triangulate(self)
-        -> Tessellate<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
+        -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
                       fn(P, ()) -> Vec<Triangle<P::Point>>>;
 }
 
@@ -175,17 +175,17 @@ impl<I, T, P> Triangulate<P> for I
           T: Clone
 {
     fn triangulate(self)
-        -> Tessellate<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
+        -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
                       fn(P, ()) -> Vec<Triangle<P::Point>>>
     {
-        Tessellate::new(self, (), into_triangles)
+        Decompose::new(self, (), into_triangles)
     }
 }
 
 pub trait Subdivide<P>: Sized
     where P: Polygonal
 {
-    fn subdivide(self, n: usize) -> Tessellate<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>>;
+    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>>;
 }
 
 impl<I, T, P> Subdivide<P> for I
@@ -193,14 +193,14 @@ impl<I, T, P> Subdivide<P> for I
           P: IntoSubdivisions<Point = T>,
           T: Clone + Interpolate
 {
-    fn subdivide(self, n: usize) -> Tessellate<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>> {
-        Tessellate::new(self, n, into_subdivisions)
+    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>> {
+        Decompose::new(self, n, into_subdivisions)
     }
 }
 
 pub trait Tetrahedrons<T>: Sized {
     fn tetrahedrons(self)
-        -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
+        -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
                      fn(Quad<T>, ()) -> Vec<Triangle<T>>>;
 }
 
@@ -209,10 +209,10 @@ impl<I, T> Tetrahedrons<T> for I
           T: Clone + Interpolate
 {
     fn tetrahedrons(self)
-        -> Tessellate<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
+        -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
                      fn(Quad<T>, ()) -> Vec<Triangle<T>>>
     {
-        Tessellate::new(self, (), into_tetrahedrons)
+        Decompose::new(self, (), into_tetrahedrons)
     }
 }
 
