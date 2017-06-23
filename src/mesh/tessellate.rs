@@ -10,8 +10,8 @@ pub struct Tessellate<I, P, Q, D, R, F>
           F: Fn(P, D) -> R,
           R: IntoIterator<Item = Q>
 {
-    source: I,
-    sink: VecDeque<Q>,
+    input: I,
+    output: VecDeque<Q>,
     parameter: D,
     f: F,
     phantom: PhantomData<(P, R)>,
@@ -22,10 +22,10 @@ impl<I, P, Q, D, R, F> Tessellate<I, P, Q, D, R, F>
           F: Fn(P, D) -> R,
           R: IntoIterator<Item = Q>
 {
-    pub(super) fn new(source: I, parameter: D, f: F) -> Self {
+    pub(super) fn new(input: I, parameter: D, f: F) -> Self {
         Tessellate {
-            source: source,
-            sink: VecDeque::new(),
+            input: input,
+            output: VecDeque::new(),
             parameter: parameter,
             f: f,
             phantom: PhantomData,
@@ -43,11 +43,11 @@ impl<I, P, Q, D, R, F> Iterator for Tessellate<I, P, Q, D, R, F>
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(polygon) = self.sink.pop_front() {
+            if let Some(polygon) = self.output.pop_front() {
                 return Some(polygon);
             }
-            if let Some(polygon) = self.source.next() {
-                self.sink.extend((self.f)(polygon, self.parameter));
+            if let Some(polygon) = self.input.next() {
+                self.output.extend((self.f)(polygon, self.parameter));
             }
             else {
                 return None;
