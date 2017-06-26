@@ -8,10 +8,7 @@ pub struct MeshBuffer {
 
 impl MeshBuffer {
     pub fn new() -> Self {
-        MeshBuffer {
-            vertices: vec![],
-            indices: vec![],
-        }
+        MeshBuffer::default()
     }
 
     pub fn extend<V, I>(&mut self, vertices: V, indices: I)
@@ -40,6 +37,15 @@ impl MeshBuffer {
 
     pub fn indices(&self) -> &[Index] {
         self.indices.as_slice()
+    }
+}
+
+impl Default for MeshBuffer {
+    fn default() -> Self {
+        MeshBuffer {
+            vertices: vec![],
+            indices: vec![],
+        }
     }
 }
 

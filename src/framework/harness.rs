@@ -34,11 +34,8 @@ where
         let mut stack = ActivityStack::new(f(&mut self.context));
         'main: loop {
             for event in self.context.renderer.window.poll_events() {
-                match event {
-                    Event::Closed => {
-                        break 'main;
-                    }
-                    _ => {}
+                if let Event::Closed = event {
+                    break 'main;
                 }
                 self.context.react(&event);
                 stack.react(&event);

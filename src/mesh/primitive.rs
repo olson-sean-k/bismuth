@@ -94,6 +94,9 @@ where
 {
     type Item = Q;
 
+    // `self.f` does not implement `Copy` or `Clone`, so it is wrapped in a
+    // closure to avoid attempting to move out of `self`.
+    #[allow(redundant_closure)]
     fn next(&mut self) -> Option<Self::Item> {
         self.primitives
             .next()

@@ -189,6 +189,7 @@ pub trait Triangulate<P>: Sized
 where
     P: Polygonal,
 {
+    #[allow(type_complexity)]
     fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>>;
 }
 
@@ -198,6 +199,7 @@ where
     P: Polygonal<Point = T>,
     T: Clone,
 {
+    #[allow(type_complexity)]
     fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>> {
         Decompose::new(self, (), into_triangles)
     }

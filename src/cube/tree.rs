@@ -74,23 +74,18 @@ impl Node {
         }
     }
 
-    fn to_orphan<'a>(
-        &'a self,
-    ) -> (
-        OrphanNode<&'a LeafPayload, &'a BranchPayload>,
-        Option<&'a NodeLink>,
-    ) {
+    fn as_orphan(&self) -> (OrphanNode<&LeafPayload, &BranchPayload>, Option<&NodeLink>) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(&leaf.payload), None),
             Node::Branch(ref branch) => (OrphanNode::Branch(&branch.payload), Some(&branch.nodes)),
         }
     }
 
-    fn to_orphan_mut<'a>(
-        &'a mut self,
+    fn as_orphan_mut(
+        &mut self,
     ) -> (
-        OrphanNode<&'a mut LeafPayload, &'a mut BranchPayload>,
-        Option<&'a mut NodeLink>,
+        OrphanNode<&mut LeafPayload, &mut BranchPayload>,
+        Option<&mut NodeLink>,
     ) {
         match *self {
             Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(&mut leaf.payload), None),
@@ -373,11 +368,11 @@ impl Root {
         }
     }
 
-    pub fn to_cube(&self) -> Cube<&Node> {
+    pub fn as_cube(&self) -> Cube<&Node> {
         Cube::new(&self.node, &self.partition, self.partition)
     }
 
-    pub fn to_cube_mut(&mut self) -> Cube<&mut Node> {
+    pub fn as_cube_mut(&mut self) -> Cube<&mut Node> {
         Cube::new(&mut self.node, &self.partition, self.partition)
     }
 }
@@ -413,8 +408,8 @@ where
         }
     }
 
-    pub fn to_orphan(&self) -> OrphanCube<&LeafPayload, &BranchPayload> {
-        let (orphan, _) = self.node.as_ref().to_orphan();
+    pub fn as_orphan(&self) -> OrphanCube<&LeafPayload, &BranchPayload> {
+        let (orphan, _) = self.node.as_ref().as_orphan();
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
@@ -422,7 +417,7 @@ where
     where
         F: FnMut(&Cube<&Node>),
     {
-        traverse!(cube => self.to_value(), |traversal| {
+        traverse!(cube => self.as_value(), |traversal| {
             f(traversal.peek());
             traversal.push();
         });
@@ -432,7 +427,7 @@ where
     where
         F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>])),
     {
-        trace!(cube => self.to_value(), |trace| {
+        trace!(cube => self.as_value(), |trace| {
             f(trace.peek());
             trace.push();
         });
@@ -476,7 +471,7 @@ where
     pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<(RayIntersection, Cube<&Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
-        traverse!(cube => self.to_value(), |traversal| {
+        traverse!(cube => self.as_value(), |traversal| {
             if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
@@ -502,7 +497,7 @@ where
         }
     }
 
-    fn to_value(&self) -> Cube<&Node> {
+    fn as_value(&self) -> Cube<&Node> {
         Cube::new(self.node.as_ref(), self.root, self.partition)
     }
 }
@@ -514,7 +509,7 @@ where
     pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
         let root = self.root;
         let partition = self.partition;
-        let (_, nodes) = self.node.as_ref().to_orphan();
+        let (_, nodes) = self.node.as_ref().as_orphan();
         (
             self,
             nodes.map(|nodes| {
@@ -528,7 +523,7 @@ where
     }
 
     pub fn into_orphan(self) -> OrphanCube<'a, &'b LeafPayload, &'b BranchPayload> {
-        let (orphan, _) = self.node.as_ref().to_orphan();
+        let (orphan, _) = self.node.as_ref().as_orphan();
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
@@ -548,8 +543,8 @@ impl<'a, N> Cube<'a, N>
 where
     N: AsRef<Node> + AsMut<Node>,
 {
-    pub fn to_orphan_mut(&mut self) -> OrphanCube<&mut LeafPayload, &mut BranchPayload> {
-        let (orphan, _) = self.node.as_mut().to_orphan_mut();
+    pub fn as_orphan_mut(&mut self) -> OrphanCube<&mut LeafPayload, &mut BranchPayload> {
+        let (orphan, _) = self.node.as_mut().as_orphan_mut();
         OrphanCube::new(orphan, self.root, self.partition)
     }
 
@@ -557,7 +552,7 @@ where
     where
         F: FnMut(&mut Cube<&mut Node>),
     {
-        traverse!(cube => self.to_value_mut(), |traversal| {
+        traverse!(cube => self.as_value_mut(), |traversal| {
             f(traversal.peek_mut());
             traversal.push();
         });
@@ -572,7 +567,7 @@ where
             ),
         ),
     {
-        trace!(cube => self.to_value_mut(), |trace| {
+        trace!(cube => self.as_value_mut(), |trace| {
             f(trace.peek_mut());
             trace.push();
         });
@@ -601,7 +596,7 @@ where
     ) -> Option<(RayIntersection, Cube<&mut Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
-        traverse!(cube => self.to_value_mut(), |traversal| {
+        traverse!(cube => self.as_value_mut(), |traversal| {
             if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
@@ -643,7 +638,7 @@ where
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
         let mut cubes = vec![];
-        traverse!(cube => self.to_value_mut(), |traversal| {
+        traverse!(cube => self.as_value_mut(), |traversal| {
             if traversal.peek().aabb().intersects(&cursor.aabb()) {
                 if traversal.peek().partition.width() == cursor.width() {
                     cubes.push(traversal.take());
@@ -711,7 +706,7 @@ where
         }
     }
 
-    fn to_value_mut(&mut self) -> Cube<&mut Node> {
+    fn as_value_mut(&mut self) -> Cube<&mut Node> {
         Cube::new(self.node.as_mut(), self.root, self.partition)
     }
 }
@@ -728,7 +723,7 @@ where
     ) {
         let root = self.root;
         let partition = self.partition;
-        let (orphan, nodes) = self.node.as_mut().to_orphan_mut();
+        let (orphan, nodes) = self.node.as_mut().as_orphan_mut();
         (
             OrphanCube::new(orphan, root, partition),
             nodes.map(|nodes| {
@@ -742,7 +737,7 @@ where
     }
 
     pub fn into_orphan_mut(self) -> OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload> {
-        let (orphan, _) = self.node.as_mut().to_orphan_mut();
+        let (orphan, _) = self.node.as_mut().as_orphan_mut();
         OrphanCube::new(orphan, self.root, self.partition)
     }
 

@@ -8,6 +8,7 @@ use math::{self, FRay3, FPoint3, FromSpace, FScalar, FVector3, LowerBound, Mask,
            UpperBound, UScalar, UVector3};
 
 /// Defines the bounds for `LogWidth` values.
+#[derive(Clone, Copy)]
 pub struct LogWidthRange;
 
 impl ClampedRange<u8> for LogWidthRange {
@@ -396,19 +397,20 @@ pub trait Spatial {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn index_at_point(point: &UPoint3, width: LogWidth) -> usize {
     let width = width.to_inner();
-    ((((point.x >> width) & UScalar::one()) << 0) |
+    (( (point.x >> width) & UScalar::one()      ) |
      (((point.y >> width) & UScalar::one()) << 1) |
      (((point.z >> width) & UScalar::one()) << 2)) as usize
 }
 
 /// Gets a vector to the origin of a subdivision in a tree at a given index and
 /// width.
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
     assert!(index < 8);
     let index = index as UScalar;
     let width = width.exp();
     UVector3::new(
-        ((index >> 0) & UScalar::one()) * width,
+        ( index       & UScalar::one()) * width,
         ((index >> 1) & UScalar::one()) * width,
         ((index >> 2) & UScalar::one()) * width,
     )

@@ -176,6 +176,7 @@ macro_rules! traverse {
         traverse!(buffer => cubes, |$t| $f)
     }};
     (buffer => $b:expr, | $t:ident | $f:block) => {{
+        #[allow(never_loop)]
         #[allow(unused_mut)]
         while let Some(cube) = $b.pop() {
             let mut $t = Traversal::new(&mut $b, cube);

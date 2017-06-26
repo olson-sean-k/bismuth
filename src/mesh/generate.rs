@@ -35,7 +35,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.range
             .next()
-            .map(|index| (self.f)(&self.generator, index))
+            .map(|index| (self.f)(self.generator, index))
     }
 }
 
@@ -45,14 +45,14 @@ pub trait ConjointPointGenerator<P> {
 }
 
 pub trait ConjointPoints<P>: Sized {
-    fn conjoint_points<'a>(&'a self) -> Generate<'a, Self, P>;
+    fn conjoint_points(&self) -> Generate<Self, P>;
 }
 
 impl<G, P> ConjointPoints<P> for G
 where
     G: ConjointPointGenerator<P>,
 {
-    fn conjoint_points<'a>(&'a self) -> Generate<'a, Self, P> {
+    fn conjoint_points(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.conjoint_point_count(), map_conjoint_point)
     }
 }
@@ -66,14 +66,14 @@ pub trait IndexPolygonGenerator<P>: PolygonGenerator {
 }
 
 pub trait IndexPolygons<P>: Sized {
-    fn index_polygons<'a>(&'a self) -> Generate<'a, Self, P>;
+    fn index_polygons(&self) -> Generate<Self, P>;
 }
 
 impl<G, P> IndexPolygons<P> for G
 where
     G: IndexPolygonGenerator<P> + PolygonGenerator,
 {
-    fn index_polygons<'a>(&'a self) -> Generate<'a, Self, P> {
+    fn index_polygons(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.polygon_count(), map_index_polygon)
     }
 }
@@ -83,14 +83,14 @@ pub trait TexturePolygonGenerator<P>: PolygonGenerator {
 }
 
 pub trait TexturePolygons<P>: Sized {
-    fn texture_polygons<'a>(&'a self) -> Generate<'a, Self, P>;
+    fn texture_polygons(&self) -> Generate<Self, P>;
 }
 
 impl<G, P> TexturePolygons<P> for G
 where
     G: PolygonGenerator + TexturePolygonGenerator<P>,
 {
-    fn texture_polygons<'a>(&'a self) -> Generate<'a, Self, P> {
+    fn texture_polygons(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.polygon_count(), map_texture_polygon)
     }
 }

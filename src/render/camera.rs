@@ -96,17 +96,14 @@ impl Camera {
 
 impl React for Camera {
     fn react(&mut self, event: &Event) {
-        match *event {
-            Event::Resized(width, height) => {
-                let ratio = (width as f32) / (height as f32);
-                self.projection = Perspective3::new(
-                    ratio,
-                    self.projection.fovy(),
-                    self.projection.znear(),
-                    self.projection.zfar(),
-                );
-            }
-            _ => {}
+        if let Event::Resized(width, height) = *event {
+            let ratio = (width as f32) / (height as f32);
+            self.projection = Perspective3::new(
+                ratio,
+                self.projection.fovy(),
+                self.projection.znear(),
+                self.projection.zfar(),
+            );
         }
     }
 }

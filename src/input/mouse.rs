@@ -33,6 +33,12 @@ pub struct Mouse {
 
 impl Mouse {
     pub fn new() -> Self {
+        Mouse::default()
+    }
+}
+
+impl Default for Mouse {
+    fn default() -> Self {
         Mouse {
             state: MouseState::new(),
             snapshot: MouseState::new(),

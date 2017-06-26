@@ -10,7 +10,7 @@ impl<'a, 'b> ToMeshBuffer for Cube<'a, &'b Node> {
     fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
         for cube in self.iter() {
-            buffer.append(&mut cube.to_orphan().to_mesh_buffer());
+            buffer.append(&mut cube.as_orphan().to_mesh_buffer());
         }
         buffer
     }

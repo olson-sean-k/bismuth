@@ -15,6 +15,12 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new() -> Self {
+        Keyboard::default()
+    }
+}
+
+impl Default for Keyboard {
+    fn default() -> Self {
         Keyboard {
             state: KeyboardState::new(),
             snapshot: KeyboardState::new(),
@@ -48,20 +54,17 @@ impl Input for Keyboard {
 
 impl React for Keyboard {
     fn react(&mut self, event: &Event) {
-        match *event {
-            Event::KeyboardInput(state, _, key) => {
-                if let Some(key) = key {
-                    match state {
-                        ElementState::Pressed => {
-                            self.state.keys.insert(key);
-                        }
-                        ElementState::Released => {
-                            self.state.keys.remove(&key);
-                        }
+        if let Event::KeyboardInput(state, _, key) = *event {
+            if let Some(key) = key {
+                match state {
+                    ElementState::Pressed => {
+                        self.state.keys.insert(key);
+                    }
+                    ElementState::Released => {
+                        self.state.keys.remove(&key);
                     }
                 }
             }
-            _ => {}
         }
     }
 }

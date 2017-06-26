@@ -31,7 +31,7 @@ where
         }
     }
 
-    pub fn polygons<'a>(&'a self) -> Generate<'a, Self, Polygon<Point3<T>>> {
+    pub fn polygons(&self) -> Generate<Self, Polygon<Point3<T>>> {
         Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 

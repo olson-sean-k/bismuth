@@ -132,7 +132,7 @@ where
         self.data.camera = transform.camera;
         self.data.model = transform.model;
         self.encoder
-            .update_buffer(&self.data.transform, &[transform.clone()], 0)
+            .update_buffer(&self.data.transform, &[*transform], 0)
             .map_err(|_| {
                 // TODO: Coerce and expose the `UpdateError`.
                 RenderError::Unknown
@@ -170,14 +170,11 @@ where
     R: MetaRenderer,
 {
     fn react(&mut self, event: &Event) {
-        match *event {
+        if let Event::Resized(..) = *event {
             // TODO: Compare the dimensions from the event to the previous
             //       dimensions of the window and only update the frame buffer
             //       view if they differ. This should avoid spurious updates.
-            Event::Resized(..) => {
-                self.update_frame_buffer_view();
-            }
-            _ => {}
+            self.update_frame_buffer_view();
         }
     }
 }

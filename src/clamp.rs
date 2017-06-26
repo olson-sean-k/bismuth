@@ -12,6 +12,7 @@ pub trait ClampedRange<T> {
     fn min_value() -> T;
 }
 
+#[derive(Clone, Copy)]
 pub struct Clamped<T, R>(T, PhantomData<R>)
 where
     T: Copy + Num + PartialOrd,
@@ -53,28 +54,11 @@ where
 impl<T, R> Clamp<Clamped<T, R>> for Clamped<T, R>
 where
     T: Copy + Num + PartialOrd,
-    R: ClampedRange<T>,
+    R: ClampedRange<T> + Copy,
 {
     fn clamp(&self, min: Self, max: Self) -> Self {
         nalgebra::clamp(*self, min, max)
     }
-}
-
-impl<T, R> Clone for Clamped<T, R>
-where
-    T: Copy + Num + PartialOrd,
-    R: ClampedRange<T>,
-{
-    fn clone(&self) -> Self {
-        Clamped(self.0, PhantomData)
-    }
-}
-
-impl<T, R> Copy for Clamped<T, R>
-where
-    T: Copy + Num + PartialOrd,
-    R: ClampedRange<T>,
-{
 }
 
 impl<T, R> From<T> for Clamped<T, R>

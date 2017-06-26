@@ -1,3 +1,5 @@
+#![allow(unknown_lints)] // Allow clippy lints.
+
 extern crate alga;
 extern crate boolinator;
 #[macro_use]

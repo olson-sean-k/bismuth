@@ -3,6 +3,7 @@ use math::{Clamp, FPoint3, FromSpace, FScalar, UPoint3};
 use super::space::Axis;
 
 /// Defines the bounds for `Offset` values.
+#[derive(Clone, Copy)]
 pub struct OffsetRange;
 
 impl ClampedRange<u8> for OffsetRange {

@@ -82,11 +82,11 @@ where
         Cube::new(lower, upper)
     }
 
-    pub fn polygons<'a>(&'a self) -> Generate<'a, Self, Quad<Point3<T>>> {
+    pub fn polygons(&self) -> Generate<Self, Quad<Point3<T>>> {
         Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 
-    pub fn plane_polygons<'a>(&'a self) -> Generate<'a, Self, Quad<FacePlane>> {
+    pub fn plane_polygons(&self) -> Generate<Self, Quad<FacePlane>> {
         Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
     }
 
@@ -175,12 +175,9 @@ fn texture_face(index: usize) -> Quad<Point2<f32>> {
     let ll = Point2::new(0.0, 0.0);
     let lu = Point2::new(0.0, 1.0);
     match index {
-        0 => Quad::new(uu, ul, ll, lu), // front
+        0 | 4 | 5 => Quad::new(uu, ul, ll, lu), // front | bottom | back
         1 => Quad::new(ul, ll, lu, uu), // right
-        2 => Quad::new(lu, uu, ul, ll), // top
-        3 => Quad::new(lu, uu, ul, ll), // left
-        4 => Quad::new(uu, ul, ll, lu), // bottom
-        5 => Quad::new(uu, ul, ll, lu), // back
+        2 | 3 => Quad::new(lu, uu, ul, ll), // top | left
         _ => panic!(),
     }
 }

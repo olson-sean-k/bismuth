@@ -8,7 +8,6 @@ use super::space::{AABB, LogWidth, Partition, Spatial};
 ///
 /// A `Cursor` is essentially a bounding box with an associated width
 /// (granularity) used to isolate cubes in a tree.
-#[derive(Clone)]
 pub struct Cursor {
     /// Location of the `Cursor`. Being in the `UScalar` space, `Cursor`s must
     /// extend positively from their origin. The origin is aligned to the width
@@ -27,9 +26,9 @@ pub struct Cursor {
 impl Cursor {
     fn new(origin: &UPoint3, width: LogWidth, span: &UVector3) -> Self {
         Cursor {
-            origin: origin.clone(),
+            origin: *origin,
             width: width,
-            span: span.clone(),
+            span: *span,
         }
     }
 
