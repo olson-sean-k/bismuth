@@ -24,15 +24,25 @@ pub mod render;
 pub mod resource;
 
 pub trait OptionExt<T> {
-    fn and_if<F>(self, f: F) -> Self where F: Fn(&T) -> bool;
+    fn and_if<F>(self, f: F) -> Self
+    where
+        F: Fn(&T) -> bool;
 }
 
 impl<T> OptionExt<T> for Option<T> {
     fn and_if<F>(mut self, f: F) -> Self
-        where F: Fn(&T) -> bool
+    where
+        F: Fn(&T) -> bool,
     {
         match self.take() {
-            Some(value) => if f(&value) { Some(value) } else { None },
+            Some(value) => {
+                if f(&value) {
+                    Some(value)
+                }
+                else {
+                    None
+                }
+            }
             _ => None,
         }
     }

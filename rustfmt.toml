@@ -1,4 +1,2 @@
-write_mode = "Overwrite"
-# Does not properly format `match`.
-# https://github.com/rust-lang-nursery/rustfmt/issues/1377
 control_brace_style = "ClosingNextLine"
+write_mode = "Overwrite"

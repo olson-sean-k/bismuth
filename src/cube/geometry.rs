@@ -114,7 +114,9 @@ impl Geometry {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.iter().any(|axis| axis.iter().all(|edge| edge.length() == 0))
+        self.0
+            .iter()
+            .any(|axis| axis.iter().all(|edge| edge.length() == 0))
     }
 
     pub fn map_unit_cube_point(&self, unit: &UPoint3) -> FPoint3 {

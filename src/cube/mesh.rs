@@ -17,8 +17,9 @@ impl<'a, 'b> ToMeshBuffer for Cube<'a, &'b Node> {
 }
 
 impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>,
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     fn to_mesh_buffer(&self) -> MeshBuffer {
         let mut buffer = MeshBuffer::new();
@@ -26,30 +27,29 @@ impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
             let origin: FVector3 = self.partition().origin().coords.into_space();
             let width = self.partition().width().exp() as FScalar;
             let ucube = mesh::cube::Cube::<UScalar>::with_unit_width();
-            buffer.extend(ucube.polygons()
-                              .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
-                              .map_points(|point| (point * width) + origin)
-                              .triangulate()
-                              .zip(ucube.plane_polygons().triangulate())
-                              .map(|(position, plane)| {
-                                  let color = Color::white();
-                                  Triangle::new(
-                                      Vertex::new(&position.a,
-                                                  &planar_uv(plane.a, &position.a),
-                                                  &color),
-                                      Vertex::new(&position.b,
-                                                  &planar_uv(plane.b, &position.b),
-                                                  &color),
-                                      Vertex::new(&position.c,
-                                                  &planar_uv(plane.c, &position.c),
-                                                  &color))
-                              })
-                              .points(),
-                          ucube.polygons()
-                              .triangulate()
-                              .points()
-                              .enumerate()
-                              .map(|(index, _)| index as Index));
+            buffer.extend(
+                ucube
+                    .polygons()
+                    .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
+                    .map_points(|point| (point * width) + origin)
+                    .triangulate()
+                    .zip(ucube.plane_polygons().triangulate())
+                    .map(|(position, plane)| {
+                        let color = Color::white();
+                        Triangle::new(
+                            Vertex::new(&position.a, &planar_uv(plane.a, &position.a), &color),
+                            Vertex::new(&position.b, &planar_uv(plane.b, &position.b), &color),
+                            Vertex::new(&position.c, &planar_uv(plane.c, &position.c), &color),
+                        )
+                    })
+                    .points(),
+                ucube
+                    .polygons()
+                    .triangulate()
+                    .points()
+                    .enumerate()
+                    .map(|(index, _)| index as Index),
+            );
         }
         buffer
     }

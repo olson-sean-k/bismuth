@@ -44,28 +44,33 @@ impl Cursor {
 
     pub fn from_point_to_point(start: &UPoint3, end: &UPoint3, width: LogWidth) -> Self {
         let (start, end) = {
-            (Partition::at_point(&start.lower_bound(end), width),
-             Partition::at_point(&start.upper_bound(end), width))
+            (
+                Partition::at_point(&start.lower_bound(end), width),
+                Partition::at_point(&start.upper_bound(end), width),
+            )
         };
         let span = (end.origin() - start.origin()) / width.exp();
         Cursor::new(start.origin(), width, &span)
     }
 
     pub fn at_cube<C>(cube: &C) -> Self
-        where C: Spatial
+    where
+        C: Spatial,
     {
         Cursor::at_point(cube.partition().origin(), cube.partition().width())
     }
 
     pub fn at_cube_with_span<C>(cube: &C, span: &UVector3) -> Self
-        where C: Spatial
+    where
+        C: Spatial,
     {
         Cursor::at_point_with_span(cube.partition().origin(), cube.partition().width(), span)
     }
 
     pub fn from_cube_to_cube<S, E>(start: &S, end: &E) -> Self
-        where S: Spatial,
-              E: Spatial
+    where
+        S: Spatial,
+        E: Spatial,
     {
         let width = cmp::min(start.partition().width(), end.partition().width());
         let aabb = start.aabb().union(&end.aabb());

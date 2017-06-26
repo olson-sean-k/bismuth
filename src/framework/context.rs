@@ -3,16 +3,15 @@ use glutin::Window;
 use event::{Event, React};
 use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
 
-pub trait WindowView: AspectRatio {
-}
+pub trait WindowView: AspectRatio {}
 
 impl<T> WindowView for T
-    where T: AspectRatio
+where
+    T: AspectRatio,
 {
 }
 
-pub trait State: Sized + React {
-}
+pub trait State: Sized + React {}
 
 pub trait ContextView {
     type State: State;
@@ -32,23 +31,26 @@ pub trait UpdateContextView: ContextView {
 //       type into framework and client code. (It's unfortunate that activities
 //       must provide a `MetaRenderer` type parameter.)
 pub trait RenderContextView<R>: ContextView
-    where R: MetaRenderer
+where
+    R: MetaRenderer,
 {
     fn renderer(&self) -> &Renderer<R>;
     fn renderer_mut(&mut self) -> &mut Renderer<R>;
 }
 
 pub struct Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     pub state: T,
     pub renderer: Renderer<R>,
 }
 
 impl<T, R> Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     pub fn new(state: T, renderer: Renderer<R>) -> Self {
         Context {
@@ -59,7 +61,8 @@ impl<T, R> Context<T, R>
 }
 
 impl<T> Context<T, GlutinRenderer>
-    where T: State
+where
+    T: State,
 {
     pub fn from_glutin_window(state: T, window: Window) -> Self {
         Context::new(state, Renderer::from_glutin_window(window))
@@ -67,8 +70,9 @@ impl<T> Context<T, GlutinRenderer>
 }
 
 impl<T, R> ContextView for Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     type State = T;
 
@@ -82,8 +86,9 @@ impl<T, R> ContextView for Context<T, R>
 }
 
 impl<T, R> UpdateContextView for Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
@@ -91,8 +96,9 @@ impl<T, R> UpdateContextView for Context<T, R>
 }
 
 impl<T, R> RenderContextView<R> for Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn renderer(&self) -> &Renderer<R> {
         &self.renderer
@@ -104,8 +110,9 @@ impl<T, R> RenderContextView<R> for Context<T, R>
 }
 
 impl<T, R> React for Context<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn react(&mut self, event: &Event) {
         self.state.react(event);

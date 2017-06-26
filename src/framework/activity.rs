@@ -7,8 +7,9 @@ use render::MetaRenderer;
 use super::context::{RenderContextView, State, UpdateContextView};
 
 pub enum Transition<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     None,
     Push(BoxActivity<T, R>),
@@ -17,8 +18,9 @@ pub enum Transition<T, R>
 }
 
 impl<T, R> Transition<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn is_abort(&self) -> bool {
         match *self {
@@ -33,8 +35,9 @@ pub type UpdateResult<T, R> = Result<Transition<T, R>, ActivityError>;
 pub type RenderResult = Result<(), ActivityError>;
 
 pub trait Activity<T, R>: React
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     // TODO: It could be useful to extract `update` and `render` into generic
     //       traits of their own, but this would require associated types and
@@ -48,39 +51,47 @@ pub trait Activity<T, R>: React
 }
 
 pub struct ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     stack: Vec<BoxActivity<T, R>>,
 }
 
 impl<T, R> ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     pub fn new(activity: BoxActivity<T, R>) -> Self {
-        ActivityStack {
-            stack: vec![activity],
-        }
+        ActivityStack { stack: vec![activity] }
     }
 
     pub fn update<C>(&mut self, context: &mut C) -> Result<bool, ActivityStackError>
-        where C: UpdateContextView<State = T>
+    where
+        C: UpdateContextView<State = T>,
     {
-        let transition = self.peek_mut().map_or(
-            Ok(Transition::Abort), |activity| activity.update(context))?;
+        let transition = self.peek_mut()
+            .map_or(Ok(Transition::Abort), |activity| activity.update(context))?;
         let signal = !transition.is_abort();
         match transition {
-            Transition::Push(activity) => { self.push(activity); }
-            Transition::Pop => { self.pop(); }
-            Transition::Abort => { self.abort(); }
+            Transition::Push(activity) => {
+                self.push(activity);
+            }
+            Transition::Pop => {
+                self.pop();
+            }
+            Transition::Abort => {
+                self.abort();
+            }
             _ => {}
         }
         Ok(signal)
     }
 
     pub fn render<C>(&mut self, context: &mut C) -> Result<(), ActivityStackError>
-        where C: RenderContextView<R, State = T>
+    where
+        C: RenderContextView<R, State = T>,
     {
         self.peek_mut().map_or(Ok(()), |activity| {
             activity.render(context).map_err(|error| error.into())
@@ -88,7 +99,8 @@ impl<T, R> ActivityStack<T, R>
     }
 
     fn peek_mut(&mut self) -> Option<&mut Activity<T, R>> {
-        if let Some(activity) = self.stack.last_mut() { // Cannot use `map`.
+        if let Some(activity) = self.stack.last_mut() {
+            // Cannot use `map`.
             Some(activity.as_mut())
         }
         else {
@@ -104,12 +116,15 @@ impl<T, R> ActivityStack<T, R>
     }
 
     fn pop(&mut self) -> bool {
-        self.stack.pop().map(|mut activity| {
-            activity.stop();
-            if let Some(activity) = self.peek_mut() {
-                activity.resume()
-            }
-        }).is_some()
+        self.stack
+            .pop()
+            .map(|mut activity| {
+                activity.stop();
+                if let Some(activity) = self.peek_mut() {
+                    activity.resume()
+                }
+            })
+            .is_some()
     }
 
     fn abort(&mut self) {
@@ -118,8 +133,9 @@ impl<T, R> ActivityStack<T, R>
 }
 
 impl<T, R> Drop for ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn drop(&mut self) {
         self.abort();
@@ -127,8 +143,9 @@ impl<T, R> Drop for ActivityStack<T, R>
 }
 
 impl<T, R> React for ActivityStack<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     fn react(&mut self, event: &Event) {
         if let Some(activity) = self.peek_mut() {

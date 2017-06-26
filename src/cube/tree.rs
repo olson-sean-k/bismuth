@@ -74,21 +74,31 @@ impl Node {
         }
     }
 
-    fn to_orphan<'a>(&'a self)
-                     -> (OrphanNode<&'a LeafPayload, &'a BranchPayload>, Option<&'a NodeLink>) {
+    fn to_orphan<'a>(
+        &'a self,
+    ) -> (
+        OrphanNode<&'a LeafPayload, &'a BranchPayload>,
+        Option<&'a NodeLink>,
+    ) {
         match *self {
             Node::Leaf(ref leaf) => (OrphanNode::Leaf(&leaf.payload), None),
             Node::Branch(ref branch) => (OrphanNode::Branch(&branch.payload), Some(&branch.nodes)),
         }
     }
 
-    fn to_orphan_mut<'a>
-        (&'a mut self)
-         -> (OrphanNode<&'a mut LeafPayload, &'a mut BranchPayload>, Option<&'a mut NodeLink>) {
+    fn to_orphan_mut<'a>(
+        &'a mut self,
+    ) -> (
+        OrphanNode<&'a mut LeafPayload, &'a mut BranchPayload>,
+        Option<&'a mut NodeLink>,
+    ) {
         match *self {
             Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(&mut leaf.payload), None),
             Node::Branch(ref mut branch) => {
-                (OrphanNode::Branch(&mut branch.payload), Some(&mut branch.nodes))
+                (
+                    OrphanNode::Branch(&mut branch.payload),
+                    Some(&mut branch.nodes),
+                )
             }
         }
     }
@@ -105,14 +115,18 @@ impl Node {
 
     fn subdivide(&mut self) -> Result<(), SubdivideError> {
         if let Node::Leaf(..) = *self {
-            *self = Node::Branch(BranchNode::new(Box::new([self.clone(),
-                                                           self.clone(),
-                                                           self.clone(),
-                                                           self.clone(),
-                                                           self.clone(),
-                                                           self.clone(),
-                                                           self.clone(),
-                                                           self.clone()])));
+            *self = Node::Branch(BranchNode::new(Box::new(
+                [
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                    self.clone(),
+                ],
+            )));
             Ok(())
         }
         else {
@@ -143,16 +157,18 @@ impl Clone for Node {
 }
 
 pub enum OrphanNode<L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     Leaf(L),
     Branch(B),
 }
 
 impl<L, B> OrphanNode<L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     pub fn is_leaf(&self) -> bool {
         match *self {
@@ -185,8 +201,9 @@ impl<L, B> OrphanNode<L, B>
 }
 
 impl<L, B> OrphanNode<L, B>
-    where L: AsRef<LeafPayload> + AsMut<LeafPayload>,
-          B: AsRef<BranchPayload> + AsMut<BranchPayload>
+where
+    L: AsRef<LeafPayload> + AsMut<LeafPayload>,
+    B: AsRef<BranchPayload> + AsMut<BranchPayload>,
 {
     pub fn as_leaf_mut(&mut self) -> Option<&mut LeafPayload> {
         match *self {
@@ -280,14 +297,18 @@ impl BranchNode {
 
 impl Clone for BranchNode {
     fn clone(&self) -> Self {
-        BranchNode::new(Box::new([self.nodes[0].clone(),
-                                  self.nodes[1].clone(),
-                                  self.nodes[2].clone(),
-                                  self.nodes[3].clone(),
-                                  self.nodes[4].clone(),
-                                  self.nodes[5].clone(),
-                                  self.nodes[6].clone(),
-                                  self.nodes[7].clone()]))
+        BranchNode::new(Box::new(
+            [
+                self.nodes[0].clone(),
+                self.nodes[1].clone(),
+                self.nodes[2].clone(),
+                self.nodes[3].clone(),
+                self.nodes[4].clone(),
+                self.nodes[5].clone(),
+                self.nodes[6].clone(),
+                self.nodes[7].clone(),
+            ],
+        ))
     }
 }
 
@@ -372,7 +393,8 @@ impl Spatial for Root {
 }
 
 pub struct Cube<'a, N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     node: N,
     root: &'a Partition,
@@ -380,7 +402,8 @@ pub struct Cube<'a, N>
 }
 
 impl<'a, N> Cube<'a, N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     fn new(node: N, root: &'a Partition, partition: Partition) -> Self {
         Cube {
@@ -396,7 +419,8 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each<F>(&self, mut f: F)
-        where F: FnMut(&Cube<&Node>)
+    where
+        F: FnMut(&Cube<&Node>),
     {
         traverse!(cube => self.to_value(), |traversal| {
             f(traversal.peek());
@@ -405,7 +429,8 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_path<F>(&mut self, mut f: F)
-        where F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>]))
+    where
+        F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>])),
     {
         trace!(cube => self.to_value(), |trace| {
             f(trace.peek());
@@ -429,7 +454,11 @@ impl<'a, N> Cube<'a, N>
                     break;
                 }
             }
-            Some(Cube::new(node, self.root, Partition::at_point(&point, depth)))
+            Some(Cube::new(
+                node,
+                self.root,
+                Partition::at_point(&point, depth),
+            ))
         }
         else {
             None
@@ -438,9 +467,9 @@ impl<'a, N> Cube<'a, N>
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
         self.node.as_ref().as_branch().map_or(None, |branch| {
-            self.partition
-                .at_index(index)
-                .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
+            self.partition.at_index(index).map(|partition| {
+                Cube::new(&branch.nodes[index], self.root, partition)
+            })
         })
     }
 
@@ -479,20 +508,23 @@ impl<'a, N> Cube<'a, N>
 }
 
 impl<'a, 'b, N> Cube<'a, &'b N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
         let root = self.root;
         let partition = self.partition;
         let (_, nodes) = self.node.as_ref().to_orphan();
-        (self,
-         nodes.map(|nodes| {
-             let mut cubes = Vec::with_capacity(8);
-             for (index, node) in nodes.iter().enumerate() {
-                 cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
-             }
-             cubes
-         }))
+        (
+            self,
+            nodes.map(|nodes| {
+                let mut cubes = Vec::with_capacity(8);
+                for (index, node) in nodes.iter().enumerate() {
+                    cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
+                }
+                cubes
+            }),
+        )
     }
 
     pub fn into_orphan(self) -> OrphanCube<'a, &'b LeafPayload, &'b BranchPayload> {
@@ -513,7 +545,8 @@ impl<'a, 'b, N> Cube<'a, &'b N>
 }
 
 impl<'a, N> Cube<'a, N>
-    where N: AsRef<Node> + AsMut<Node>
+where
+    N: AsRef<Node> + AsMut<Node>,
 {
     pub fn to_orphan_mut(&mut self) -> OrphanCube<&mut LeafPayload, &mut BranchPayload> {
         let (orphan, _) = self.node.as_mut().to_orphan_mut();
@@ -521,7 +554,8 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_mut<F>(&mut self, mut f: F)
-        where F: FnMut(&mut Cube<&mut Node>)
+    where
+        F: FnMut(&mut Cube<&mut Node>),
     {
         traverse!(cube => self.to_value_mut(), |traversal| {
             f(traversal.peek_mut());
@@ -530,8 +564,13 @@ impl<'a, N> Cube<'a, N>
     }
 
     pub fn for_each_path_mut<F>(&mut self, mut f: F)
-        where F: FnMut((&mut Cube<&mut Node>,
-                        &mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>]))
+    where
+        F: FnMut(
+            (
+                &mut Cube<&mut Node>,
+                &mut [OrphanCube<&mut LeafPayload, &mut BranchPayload>],
+            ),
+        ),
     {
         trace!(cube => self.to_value_mut(), |trace| {
             f(trace.peek_mut());
@@ -547,18 +586,19 @@ impl<'a, N> Cube<'a, N>
         match *self.node.as_mut() {
             Node::Branch(ref mut branch) => {
                 let root = self.root;
-                self.partition
-                    .at_index(index)
-                    .map(move |partition| Cube::new(&mut branch.nodes[index], root, partition))
+                self.partition.at_index(index).map(move |partition| {
+                    Cube::new(&mut branch.nodes[index], root, partition)
+                })
             }
             _ => None,
         }
     }
 
-    pub fn at_ray_mut(&mut self,
-                      ray: &FRay3,
-                      width: LogWidth)
-                      -> Option<(RayIntersection, Cube<&mut Node>)> {
+    pub fn at_ray_mut(
+        &mut self,
+        ray: &FRay3,
+        width: LogWidth,
+    ) -> Option<(RayIntersection, Cube<&mut Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
         traverse!(cube => self.to_value_mut(), |traversal| {
@@ -593,13 +633,12 @@ impl<'a, N> Cube<'a, N>
         }
     }
 
-    pub fn subdivide_to_point(&mut self,
-                              point: &UPoint3,
-                              width: LogWidth)
-                              -> Option<Cube<&mut Node>> {
-        self.for_each_node_to_point(point, width, |node| {
-            let _ = node.subdivide();
-        })
+    pub fn subdivide_to_point(
+        &mut self,
+        point: &UPoint3,
+        width: LogWidth,
+    ) -> Option<Cube<&mut Node>> {
+        self.for_each_node_to_point(point, width, |node| { let _ = node.subdivide(); })
     }
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
@@ -620,26 +659,26 @@ impl<'a, N> Cube<'a, N>
 
     #[allow(dead_code)]
     fn instrument(&mut self) -> usize {
-        self.for_each_path_mut(|(cube, path)| {
-            if cube.is_leaf() {
-                cube.hint_mut().load = 0;
+        self.for_each_path_mut(|(cube, path)| if cube.is_leaf() {
+            cube.hint_mut().load = 0;
+        }
+        else {
+            for cube in path.iter_mut() {
+                cube.hint_mut().load += 1;
             }
-            else {
-                for cube in path.iter_mut() {
-                    cube.hint_mut().load += 1;
-                }
-                cube.hint_mut().load = 1;
-            }
+            cube.hint_mut().load = 1;
         });
         self.hint().load
     }
 
-    fn for_each_node_to_point<F>(&mut self,
-                                 point: &UPoint3,
-                                 width: LogWidth,
-                                 mut f: F)
-                                 -> Option<Cube<&mut Node>>
-        where F: FnMut(&mut Node)
+    fn for_each_node_to_point<F>(
+        &mut self,
+        point: &UPoint3,
+        width: LogWidth,
+        mut f: F,
+    ) -> Option<Cube<&mut Node>>
+    where
+        F: FnMut(&mut Node),
     {
         if self.partition.aabb().intersects(point) {
             let mut node: Option<&mut Node> = Some(self.node.as_mut());
@@ -661,9 +700,11 @@ impl<'a, N> Cube<'a, N>
                     }
                 }
             }
-            Some(Cube::new(node.take().unwrap(),
-                           self.root,
-                           Partition::at_point(&point, depth)))
+            Some(Cube::new(
+                node.take().unwrap(),
+                self.root,
+                Partition::at_point(&point, depth),
+            ))
         }
         else {
             None
@@ -676,23 +717,28 @@ impl<'a, N> Cube<'a, N>
 }
 
 impl<'a, 'b, N> Cube<'a, &'b mut N>
-    where N: AsRef<Node> + AsMut<Node>
+where
+    N: AsRef<Node> + AsMut<Node>,
 {
-    pub fn into_subdivisions_mut(self)
-                                 -> (OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
-                                     Option<Vec<Cube<'a, &'b mut Node>>>)
-    {
+    pub fn into_subdivisions_mut(
+        self,
+    ) -> (
+        OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
+        Option<Vec<Cube<'a, &'b mut Node>>>,
+    ) {
         let root = self.root;
         let partition = self.partition;
         let (orphan, nodes) = self.node.as_mut().to_orphan_mut();
-        (OrphanCube::new(orphan, root, partition),
-         nodes.map(|nodes| {
-             let mut cubes = Vec::with_capacity(8);
-             for (index, node) in nodes.iter_mut().enumerate() {
-                 cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
-             }
-             cubes
-         }))
+        (
+            OrphanCube::new(orphan, root, partition),
+            nodes.map(|nodes| {
+                let mut cubes = Vec::with_capacity(8);
+                for (index, node) in nodes.iter_mut().enumerate() {
+                    cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
+                }
+                cubes
+            }),
+        )
     }
 
     pub fn into_orphan_mut(self) -> OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload> {
@@ -713,7 +759,8 @@ impl<'a, 'b, N> Cube<'a, &'b mut N>
 }
 
 impl<'a, N> ops::Deref for Cube<'a, N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     type Target = Node;
 
@@ -723,7 +770,8 @@ impl<'a, N> ops::Deref for Cube<'a, N>
 }
 
 impl<'a, N> ops::DerefMut for Cube<'a, N>
-    where N: AsRef<Node> + AsMut<Node>
+where
+    N: AsRef<Node> + AsMut<Node>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.node.as_mut()
@@ -731,7 +779,8 @@ impl<'a, N> ops::DerefMut for Cube<'a, N>
 }
 
 impl<'a, N> Spatial for Cube<'a, N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     fn partition(&self) -> &Partition {
         &self.partition
@@ -742,7 +791,9 @@ impl<'a, N> Spatial for Cube<'a, N>
     }
 }
 
-pub struct CubeIter<'a, N>(Vec<Cube<'a, N>>) where N: AsRef<Node>;
+pub struct CubeIter<'a, N>(Vec<Cube<'a, N>>)
+where
+    N: AsRef<Node>;
 
 impl<'a> Iterator for CubeIter<'a, &'a Node> {
     type Item = Cube<'a, &'a Node>;
@@ -785,7 +836,8 @@ impl<'a> Iterator for CubeIter<'a, &'a mut Node> {
 }
 
 pub struct CursorIter<'a, N>
-    where N: AsRef<Node>
+where
+    N: AsRef<Node>,
 {
     cubes: Vec<Cube<'a, N>>,
     cursor: &'a Cursor,
@@ -828,8 +880,9 @@ impl<'a> Iterator for CursorIter<'a, &'a mut Node> {
 }
 
 pub struct OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     node: OrphanNode<L, B>,
     root: &'a Partition,
@@ -837,8 +890,9 @@ pub struct OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     fn new(node: OrphanNode<L, B>, root: &'a Partition, partition: Partition) -> Self {
         OrphanCube {
@@ -850,8 +904,9 @@ impl<'a, L, B> OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     type Target = OrphanNode<L, B>;
 
@@ -861,8 +916,9 @@ impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload> + AsMut<LeafPayload>,
-          B: AsRef<BranchPayload> + AsMut<BranchPayload>
+where
+    L: AsRef<LeafPayload> + AsMut<LeafPayload>,
+    B: AsRef<BranchPayload> + AsMut<BranchPayload>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.node
@@ -870,8 +926,9 @@ impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
 }
 
 impl<'a, L, B> Spatial for OrphanCube<'a, L, B>
-    where L: AsRef<LeafPayload>,
-          B: AsRef<BranchPayload>
+where
+    L: AsRef<LeafPayload>,
+    B: AsRef<BranchPayload>,
 {
     fn partition(&self) -> &Partition {
         &self.partition

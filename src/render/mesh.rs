@@ -15,8 +15,9 @@ impl MeshBuffer {
     }
 
     pub fn extend<V, I>(&mut self, vertices: V, indices: I)
-        where V: IntoIterator<Item = Vertex>,
-              I: IntoIterator<Item = Index>
+    where
+        V: IntoIterator<Item = Vertex>,
+        I: IntoIterator<Item = Index>,
     {
         self.vertices.extend(vertices);
         self.indices.extend(indices);
@@ -25,7 +26,12 @@ impl MeshBuffer {
     pub fn append(&mut self, buffer: &mut Self) {
         let offset = self.vertices.len();
         self.vertices.append(&mut buffer.vertices);
-        self.indices.extend(buffer.indices.drain(..).map(|index| index + offset as Index));
+        self.indices.extend(
+            buffer
+                .indices
+                .drain(..)
+                .map(|index| index + offset as Index),
+        );
     }
 
     pub fn vertices(&self) -> &[Vertex] {

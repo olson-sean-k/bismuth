@@ -6,7 +6,7 @@ use event::{ElementState, React};
 
 pub trait State: Copy + Eq {
     // TODO: Use a default type (`Self`) here once that feature stabilizes.
-    type Difference/* = Self*/;
+    type Difference;
 
     fn transition(state: Self, snapshot: Self) -> Option<Self> {
         if state == snapshot {
@@ -27,7 +27,8 @@ impl State for ElementState {
 }
 
 impl<T> State for Point2<T>
-    where T: Eq + Scalar
+where
+    T: Eq + Scalar,
 {
     type Difference = Vector2<T>;
 }
@@ -37,23 +38,26 @@ pub trait Element: Copy + Sized {
 }
 
 pub trait CompositeState<E>
-    where E: Element
+where
+    E: Element,
 {
     // TODO: Use a default type (`E::State`) here once that feature stabilizes.
-    type Composite/* = E::State*/;
+    type Composite;
 
     fn composite(&self) -> &Self::Composite;
 }
 
 pub trait InputState<E>
-    where E: Element
+where
+    E: Element,
 {
     fn state(&self, element: E) -> E::State;
 }
 
 impl<E, T> InputState<E> for T
-    where T: CompositeState<E, Composite = HashSet<E>>,
-          E: Element<State = ElementState> + Eq + Hash
+where
+    T: CompositeState<E, Composite = HashSet<E>>,
+    E: Element<State = ElementState> + Eq + Hash,
 {
     fn state(&self, element: E) -> E::State {
         if self.composite().contains(&element) {
@@ -66,15 +70,17 @@ impl<E, T> InputState<E> for T
 }
 
 pub trait InputTransition<E>
-    where E: Element
+where
+    E: Element,
 {
     fn transition(&self, element: E) -> Option<E::State>;
 }
 
 impl<E, T> InputTransition<E> for T
-    where T: Input,
-          T::State: InputState<E>,
-          E: Element
+where
+    T: Input,
+    T::State: InputState<E>,
+    E: Element,
 {
     fn transition(&self, element: E) -> Option<E::State> {
         E::State::transition(self.now().state(element), self.previous().state(element))
@@ -82,7 +88,8 @@ impl<E, T> InputTransition<E> for T
 }
 
 pub trait InputDifference<E>
-    where E: Element
+where
+    E: Element,
 {
     type Difference: IntoIterator<Item = (E, <E::State as State>::Difference)>;
 
@@ -90,15 +97,18 @@ pub trait InputDifference<E>
 }
 
 impl<E, S, T> InputDifference<E> for T
-    where T: Input,
-          T::State: CompositeState<E, Composite = HashSet<E>> + InputState<E>,
-          E: Element<State = S> + Eq + Hash,
-          S: State<Difference = S>
+where
+    T: Input,
+    T::State: CompositeState<E, Composite = HashSet<E>> + InputState<E>,
+    E: Element<State = S> + Eq + Hash,
+    S: State<Difference = S>,
 {
     type Difference = Vec<(E, <E::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
-        self.now().composite().symmetric_difference(self.previous().composite())
+        self.now()
+            .composite()
+            .symmetric_difference(self.previous().composite())
             .map(|element| (*element, self.now().state(*element)))
             .collect()
     }

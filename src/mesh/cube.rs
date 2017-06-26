@@ -54,14 +54,16 @@ pub enum FacePlane {
 
 #[derive(Clone)]
 pub struct Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     lower: T,
     upper: T,
 }
 
 impl<T> Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     fn new(lower: T, upper: T) -> Self {
         Cube {
@@ -80,18 +82,19 @@ impl<T> Cube<T>
         Cube::new(lower, upper)
     }
 
-    pub fn polygons<'a>(&'a self)
-        -> Generate<'a, Self, Quad<Point3<T>>, fn(&'a Self, usize) -> Quad<Point3<T>>>
-    {
+    pub fn polygons<'a>(
+        &'a self,
+    ) -> Generate<'a, Self, Quad<Point3<T>>, fn(&'a Self, usize) -> Quad<Point3<T>>> {
         Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 
-    pub fn plane_polygons<'a>(&'a self)
-        -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>>
-    {
+    pub fn plane_polygons<'a>(
+        &'a self,
+    ) -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>> {
         Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
     }
 
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn point(&self, index: usize) -> Point3<T> {
         let x = if index & 0b100 == 0b100 { self.upper } else { self.lower };
         let y = if index & 0b010 == 0b010 { self.upper } else { self.lower };
@@ -105,7 +108,8 @@ impl<T> Cube<T>
 }
 
 impl<T> ConjointPointGenerator<Point3<T>> for Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     fn conjoint_point(&self, index: usize) -> Point3<T> {
         self.point(index)
@@ -117,7 +121,8 @@ impl<T> ConjointPointGenerator<Point3<T>> for Cube<T>
 }
 
 impl<T> PolygonGenerator for Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     fn polygon_count(&self) -> usize {
         6
@@ -125,7 +130,8 @@ impl<T> PolygonGenerator for Cube<T>
 }
 
 impl<T> IndexPolygonGenerator<Quad<usize>> for Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     fn index_polygon(&self, index: usize) -> Quad<usize> {
         index_face(index)
@@ -133,7 +139,8 @@ impl<T> IndexPolygonGenerator<Quad<usize>> for Cube<T>
 }
 
 impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
-    where T: Unit
+where
+    T: Unit,
 {
     fn texture_polygon(&self, index: usize) -> Quad<Point2<f32>> {
         texture_face(index)
@@ -141,13 +148,15 @@ impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
 }
 
 fn map_polygon<T>(source: &Cube<T>, index: usize) -> Quad<Point3<T>>
-    where T: Unit
+where
+    T: Unit,
 {
     source.face(index)
 }
 
 fn map_plane_polygon<T>(_: &Cube<T>, index: usize) -> Quad<FacePlane>
-    where T: Unit
+where
+    T: Unit,
 {
     plane_face(index)
 }

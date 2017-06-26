@@ -6,9 +6,10 @@ use math::{self, FScalar};
 use super::primitive::{Polygon, Polygonal, Primitive, Triangle, Quad};
 
 pub struct Decompose<I, P, Q, D, R, F>
-    where D: Copy,
-          F: Fn(P, D) -> R,
-          R: IntoIterator<Item = Q>
+where
+    D: Copy,
+    F: Fn(P, D) -> R,
+    R: IntoIterator<Item = Q>,
 {
     input: I,
     output: VecDeque<Q>,
@@ -18,9 +19,10 @@ pub struct Decompose<I, P, Q, D, R, F>
 }
 
 impl<I, P, Q, D, R, F> Decompose<I, P, Q, D, R, F>
-    where D: Copy,
-          F: Fn(P, D) -> R,
-          R: IntoIterator<Item = Q>
+where
+    D: Copy,
+    F: Fn(P, D) -> R,
+    R: IntoIterator<Item = Q>,
 {
     pub(super) fn new(input: I, parameter: D, f: F) -> Self {
         Decompose {
@@ -34,10 +36,11 @@ impl<I, P, Q, D, R, F> Decompose<I, P, Q, D, R, F>
 }
 
 impl<I, P, Q, D, R, F> Iterator for Decompose<I, P, Q, D, R, F>
-    where I: Iterator<Item = P>,
-          D: Copy,
-          F: Fn(P, D) -> R,
-          R: IntoIterator<Item = Q>
+where
+    I: Iterator<Item = P>,
+    D: Copy,
+    F: Fn(P, D) -> R,
+    R: IntoIterator<Item = Q>,
 {
     type Item = Q;
 
@@ -58,31 +61,45 @@ impl<I, P, Q, D, R, F> Iterator for Decompose<I, P, Q, D, R, F>
 
 pub trait Interpolate: math::Interpolate<FScalar> {}
 
-impl<T> Interpolate for T where T: math::Interpolate<FScalar> {}
+impl<T> Interpolate for T
+where
+    T: math::Interpolate<FScalar>,
+{
+}
 
 pub trait IntoSubdivisions: Polygonal
-    where Self::Point: Clone + Interpolate
+where
+    Self::Point: Clone + Interpolate,
 {
-    fn into_subdivisions<F>(self, n: usize, f: F) where F: FnMut(Self);
+    fn into_subdivisions<F>(self, n: usize, f: F)
+    where
+        F: FnMut(Self);
 }
 
 pub trait IntoTetrahedrons: Polygonal
-    where Self::Point: Clone + Interpolate
+where
+    Self::Point: Clone + Interpolate,
 {
-    fn into_tetrahedrons<F>(self, f: F) where F: FnMut(Triangle<Self::Point>);
+    fn into_tetrahedrons<F>(self, f: F)
+    where
+        F: FnMut(Triangle<Self::Point>);
 }
 
 impl<T> IntoSubdivisions for Triangle<T>
-    where T: Clone + Interpolate
+where
+    T: Clone + Interpolate,
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
-        where F: FnMut(Self)
+    where
+        F: FnMut(Self),
     {
         for triangle in n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
             let ac = a.midpoint(&c);
-            vec![Triangle::new(b.clone(), ac.clone(), a),
-                 Triangle::new(c, ac, b)]
+            vec![
+                Triangle::new(b.clone(), ac.clone(), a),
+                Triangle::new(c, ac, b),
+            ]
         }) {
             f(triangle);
         }
@@ -90,10 +107,12 @@ impl<T> IntoSubdivisions for Triangle<T>
 }
 
 impl<T> IntoSubdivisions for Quad<T>
-    where T: Clone + Interpolate
+where
+    T: Clone + Interpolate,
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
-        where F: FnMut(Self)
+    where
+        F: FnMut(Self),
     {
         for quad in n_map_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
@@ -102,10 +121,12 @@ impl<T> IntoSubdivisions for Quad<T>
             let cd = c.midpoint(&d);
             let da = d.midpoint(&a);
             let ac = a.midpoint(&c); // Diagonal.
-            vec![Quad::new(a, ab.clone(), ac.clone(), da.clone()),
-                 Quad::new(ab, b, bc.clone(), ac.clone()),
-                 Quad::new(ac.clone(), bc, c, cd.clone()),
-                 Quad::new(da, ac, cd, d)]
+            vec![
+                Quad::new(a, ab.clone(), ac.clone(), da.clone()),
+                Quad::new(ab, b, bc.clone(), ac.clone()),
+                Quad::new(ac.clone(), bc, c, cd.clone()),
+                Quad::new(da, ac, cd, d),
+            ]
         }) {
             f(quad);
         }
@@ -113,10 +134,12 @@ impl<T> IntoSubdivisions for Quad<T>
 }
 
 impl<T> IntoTetrahedrons for Quad<T>
-    where T: Clone + Interpolate
+where
+    T: Clone + Interpolate,
 {
     fn into_tetrahedrons<F>(self, mut f: F)
-        where F: FnMut(Triangle<Self::Point>)
+    where
+        F: FnMut(Triangle<Self::Point>),
     {
         let Quad { a, b, c, d } = self;
         let ac = a.midpoint(&c); // Diagonal.
@@ -128,70 +151,90 @@ impl<T> IntoTetrahedrons for Quad<T>
 }
 
 impl<T> IntoSubdivisions for Polygon<T>
-    where T: Clone + Interpolate
+where
+    T: Clone + Interpolate,
 {
     fn into_subdivisions<F>(self, n: usize, mut f: F)
-        where F: FnMut(Self)
+    where
+        F: FnMut(Self),
     {
         match self {
             Polygon::Triangle(triangle) => {
                 triangle.into_subdivisions(n, |triangle| f(triangle.into()));
             }
-            Polygon::Quad(quad) => { quad.into_subdivisions(n, |quad| f(quad.into())); }
+            Polygon::Quad(quad) => {
+                quad.into_subdivisions(n, |quad| f(quad.into()));
+            }
         }
     }
 }
 
 pub trait Points<P>: Sized
-    where P: Primitive
+where
+    P: Primitive,
 {
-    fn points(self)
-        -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
+    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
 }
 
 impl<I, T, P> Points<P> for I
-    where I: Iterator<Item = P>,
-          P: Primitive<Point = T>,
-          T: Clone
+where
+    I: Iterator<Item = P>,
+    P: Primitive<Point = T>,
+    T: Clone,
 {
-    fn points(self)
-        -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>
-    {
+    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>> {
         Decompose::new(self, (), into_points)
     }
 }
 
 pub trait Triangulate<P>: Sized
-    where P: Polygonal
+where
+    P: Polygonal,
 {
-    fn triangulate(self)
-        -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
-                      fn(P, ()) -> Vec<Triangle<P::Point>>>;
+    fn triangulate(
+        self,
+    ) -> Decompose<
+        Self,
+        P,
+        Triangle<P::Point>,
+        (),
+        Vec<Triangle<P::Point>>,
+        fn(P, ()) -> Vec<Triangle<P::Point>>,
+    >;
 }
 
 impl<I, T, P> Triangulate<P> for I
-    where I: Iterator<Item = P>,
-          P: Polygonal<Point = T>,
-          T: Clone
+where
+    I: Iterator<Item = P>,
+    P: Polygonal<Point = T>,
+    T: Clone,
 {
-    fn triangulate(self)
-        -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>,
-                      fn(P, ()) -> Vec<Triangle<P::Point>>>
-    {
+    fn triangulate(
+        self,
+    ) -> Decompose<
+        Self,
+        P,
+        Triangle<P::Point>,
+        (),
+        Vec<Triangle<P::Point>>,
+        fn(P, ()) -> Vec<Triangle<P::Point>>,
+    > {
         Decompose::new(self, (), into_triangles)
     }
 }
 
 pub trait Subdivide<P>: Sized
-    where P: Polygonal
+where
+    P: Polygonal,
 {
     fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>>;
 }
 
 impl<I, T, P> Subdivide<P> for I
-    where I: Iterator<Item = P>,
-          P: IntoSubdivisions<Point = T>,
-          T: Clone + Interpolate
+where
+    I: Iterator<Item = P>,
+    P: IntoSubdivisions<Point = T>,
+    T: Clone + Interpolate,
 {
     fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>> {
         Decompose::new(self, n, into_subdivisions)
@@ -199,26 +242,41 @@ impl<I, T, P> Subdivide<P> for I
 }
 
 pub trait Tetrahedrons<T>: Sized {
-    fn tetrahedrons(self)
-        -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
-                     fn(Quad<T>, ()) -> Vec<Triangle<T>>>;
+    fn tetrahedrons(
+        self,
+    ) -> Decompose<
+        Self,
+        Quad<T>,
+        Triangle<T>,
+        (),
+        Vec<Triangle<T>>,
+        fn(Quad<T>, ()) -> Vec<Triangle<T>>,
+    >;
 }
 
 impl<I, T> Tetrahedrons<T> for I
-    where I: Iterator<Item = Quad<T>>,
-          T: Clone + Interpolate
+where
+    I: Iterator<Item = Quad<T>>,
+    T: Clone + Interpolate,
 {
-    fn tetrahedrons(self)
-        -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>,
-                     fn(Quad<T>, ()) -> Vec<Triangle<T>>>
-    {
+    fn tetrahedrons(
+        self,
+    ) -> Decompose<
+        Self,
+        Quad<T>,
+        Triangle<T>,
+        (),
+        Vec<Triangle<T>>,
+        fn(Quad<T>, ()) -> Vec<Triangle<T>>,
+    > {
         Decompose::new(self, (), into_tetrahedrons)
     }
 }
 
 fn into_points<P, T>(primitive: P, _: ()) -> Vec<T>
-    where P: Primitive<Point = T>,
-          T: Clone
+where
+    P: Primitive<Point = T>,
+    T: Clone,
 {
     let mut points = vec![];
     primitive.into_points(|point| points.push(point));
@@ -226,8 +284,9 @@ fn into_points<P, T>(primitive: P, _: ()) -> Vec<T>
 }
 
 fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
-    where P: Polygonal<Point = T>,
-          T: Clone
+where
+    P: Polygonal<Point = T>,
+    T: Clone,
 {
     let mut triangles = vec![];
     polygon.into_triangles(|triangle| triangles.push(triangle));
@@ -235,8 +294,9 @@ fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
 }
 
 fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<P>
-    where P: IntoSubdivisions<Point = T>,
-          T: Clone + Interpolate
+where
+    P: IntoSubdivisions<Point = T>,
+    T: Clone + Interpolate,
 {
     let mut polygons = vec![];
     polygon.into_subdivisions(n, |polygon| polygons.push(polygon));
@@ -244,7 +304,8 @@ fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<P>
 }
 
 fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
-    where T: Clone + Interpolate
+where
+    T: Clone + Interpolate,
 {
     let mut triangles = vec![];
     quad.into_tetrahedrons(|triangle| triangles.push(triangle));
@@ -252,9 +313,10 @@ fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
 }
 
 fn n_map_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
-    where P: Polygonal<Point = T>,
-          T: Clone,
-          F: Fn(P) -> Vec<P>
+where
+    P: Polygonal<Point = T>,
+    T: Clone,
+    F: Fn(P) -> Vec<P>,
 {
     let mut queued = vec![];
     let mut transformed = vec![polygon];

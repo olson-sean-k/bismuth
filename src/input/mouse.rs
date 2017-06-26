@@ -65,8 +65,12 @@ impl Input for Mouse {
 }
 
 impl InputDifference<MousePosition> for Mouse {
-    type Difference = Option<(MousePosition,
-                              <<MousePosition as Element>::State as State>::Difference)>;
+    type Difference = Option<
+        (
+            MousePosition,
+            <<MousePosition as Element>::State as State>::Difference,
+        ),
+    >;
 
     // This is distinct from `InputTransition::transition`. That function
     // indicates whether or not a change has occurred and yields the current
@@ -81,11 +85,16 @@ impl InputDifference<MousePosition> for Mouse {
 }
 
 impl InputDifference<MouseProximity> for Mouse {
-    type Difference = Option<(MouseProximity,
-                              <<MouseProximity as Element>::State as State>::Difference)>;
+    type Difference = Option<
+        (
+            MouseProximity,
+            <<MouseProximity as Element>::State as State>::Difference,
+        ),
+    >;
 
     fn difference(&self) -> Self::Difference {
-        self.transition(MouseProximity).map(|state| (MouseProximity, state))
+        self.transition(MouseProximity)
+            .map(|state| (MouseProximity, state))
     }
 }
 

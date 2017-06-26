@@ -22,29 +22,30 @@ pub trait SwapBuffers {
 
 impl SwapBuffers for Window {
     fn swap_buffers(&mut self) -> Result<(), RenderError> {
-        Window::swap_buffers(self).map_err(|error| {
-            match error {
-                ContextError::ContextLost => RenderError::ContextLost,
-                _ => RenderError::Unknown,
-            }
+        Window::swap_buffers(self).map_err(|error| match error {
+            ContextError::ContextLost => RenderError::ContextLost,
+            _ => RenderError::Unknown,
         })
     }
 }
 
 pub trait UpdateFrameBufferView<R>
-    where R: Resources
+where
+    R: Resources,
 {
-    fn update_frame_buffer_view(&self,
-                                color: &mut RenderTargetView<R, Rgba8>,
-                                depth: &mut DepthStencilView<R, DepthStencil>);
+    fn update_frame_buffer_view(
+        &self,
+        color: &mut RenderTargetView<R, Rgba8>,
+        depth: &mut DepthStencilView<R, DepthStencil>,
+    );
 }
 
 impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
     fn update_frame_buffer_view(
         &self,
         color: &mut RenderTargetView<gfx_device_gl::Resources, Rgba8>,
-        depth: &mut DepthStencilView<gfx_device_gl::Resources, DepthStencil>)
-    {
+        depth: &mut DepthStencilView<gfx_device_gl::Resources, DepthStencil>,
+    ) {
         gfx_window_glutin::update_views(self, color, depth);
     }
 }
@@ -68,7 +69,8 @@ impl MetaRenderer for GlutinRenderer {
 }
 
 pub struct Renderer<R>
-    where R: MetaRenderer
+where
+    R: MetaRenderer,
 {
     pub window: R::Window,
     pub factory: R::Factory,
@@ -87,19 +89,23 @@ impl Renderer<GlutinRenderer> {
 }
 
 impl<R> Renderer<R>
-    where R: MetaRenderer
+where
+    R: MetaRenderer,
 {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn new(window: R::Window,
-           mut factory: R::Factory,
-           device: R::Device,
-           encoder: Encoder<R::Resources, R::CommandBuffer>,
-           color: RenderTargetView<R::Resources, Rgba8>,
-           depth: DepthStencilView<R::Resources, DepthStencil>)
-           -> Self {
-        let state = factory.create_pipeline_simple(include_bytes!("../shader/cube.v.glsl"),
-                                                   include_bytes!("../shader/cube.f.glsl"),
-                                                   pipeline::new())
+    fn new(
+        window: R::Window,
+        mut factory: R::Factory,
+        device: R::Device,
+        encoder: Encoder<R::Resources, R::CommandBuffer>,
+        color: RenderTargetView<R::Resources, Rgba8>,
+        depth: DepthStencilView<R::Resources, DepthStencil>,
+    ) -> Self {
+        let state = factory
+            .create_pipeline_simple(
+                include_bytes!("../shader/cube.v.glsl"),
+                include_bytes!("../shader/cube.f.glsl"),
+                pipeline::new(),
+            )
             .unwrap();
         let texture = Texture::<_, Srgba8>::from_file(&mut factory, "data/texture/default.png");
         let data = Data {
@@ -125,10 +131,12 @@ impl<R> Renderer<R>
     pub fn set_transform(&mut self, transform: &Transform) -> Result<(), RenderError> {
         self.data.camera = transform.camera;
         self.data.model = transform.model;
-        self.encoder.update_buffer(&self.data.transform, &[transform.clone()], 0).map_err(|_| {
-            // TODO: Coerce and expose the `UpdateError`.
-            RenderError::Unknown
-        })
+        self.encoder
+            .update_buffer(&self.data.transform, &[transform.clone()], 0)
+            .map_err(|_| {
+                // TODO: Coerce and expose the `UpdateError`.
+                RenderError::Unknown
+            })
     }
 
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {
@@ -152,12 +160,14 @@ impl<R> Renderer<R>
     }
 
     fn update_frame_buffer_view(&mut self) {
-        self.window.update_frame_buffer_view(&mut self.data.color, &mut self.data.depth);
+        self.window
+            .update_frame_buffer_view(&mut self.data.color, &mut self.data.depth);
     }
 }
 
 impl<R> React for Renderer<R>
-    where R: MetaRenderer
+where
+    R: MetaRenderer,
 {
     fn react(&mut self, event: &Event) {
         match *event {

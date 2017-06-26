@@ -6,28 +6,30 @@ use super::activity::{ActivityStack, BoxActivity};
 use super::context::{Context, State};
 
 pub struct Harness<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     context: Context<T, R>,
 }
 
 impl<T> Harness<T, GlutinRenderer>
-    where T: State
+where
+    T: State,
 {
     pub fn from_glutin_window(state: T, window: Window) -> Self {
-        Harness {
-            context: Context::from_glutin_window(state, window),
-        }
+        Harness { context: Context::from_glutin_window(state, window) }
     }
 }
 
 impl<T, R> Harness<T, R>
-    where T: State,
-          R: MetaRenderer
+where
+    T: State,
+    R: MetaRenderer,
 {
     pub fn start<F>(&mut self, mut f: F)
-        where F: FnMut(&mut Context<T, R>) -> BoxActivity<T, R>
+    where
+        F: FnMut(&mut Context<T, R>) -> BoxActivity<T, R>,
     {
         let mut stack = ActivityStack::new(f(&mut self.context));
         'main: loop {

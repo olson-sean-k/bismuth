@@ -7,30 +7,42 @@ use math;
 pub trait Primitive: Sized {
     type Point: Clone;
 
-    fn into_points<F>(self, f: F) where F: FnMut(Self::Point);
-    fn into_lines<F>(self, f: F) where F: FnMut(Line<Self::Point>);
+    fn into_points<F>(self, f: F)
+    where
+        F: FnMut(Self::Point);
+    fn into_lines<F>(self, f: F)
+    where
+        F: FnMut(Line<Self::Point>);
 }
 
 pub trait Polygonal: Primitive {
-    fn into_triangles<F>(self, f: F) where F: FnMut(Triangle<Self::Point>);
+    fn into_triangles<F>(self, f: F)
+    where
+        F: FnMut(Triangle<Self::Point>);
 }
 
 pub trait MapPrimitive<T, U>: Primitive<Point = T>
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output: Primitive<Point = U>;
 
-    fn map_primitive<F>(self, f: F) -> Self::Output where F: FnMut(T) -> U;
+    fn map_primitive<F>(self, f: F) -> Self::Output
+    where
+        F: FnMut(T) -> U;
 }
 
 pub trait MapPoints<T, U>: Sized
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output: Primitive<Point = U>;
 
-    fn map_points<F>(self, f: F) -> Map<Self, T, U, F> where F: FnMut(T) -> U;
+    fn map_points<F>(self, f: F) -> Map<Self, T, U, F>
+    where
+        F: FnMut(T) -> U;
 }
 
 pub trait Rotate {
@@ -38,16 +50,18 @@ pub trait Rotate {
 }
 
 impl<I, T, U, P, Q> MapPoints<T, U> for I
-    where I: Iterator<Item = P>,
-          P: MapPrimitive<T, U, Output = Q>,
-          Q: Primitive<Point = U>,
-          T: Clone,
-          U: Clone
+where
+    I: Iterator<Item = P>,
+    P: MapPrimitive<T, U, Output = Q>,
+    Q: Primitive<Point = U>,
+    T: Clone,
+    U: Clone,
 {
     type Output = Q;
 
     fn map_points<F>(self, f: F) -> Map<Self, T, U, F>
-        where F: FnMut(T) -> U
+    where
+        F: FnMut(T) -> U,
     {
         Map::new(self, f)
     }
@@ -70,17 +84,20 @@ impl<I, T, U, F> Map<I, T, U, F> {
 }
 
 impl<I, T, U, F, P, Q> Iterator for Map<I, T, U, F>
-    where I: Iterator<Item = P>,
-          F: FnMut(T) -> U,
-          P: MapPrimitive<T, U, Output = Q>,
-          Q: Primitive<Point = U>,
-          T: Clone,
-          U: Clone
+where
+    I: Iterator<Item = P>,
+    F: FnMut(T) -> U,
+    P: MapPrimitive<T, U, Output = Q>,
+    Q: Primitive<Point = U>,
+    T: Clone,
+    U: Clone,
 {
     type Item = Q;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.primitives.next().map(|primitive| primitive.map_primitive(|point| (self.f)(point)))
+        self.primitives
+            .next()
+            .map(|primitive| primitive.map_primitive(|point| (self.f)(point)))
     }
 }
 
@@ -95,20 +112,23 @@ impl<T> Line<T> {
     }
 
     pub fn converged(value: T) -> Self
-        where T: Clone
+    where
+        T: Clone,
     {
         Line::new(value.clone(), value)
     }
 }
 
 impl<T, U> MapPrimitive<T, U> for Line<T>
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output = Line<U>;
 
     fn map_primitive<F>(self, mut f: F) -> Self::Output
-        where F: FnMut(T) -> U
+    where
+        F: FnMut(T) -> U,
     {
         let Line { a, b } = self;
         Line::new(f(a), f(b))
@@ -116,12 +136,14 @@ impl<T, U> MapPrimitive<T, U> for Line<T>
 }
 
 impl<T> Primitive for Line<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Point = T;
 
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(Self::Point)
+    where
+        F: FnMut(Self::Point),
     {
         let Line { a, b } = self;
         f(a);
@@ -129,14 +151,16 @@ impl<T> Primitive for Line<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<Self::Point>)
+    where
+        F: FnMut(Line<Self::Point>),
     {
         f(self);
     }
 }
 
 impl<T> Rotate for Line<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn rotate(&mut self, n: isize) {
         if n % 2 != 0 {
@@ -157,7 +181,8 @@ impl<T> Triangle<T> {
     }
 
     pub fn converged(value: T) -> Self
-        where T: Clone
+    where
+        T: Clone,
     {
         Triangle::new(value.clone(), value.clone(), value)
     }
@@ -170,13 +195,15 @@ impl<T> Into<Polygon<T>> for Triangle<T> {
 }
 
 impl<T, U> MapPrimitive<T, U> for Triangle<T>
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output = Triangle<U>;
 
     fn map_primitive<F>(self, mut f: F) -> Self::Output
-        where F: FnMut(T) -> U
+    where
+        F: FnMut(T) -> U,
     {
         let Triangle { a, b, c } = self;
         Triangle::new(f(a), f(b), f(c))
@@ -184,12 +211,14 @@ impl<T, U> MapPrimitive<T, U> for Triangle<T>
 }
 
 impl<T> Primitive for Triangle<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Point = T;
 
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(Self::Point)
+    where
+        F: FnMut(Self::Point),
     {
         let Triangle { a, b, c } = self;
         f(a);
@@ -198,7 +227,8 @@ impl<T> Primitive for Triangle<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<Self::Point>)
+    where
+        F: FnMut(Line<Self::Point>),
     {
         let Triangle { a, b, c } = self;
         f(Line::new(a.clone(), b.clone()));
@@ -208,17 +238,20 @@ impl<T> Primitive for Triangle<T>
 }
 
 impl<T> Polygonal for Triangle<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn into_triangles<F>(self, mut f: F)
-        where F: FnMut(Triangle<Self::Point>)
+    where
+        F: FnMut(Triangle<Self::Point>),
     {
         f(self);
     }
 }
 
 impl<T> Rotate for Triangle<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn rotate(&mut self, n: isize) {
         let n = math::umod(n, 3);
@@ -251,7 +284,8 @@ impl<T> Quad<T> {
     }
 
     pub fn converged(value: T) -> Self
-        where T: Clone
+    where
+        T: Clone,
     {
         Quad::new(value.clone(), value.clone(), value.clone(), value)
     }
@@ -264,13 +298,15 @@ impl<T> Into<Polygon<T>> for Quad<T> {
 }
 
 impl<T, U> MapPrimitive<T, U> for Quad<T>
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output = Quad<U>;
 
     fn map_primitive<F>(self, mut f: F) -> Self::Output
-        where F: FnMut(T) -> U
+    where
+        F: FnMut(T) -> U,
     {
         let Quad { a, b, c, d } = self;
         Quad::new(f(a), f(b), f(c), f(d))
@@ -278,12 +314,14 @@ impl<T, U> MapPrimitive<T, U> for Quad<T>
 }
 
 impl<T> Primitive for Quad<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Point = T;
 
     fn into_points<F>(self, mut f: F)
-        where F: FnMut(Self::Point)
+    where
+        F: FnMut(Self::Point),
     {
         let Quad { a, b, c, d } = self;
         f(a);
@@ -293,7 +331,8 @@ impl<T> Primitive for Quad<T>
     }
 
     fn into_lines<F>(self, mut f: F)
-        where F: FnMut(Line<Self::Point>)
+    where
+        F: FnMut(Line<Self::Point>),
     {
         let Quad { a, b, c, d } = self;
         f(Line::new(a.clone(), b.clone()));
@@ -304,10 +343,12 @@ impl<T> Primitive for Quad<T>
 }
 
 impl<T> Polygonal for Quad<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn into_triangles<F>(self, mut f: F)
-        where F: FnMut(Triangle<Self::Point>)
+    where
+        F: FnMut(Triangle<Self::Point>),
     {
         let Quad { a, b, c, d } = self;
         f(Triangle::new(a.clone(), b, c.clone()));
@@ -316,7 +357,8 @@ impl<T> Polygonal for Quad<T>
 }
 
 impl<T> Rotate for Quad<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn rotate(&mut self, n: isize) {
         let n = math::umod(n, 4);
@@ -343,13 +385,15 @@ pub enum Polygon<T> {
 }
 
 impl<T, U> MapPrimitive<T, U> for Polygon<T>
-    where T: Clone,
-          U: Clone
+where
+    T: Clone,
+    U: Clone,
 {
     type Output = Polygon<U>;
 
     fn map_primitive<F>(self, f: F) -> Self::Output
-        where F: FnMut(T) -> U
+    where
+        F: FnMut(T) -> U,
     {
         match self {
             Polygon::Triangle(triangle) => Polygon::Triangle(triangle.map_primitive(f)),
@@ -359,12 +403,14 @@ impl<T, U> MapPrimitive<T, U> for Polygon<T>
 }
 
 impl<T> Primitive for Polygon<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Point = T;
 
     fn into_points<F>(self, f: F)
-        where F: FnMut(Self::Point)
+    where
+        F: FnMut(Self::Point),
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_points(f),
@@ -373,7 +419,8 @@ impl<T> Primitive for Polygon<T>
     }
 
     fn into_lines<F>(self, f: F)
-        where F: FnMut(Line<Self::Point>)
+    where
+        F: FnMut(Line<Self::Point>),
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_lines(f),
@@ -383,10 +430,12 @@ impl<T> Primitive for Polygon<T>
 }
 
 impl<T> Polygonal for Polygon<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn into_triangles<F>(self, f: F)
-        where F: FnMut(Triangle<Self::Point>)
+    where
+        F: FnMut(Triangle<Self::Point>),
     {
         match self {
             Polygon::Triangle(triangle) => triangle.into_triangles(f),
@@ -396,7 +445,8 @@ impl<T> Polygonal for Polygon<T>
 }
 
 impl<T> Rotate for Polygon<T>
-    where T: Clone
+where
+    T: Clone,
 {
     fn rotate(&mut self, n: isize) {
         match *self {

@@ -9,7 +9,8 @@ use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
 pub struct UVSphere<T>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     nu: usize, // Meridians.
     nv: usize, // Parallels.
@@ -17,7 +18,8 @@ pub struct UVSphere<T>
 }
 
 impl<T> UVSphere<T>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     pub fn with_unit_radius(nu: usize, nv: usize) -> Self {
         let nu = cmp::max(3, nu);
@@ -29,9 +31,9 @@ impl<T> UVSphere<T>
         }
     }
 
-    pub fn polygons<'a>(&'a self)
-        -> Generate<'a, Self, Polygon<Point3<T>>, fn(&'a Self, usize) -> Polygon<Point3<T>>>
-    {
+    pub fn polygons<'a>(
+        &'a self,
+    ) -> Generate<'a, Self, Polygon<Point3<T>>, fn(&'a Self, usize) -> Polygon<Point3<T>>> {
         Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 
@@ -69,7 +71,12 @@ impl<T> UVSphere<T>
             Polygon::Triangle(Triangle::new(high, self.point(u + 1, v), low))
         }
         else {
-            Polygon::Quad(Quad::new(low, self.point(u, v + 1), high, self.point(u + 1, v)))
+            Polygon::Quad(Quad::new(
+                low,
+                self.point(u, v + 1),
+                high,
+                self.point(u + 1, v),
+            ))
         }
     }
 
@@ -79,7 +86,8 @@ impl<T> UVSphere<T>
 }
 
 impl<T> ConjointPointGenerator<Point3<T>> for UVSphere<T>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     fn conjoint_point(&self, index: usize) -> Point3<T> {
         if index == 0 {
@@ -100,7 +108,8 @@ impl<T> ConjointPointGenerator<Point3<T>> for UVSphere<T>
 }
 
 impl<T> PolygonGenerator for UVSphere<T>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     fn polygon_count(&self) -> usize {
         self.nu * self.nv
@@ -108,7 +117,8 @@ impl<T> PolygonGenerator for UVSphere<T>
 }
 
 impl<T> IndexPolygonGenerator<Polygon<usize>> for UVSphere<T>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     fn index_polygon(&self, index: usize) -> Polygon<usize> {
         let (u, v) = self.map_polygon_index(index);
@@ -122,16 +132,19 @@ impl<T> IndexPolygonGenerator<Polygon<usize>> for UVSphere<T>
             Polygon::Triangle(Triangle::new(high, self.index_point(u + 1, v), low))
         }
         else {
-            Polygon::Quad(Quad::new(low,
-                                    self.index_point(u, v + 1),
-                                    high,
-                                    self.index_point(u + 1, v)))
+            Polygon::Quad(Quad::new(
+                low,
+                self.index_point(u, v + 1),
+                high,
+                self.index_point(u + 1, v),
+            ))
         }
     }
 }
 
 fn map_polygon<T>(source: &UVSphere<T>, index: usize) -> Polygon<Point3<T>>
-    where T: Float + FloatConst + Scalar
+where
+    T: Float + FloatConst + Scalar,
 {
     source.face(index)
 }

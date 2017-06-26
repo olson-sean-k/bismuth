@@ -64,6 +64,10 @@ impl Vertex {
 
 impl Default for Vertex {
     fn default() -> Self {
-        Vertex::new(&FPoint3::origin(), &FPoint2::origin(), &Color::new(0.0, 0.0, 0.0, 1.0))
+        Vertex::new(
+            &FPoint3::origin(),
+            &FPoint2::origin(),
+            &Color::new(0.0, 0.0, 0.0, 1.0),
+        )
     }
 }

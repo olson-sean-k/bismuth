@@ -25,10 +25,12 @@ impl Color {
     }
 
     pub fn random() -> Self {
-        Color::new(rand::random::<FScalar>(),
-                   rand::random::<FScalar>(),
-                   rand::random::<FScalar>(),
-                   1.0)
+        Color::new(
+            rand::random::<FScalar>(),
+            rand::random::<FScalar>(),
+            rand::random::<FScalar>(),
+            1.0,
+        )
     }
 
     pub fn white() -> Self {

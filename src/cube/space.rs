@@ -167,7 +167,8 @@ pub trait RayCast: PartialRayCast {
 }
 
 impl<T> Intersects<FRay3> for T
-    where T: PartialRayCast
+where
+    T: PartialRayCast,
 {
     fn intersects(&self, ray: &FRay3) -> bool {
         self.partial_ray_intersection(ray).is_some()
@@ -175,7 +176,8 @@ impl<T> Intersects<FRay3> for T
 }
 
 impl<T> RayCast for T
-    where T: PartialRayCast + PointNormal
+where
+    T: PartialRayCast + PointNormal,
 {
     fn ray_intersection(&self, ray: &FRay3) -> Option<RayIntersection> {
         self.partial_ray_intersection(ray).map(|(distance, _)| {
@@ -240,7 +242,8 @@ impl Intersects<AABB> for AABB {
 }
 
 impl<T> Intersects<Point3<T>> for AABB
-    where T: PartialOrd + Scalar + SupersetOf<UScalar>
+where
+    T: PartialOrd + Scalar + SupersetOf<UScalar>,
 {
     /// Determines if a point intersects an `AABB`.
     fn intersects(&self, point: &Point3<T>) -> bool {
@@ -270,8 +273,8 @@ impl PartialRayCast for AABB {
             let origin = ray.origin[axis];
             let direction = ray.direction[axis];
 
-            let (lower, upper) = math::ordered_pair((lower - origin) / direction,
-                                                    (upper - origin) / direction);
+            let (lower, upper) =
+                math::ordered_pair((lower - origin) / direction, (upper - origin) / direction);
             min[axis] = lower;
             max[axis] = upper;
         }
@@ -404,9 +407,11 @@ pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
     assert!(index < 8);
     let index = index as UScalar;
     let width = width.exp();
-    UVector3::new(((index >> 0) & UScalar::one()) * width,
-                  ((index >> 1) & UScalar::one()) * width,
-                  ((index >> 2) & UScalar::one()) * width)
+    UVector3::new(
+        ((index >> 0) & UScalar::one()) * width,
+        ((index >> 1) & UScalar::one()) * width,
+        ((index >> 2) & UScalar::one()) * width,
+    )
 }
 
 #[cfg(test)]

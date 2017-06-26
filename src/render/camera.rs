@@ -61,10 +61,12 @@ pub struct Camera {
 impl Camera {
     pub fn new(window: &WindowView, projection: &Projection) -> Self {
         Camera {
-            projection: Perspective3::new(window.aspect_ratio(),
-                                          projection.fov,
-                                          projection.near,
-                                          projection.far),
+            projection: Perspective3::new(
+                window.aspect_ratio(),
+                projection.fov,
+                projection.near,
+                projection.far,
+            ),
             view: Isometry3::look_at_rh(&FPoint3::origin(), &FPoint3::new(0.0, 0.0, -1.0), &UP),
         }
     }
@@ -75,10 +77,14 @@ impl Camera {
 
     pub fn cast_ray(&self, window: &WindowView, point: &Point2<i32>) -> FRay3 {
         let (width, height) = window.dimensions();
-        let point = FPoint2::new(((2.0 * point.x as FScalar) / width as FScalar) - 1.0,
-                                 1.0 - ((2.0 * point.y as FScalar) / height as FScalar));
-        let near = self.projection.unproject_point(&FPoint3::new(point.x, point.y, -1.0));
-        let far = self.projection.unproject_point(&FPoint3::new(point.x, point.y, 1.0));
+        let point = FPoint2::new(
+            ((2.0 * point.x as FScalar) / width as FScalar) - 1.0,
+            1.0 - ((2.0 * point.y as FScalar) / height as FScalar),
+        );
+        let near = self.projection
+            .unproject_point(&FPoint3::new(point.x, point.y, -1.0));
+        let far = self.projection
+            .unproject_point(&FPoint3::new(point.x, point.y, 1.0));
         let inverse = self.view.inverse();
         FRay3::new(inverse * near, (inverse * (far - near)))
     }
@@ -93,10 +99,12 @@ impl React for Camera {
         match *event {
             Event::Resized(width, height) => {
                 let ratio = (width as f32) / (height as f32);
-                self.projection = Perspective3::new(ratio,
-                                                    self.projection.fovy(),
-                                                    self.projection.znear(),
-                                                    self.projection.zfar());
+                self.projection = Perspective3::new(
+                    ratio,
+                    self.projection.fovy(),
+                    self.projection.znear(),
+                    self.projection.zfar(),
+                );
             }
             _ => {}
         }
