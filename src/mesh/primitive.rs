@@ -38,8 +38,6 @@ where
     T: Clone,
     U: Clone,
 {
-    type Output: Primitive<Point = U>;
-
     fn map_points<F>(self, f: F) -> Map<Self, T, U, F>
     where
         F: FnMut(T) -> U;
@@ -57,8 +55,6 @@ where
     T: Clone,
     U: Clone,
 {
-    type Output = Q;
-
     fn map_points<F>(self, f: F) -> Map<Self, T, U, F>
     where
         F: FnMut(T) -> U,
