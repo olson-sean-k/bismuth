@@ -1,45 +1,43 @@
 use std::collections::VecDeque;
 use std::iter::IntoIterator;
-use std::marker::PhantomData;
 
 use math::{self, FScalar};
 use super::primitive::{Polygon, Polygonal, Primitive, Triangle, Quad};
 
-pub struct Decompose<I, P, Q, D, R, F>
+// A type `F` constrained to `Fn(P, D) -> R` could be used here, but it would
+// not be possible to name that type for anything but functions (not closures).
+// Instead of a limited and somewhat redundant type `F`, just use `fn(P, D) ->
+// R` for the member `f`.
+pub struct Decompose<I, P, Q, D, R>
 where
     D: Copy,
-    F: Fn(P, D) -> R,
     R: IntoIterator<Item = Q>,
 {
     input: I,
     output: VecDeque<Q>,
     parameter: D,
-    f: F,
-    phantom: PhantomData<(P, R)>,
+    f: fn(P, D) -> R,
 }
 
-impl<I, P, Q, D, R, F> Decompose<I, P, Q, D, R, F>
+impl<I, P, Q, D, R> Decompose<I, P, Q, D, R>
 where
     D: Copy,
-    F: Fn(P, D) -> R,
     R: IntoIterator<Item = Q>,
 {
-    pub(super) fn new(input: I, parameter: D, f: F) -> Self {
+    pub(super) fn new(input: I, parameter: D, f: fn(P, D) -> R) -> Self {
         Decompose {
             input: input,
             output: VecDeque::new(),
             parameter: parameter,
             f: f,
-            phantom: PhantomData,
         }
     }
 }
 
-impl<I, P, Q, D, R, F> Iterator for Decompose<I, P, Q, D, R, F>
+impl<I, P, Q, D, R> Iterator for Decompose<I, P, Q, D, R>
 where
     I: Iterator<Item = P>,
     D: Copy,
-    F: Fn(P, D) -> R,
     R: IntoIterator<Item = Q>,
 {
     type Item = Q;
@@ -173,7 +171,7 @@ pub trait Points<P>: Sized
 where
     P: Primitive,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>>;
+    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>>;
 }
 
 impl<I, T, P> Points<P> for I
@@ -182,7 +180,7 @@ where
     P: Primitive<Point = T>,
     T: Clone,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>, fn(P, ()) -> Vec<P::Point>> {
+    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>> {
         Decompose::new(self, (), into_points)
     }
 }
@@ -191,16 +189,7 @@ pub trait Triangulate<P>: Sized
 where
     P: Polygonal,
 {
-    fn triangulate(
-        self,
-    ) -> Decompose<
-        Self,
-        P,
-        Triangle<P::Point>,
-        (),
-        Vec<Triangle<P::Point>>,
-        fn(P, ()) -> Vec<Triangle<P::Point>>,
-    >;
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>>;
 }
 
 impl<I, T, P> Triangulate<P> for I
@@ -209,16 +198,7 @@ where
     P: Polygonal<Point = T>,
     T: Clone,
 {
-    fn triangulate(
-        self,
-    ) -> Decompose<
-        Self,
-        P,
-        Triangle<P::Point>,
-        (),
-        Vec<Triangle<P::Point>>,
-        fn(P, ()) -> Vec<Triangle<P::Point>>,
-    > {
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>> {
         Decompose::new(self, (), into_triangles)
     }
 }
@@ -227,7 +207,7 @@ pub trait Subdivide<P>: Sized
 where
     P: Polygonal,
 {
-    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>>;
+    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>>;
 }
 
 impl<I, T, P> Subdivide<P> for I
@@ -236,22 +216,13 @@ where
     P: IntoSubdivisions<Point = T>,
     T: Clone + Interpolate,
 {
-    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>, fn(P, usize) -> Vec<P>> {
+    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>> {
         Decompose::new(self, n, into_subdivisions)
     }
 }
 
 pub trait Tetrahedrons<T>: Sized {
-    fn tetrahedrons(
-        self,
-    ) -> Decompose<
-        Self,
-        Quad<T>,
-        Triangle<T>,
-        (),
-        Vec<Triangle<T>>,
-        fn(Quad<T>, ()) -> Vec<Triangle<T>>,
-    >;
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>>;
 }
 
 impl<I, T> Tetrahedrons<T> for I
@@ -259,16 +230,7 @@ where
     I: Iterator<Item = Quad<T>>,
     T: Clone + Interpolate,
 {
-    fn tetrahedrons(
-        self,
-    ) -> Decompose<
-        Self,
-        Quad<T>,
-        Triangle<T>,
-        (),
-        Vec<Triangle<T>>,
-        fn(Quad<T>, ()) -> Vec<Triangle<T>>,
-    > {
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>> {
         Decompose::new(self, (), into_tetrahedrons)
     }
 }
