@@ -82,15 +82,11 @@ where
         Cube::new(lower, upper)
     }
 
-    pub fn polygons<'a>(
-        &'a self,
-    ) -> Generate<'a, Self, Quad<Point3<T>>, fn(&'a Self, usize) -> Quad<Point3<T>>> {
+    pub fn polygons<'a>(&'a self) -> Generate<'a, Self, Quad<Point3<T>>> {
         Generate::new(self, 0..self.polygon_count(), map_polygon)
     }
 
-    pub fn plane_polygons<'a>(
-        &'a self,
-    ) -> Generate<'a, Self, Quad<FacePlane>, fn(&'a Self, usize) -> Quad<FacePlane>> {
+    pub fn plane_polygons<'a>(&'a self) -> Generate<'a, Self, Quad<FacePlane>> {
         Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
     }
 
