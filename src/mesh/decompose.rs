@@ -211,7 +211,7 @@ where
     T: Clone + Interpolate,
 {
     fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>> {
-        Decompose::new(self, n, into_subdivisions)
+        Decompose::new(self, n, P::into_subdivisions)
     }
 }
 
@@ -243,14 +243,6 @@ where
     T: Clone,
 {
     polygon.into_triangles()
-}
-
-fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<P>
-where
-    P: IntoSubdivisions<Point = T>,
-    T: Clone + Interpolate,
-{
-    polygon.into_subdivisions(n)
 }
 
 fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> ArrayVec<[Triangle<T>; 4]>
