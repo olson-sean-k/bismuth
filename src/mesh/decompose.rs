@@ -216,6 +216,7 @@ where
 }
 
 pub trait Tetrahedrons<T>: Sized {
+    #[allow(type_complexity)]
     fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>>;
 }
 
@@ -224,6 +225,7 @@ where
     I: Iterator<Item = Quad<T>>,
     T: Clone + Interpolate,
 {
+    #[allow(type_complexity)]
     fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>> {
         Decompose::new(self, (), into_tetrahedrons)
     }
@@ -260,10 +262,7 @@ where
 {
     let mut polygons = vec![polygon];
     for _ in 0..n {
-        polygons = polygons
-            .into_iter()
-            .flat_map(|polygon| f(polygon))
-            .collect();
+        polygons = polygons.into_iter().flat_map(&f).collect();
     }
     polygons
 }
