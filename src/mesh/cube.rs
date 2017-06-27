@@ -83,11 +83,11 @@ where
     }
 
     pub fn polygons(&self) -> Generate<Self, Quad<Point3<T>>> {
-        Generate::new(self, 0..self.polygon_count(), map_polygon)
+        Generate::new(self, 0..self.polygon_count(), Cube::polygon)
     }
 
     pub fn plane_polygons(&self) -> Generate<Self, Quad<FacePlane>> {
-        Generate::new(self, 0..self.polygon_count(), map_plane_polygon)
+        Generate::new(self, 0..self.polygon_count(), Cube::plane_polygon)
     }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -98,8 +98,21 @@ where
         Point3::new(x, y, z)
     }
 
-    fn face(&self, index: usize) -> Quad<Point3<T>> {
-        index_face(index).map_primitive(|index| self.point(index))
+    fn polygon(&self, index: usize) -> Quad<Point3<T>> {
+        self.index_polygon(index)
+            .map_primitive(|index| self.point(index))
+    }
+
+    fn plane_polygon(&self, index: usize) -> Quad<FacePlane> {
+        match index {
+            0 => Quad::converged(FacePlane::XY),  // front
+            1 => Quad::converged(FacePlane::NZY), // right
+            2 => Quad::converged(FacePlane::XNZ), // top
+            3 => Quad::converged(FacePlane::ZY),  // left
+            4 => Quad::converged(FacePlane::XZ),  // bottom
+            5 => Quad::converged(FacePlane::NXY), // back
+            _ => panic!(),
+        }
     }
 }
 
@@ -130,7 +143,15 @@ where
     T: Unit,
 {
     fn index_polygon(&self, index: usize) -> Quad<usize> {
-        index_face(index)
+        match index {
+            0 => Quad::new(5, 7, 3, 1), // front
+            1 => Quad::new(6, 7, 5, 4), // right
+            2 => Quad::new(3, 7, 6, 2), // top
+            3 => Quad::new(0, 1, 3, 2), // left
+            4 => Quad::new(4, 5, 1, 0), // bottom
+            5 => Quad::new(0, 2, 6, 4), // back
+            _ => panic!(),
+        }
     }
 }
 
@@ -139,57 +160,15 @@ where
     T: Unit,
 {
     fn texture_polygon(&self, index: usize) -> Quad<Point2<f32>> {
-        texture_face(index)
-    }
-}
-
-fn map_polygon<T>(source: &Cube<T>, index: usize) -> Quad<Point3<T>>
-where
-    T: Unit,
-{
-    source.face(index)
-}
-
-fn map_plane_polygon<T>(_: &Cube<T>, index: usize) -> Quad<FacePlane>
-where
-    T: Unit,
-{
-    plane_face(index)
-}
-
-fn index_face(index: usize) -> Quad<usize> {
-    match index {
-        0 => Quad::new(5, 7, 3, 1), // front
-        1 => Quad::new(6, 7, 5, 4), // right
-        2 => Quad::new(3, 7, 6, 2), // top
-        3 => Quad::new(0, 1, 3, 2), // left
-        4 => Quad::new(4, 5, 1, 0), // bottom
-        5 => Quad::new(0, 2, 6, 4), // back
-        _ => panic!(),
-    }
-}
-
-fn texture_face(index: usize) -> Quad<Point2<f32>> {
-    let uu = Point2::new(1.0, 1.0);
-    let ul = Point2::new(1.0, 0.0);
-    let ll = Point2::new(0.0, 0.0);
-    let lu = Point2::new(0.0, 1.0);
-    match index {
-        0 | 4 | 5 => Quad::new(uu, ul, ll, lu), // front | bottom | back
-        1 => Quad::new(ul, ll, lu, uu), // right
-        2 | 3 => Quad::new(lu, uu, ul, ll), // top | left
-        _ => panic!(),
-    }
-}
-
-fn plane_face(index: usize) -> Quad<FacePlane> {
-    match index {
-        0 => Quad::converged(FacePlane::XY),  // front
-        1 => Quad::converged(FacePlane::NZY), // right
-        2 => Quad::converged(FacePlane::XNZ), // top
-        3 => Quad::converged(FacePlane::ZY),  // left
-        4 => Quad::converged(FacePlane::XZ),  // bottom
-        5 => Quad::converged(FacePlane::NXY), // back
-        _ => panic!(),
+        let uu = Point2::new(1.0, 1.0);
+        let ul = Point2::new(1.0, 0.0);
+        let ll = Point2::new(0.0, 0.0);
+        let lu = Point2::new(0.0, 1.0);
+        match index {
+            0 | 4 | 5 => Quad::new(uu, ul, ll, lu), // front | bottom | back
+            1 => Quad::new(ul, ll, lu, uu), // right
+            2 | 3 => Quad::new(lu, uu, ul, ll), // top | left
+            _ => panic!(),
+        }
     }
 }

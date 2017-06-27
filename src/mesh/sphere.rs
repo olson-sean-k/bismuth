@@ -32,7 +32,7 @@ where
     }
 
     pub fn polygons(&self) -> Generate<Self, Polygon<Point3<T>>> {
-        Generate::new(self, 0..self.polygon_count(), map_polygon)
+        Generate::new(self, 0..self.polygon_count(), UVSphere::polygon)
     }
 
     fn point(&self, u: usize, v: usize) -> Point3<T> {
@@ -53,13 +53,13 @@ where
         }
     }
 
-    fn face(&self, index: usize) -> Polygon<Point3<T>> {
+    fn polygon(&self, index: usize) -> Polygon<Point3<T>> {
         let (u, v) = self.map_polygon_index(index);
 
-        // Generate the points at the current meridian and parallel. The upper
-        // and lower bounds of (u, v) are always used, so generate them in
-        // advance (`low` and `high`). Emit triangles at the poles, otherwise
-        // quads.
+        // Generate the points at the requested meridian and parallel. The
+        // upper and lower bounds of (u, v) are always used, so generate them
+        // in advance (`low` and `high`). Emit triangles at the poles,
+        // otherwise quads.
         let low = self.point(u, v);
         let high = self.point(u + 1, v + 1);
         if v == 0 {
@@ -138,11 +138,4 @@ where
             ))
         }
     }
-}
-
-fn map_polygon<T>(source: &UVSphere<T>, index: usize) -> Polygon<Point3<T>>
-where
-    T: Float + FloatConst + Scalar,
-{
-    source.face(index)
 }
