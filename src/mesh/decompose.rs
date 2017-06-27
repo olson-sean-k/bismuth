@@ -1,3 +1,6 @@
+//! This module provides a generic iterator and traits for decomposing
+//! primitives and tessellating polygons.
+
 use arrayvec::{Array, ArrayVec};
 use std::collections::VecDeque;
 use std::iter::IntoIterator;

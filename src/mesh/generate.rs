@@ -1,3 +1,6 @@
+//! This module provides a generic iterator and traits for mapping from an
+//! index to a primitive from some shape.
+
 use std::ops::Range;
 
 // A type `F` constrained to `Fn(&'a G, usize) -> P` could be used here, but it

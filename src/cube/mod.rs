@@ -39,9 +39,11 @@
 //! let mut root = Root::new(LogWidth::max_value());
 //! let _ = root.as_cube_mut().subdivide();
 //! for cube in root.as_cube().iter() {
-//!     println!("origin: {}; width: {}",
-//!              cube.partition().origin(),
-//!              cube.partition().width().to_inner());
+//!     println!(
+//!         "origin: {}; width: {}",
+//!         cube.partition().origin(),
+//!         cube.partition().width().to_inner()
+//!     );
 //! }
 //! ```
 
