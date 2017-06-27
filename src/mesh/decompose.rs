@@ -1,3 +1,4 @@
+use arrayvec::ArrayVec;
 use std::collections::VecDeque;
 use std::iter::IntoIterator;
 
@@ -76,7 +77,7 @@ pub trait IntoTetrahedrons: Polygonal
 where
     Self::Point: Clone + Interpolate,
 {
-    fn into_tetrahedrons(self) -> Vec<Triangle<Self::Point>>;
+    fn into_tetrahedrons(self) -> ArrayVec<[Triangle<Self::Point>; 4]>;
 }
 
 impl<T> IntoSubdivisions for Triangle<T>
@@ -121,15 +122,17 @@ impl<T> IntoTetrahedrons for Quad<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_tetrahedrons(self) -> Vec<Triangle<Self::Point>> {
+    fn into_tetrahedrons(self) -> ArrayVec<[Triangle<Self::Point>; 4]> {
         let Quad { a, b, c, d } = self;
         let ac = a.midpoint(&c); // Diagonal.
-        vec![
-            Triangle::new(a.clone(), b.clone(), ac.clone()),
-            Triangle::new(b, c.clone(), ac.clone()),
-            Triangle::new(c, d.clone(), ac.clone()),
-            Triangle::new(d, a, ac),
-        ]
+        ArrayVec::from(
+            [
+                Triangle::new(a.clone(), b.clone(), ac.clone()),
+                Triangle::new(b, c.clone(), ac.clone()),
+                Triangle::new(c, d.clone(), ac.clone()),
+                Triangle::new(d, a, ac),
+            ],
+        )
     }
 }
 
@@ -213,7 +216,7 @@ where
 }
 
 pub trait Tetrahedrons<T>: Sized {
-    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>>;
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>>;
 }
 
 impl<I, T> Tetrahedrons<T> for I
@@ -221,7 +224,7 @@ where
     I: Iterator<Item = Quad<T>>,
     T: Clone + Interpolate,
 {
-    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), Vec<Triangle<T>>> {
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>> {
         Decompose::new(self, (), into_tetrahedrons)
     }
 }
@@ -250,7 +253,7 @@ where
     polygon.into_subdivisions(n)
 }
 
-fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
+fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> ArrayVec<[Triangle<T>; 4]>
 where
     T: Clone + Interpolate,
 {

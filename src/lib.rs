@@ -1,6 +1,7 @@
 #![allow(unknown_lints)] // Allow clippy lints.
 
 extern crate alga;
+extern crate arrayvec;
 extern crate boolinator;
 #[macro_use]
 extern crate gfx;
