@@ -53,7 +53,7 @@ where
     G: ConjointPointGenerator<P>,
 {
     fn conjoint_points(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.conjoint_point_count(), map_conjoint_point)
+        Generate::new(self, 0..self.conjoint_point_count(), G::conjoint_point)
     }
 }
 
@@ -74,7 +74,7 @@ where
     G: IndexPolygonGenerator<P> + PolygonGenerator,
 {
     fn index_polygons(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.polygon_count(), map_index_polygon)
+        Generate::new(self, 0..self.polygon_count(), G::index_polygon)
     }
 }
 
@@ -91,27 +91,6 @@ where
     G: PolygonGenerator + TexturePolygonGenerator<P>,
 {
     fn texture_polygons(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.polygon_count(), map_texture_polygon)
+        Generate::new(self, 0..self.polygon_count(), G::texture_polygon)
     }
-}
-
-fn map_conjoint_point<G, P>(generator: &G, index: usize) -> P
-where
-    G: ConjointPointGenerator<P>,
-{
-    generator.conjoint_point(index)
-}
-
-fn map_index_polygon<G, P>(generator: &G, index: usize) -> P
-where
-    G: IndexPolygonGenerator<P>,
-{
-    generator.index_polygon(index)
-}
-
-fn map_texture_polygon<G, P>(generator: &G, index: usize) -> P
-where
-    G: TexturePolygonGenerator<P>,
-{
-    generator.texture_polygon(index)
 }
