@@ -353,6 +353,24 @@ where
     }
 }
 
+pub trait Lines<P>: Sized
+where
+    P: IntoLines,
+{
+    fn lines(self) -> Decompose<Self, P, Line<P::Point>, (), P::Output>;
+}
+
+impl<I, P> Lines<P> for I
+where
+    I: Iterator<Item = P>,
+    P: IntoLines,
+    P::Point: Clone,
+{
+    fn lines(self) -> Decompose<Self, P, Line<P::Point>, (), P::Output> {
+        Decompose::new(self, (), into_lines)
+    }
+}
+
 pub trait Triangulate<P>: Sized
 where
     P: IntoTriangles,
@@ -412,6 +430,14 @@ where
     P::Point: Clone,
 {
     primitive.into_points()
+}
+
+fn into_lines<P>(primitive: P, _: ()) -> P::Output
+where
+    P: IntoLines,
+    P::Point: Clone,
+{
+    primitive.into_lines()
 }
 
 fn into_triangles<P>(polygon: P, _: ()) -> P::Output
