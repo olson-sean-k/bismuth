@@ -1,4 +1,4 @@
-use arrayvec::ArrayVec;
+use arrayvec::{Array, ArrayVec};
 use std::collections::VecDeque;
 use std::iter::IntoIterator;
 
@@ -88,10 +88,12 @@ where
         n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
             let ac = a.midpoint(&c);
-            vec![
-                Triangle::new(b.clone(), ac.clone(), a),
-                Triangle::new(c, ac, b),
-            ]
+            ArrayVec::from(
+                [
+                    Triangle::new(b.clone(), ac.clone(), a),
+                    Triangle::new(c, ac, b),
+                ],
+            )
         })
     }
 }
@@ -108,12 +110,14 @@ where
             let cd = c.midpoint(&d);
             let da = d.midpoint(&a);
             let ac = a.midpoint(&c); // Diagonal.
-            vec![
-                Quad::new(a, ab.clone(), ac.clone(), da.clone()),
-                Quad::new(ab, b, bc.clone(), ac.clone()),
-                Quad::new(ac.clone(), bc, c, cd.clone()),
-                Quad::new(da, ac, cd, d),
-            ]
+            ArrayVec::from(
+                [
+                    Quad::new(a, ab.clone(), ac.clone(), da.clone()),
+                    Quad::new(ab, b, bc.clone(), ac.clone()),
+                    Quad::new(ac.clone(), bc, c, cd.clone()),
+                    Quad::new(da, ac, cd, d),
+                ],
+            )
         })
     }
 }
@@ -254,11 +258,12 @@ where
     quad.into_tetrahedrons()
 }
 
-fn n_map_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>
+fn n_map_polygon<T, P, A, F>(n: usize, polygon: P, f: F) -> Vec<P>
 where
     P: Polygonal<Point = T>,
     T: Clone,
-    F: Fn(P) -> Vec<P>,
+    A: Array<Item = P>,
+    F: Fn(P) -> ArrayVec<A>,
 {
     let mut polygons = vec![polygon];
     for _ in 0..n {
