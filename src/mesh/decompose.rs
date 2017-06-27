@@ -69,38 +69,29 @@ pub trait IntoSubdivisions: Polygonal
 where
     Self::Point: Clone + Interpolate,
 {
-    fn into_subdivisions<F>(self, n: usize, f: F)
-    where
-        F: FnMut(Self);
+    fn into_subdivisions(self, n: usize) -> Vec<Self>;
 }
 
 pub trait IntoTetrahedrons: Polygonal
 where
     Self::Point: Clone + Interpolate,
 {
-    fn into_tetrahedrons<F>(self, f: F)
-    where
-        F: FnMut(Triangle<Self::Point>);
+    fn into_tetrahedrons(self) -> Vec<Triangle<Self::Point>>;
 }
 
 impl<T> IntoSubdivisions for Triangle<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions<F>(self, n: usize, mut f: F)
-    where
-        F: FnMut(Self),
-    {
-        for triangle in n_map_polygon(n, self, |triangle| {
+    fn into_subdivisions(self, n: usize) -> Vec<Self> {
+        n_map_polygon(n, self, |triangle| {
             let Triangle { a, b, c } = triangle;
             let ac = a.midpoint(&c);
             vec![
                 Triangle::new(b.clone(), ac.clone(), a),
                 Triangle::new(c, ac, b),
             ]
-        }) {
-            f(triangle);
-        }
+        })
     }
 }
 
@@ -108,11 +99,8 @@ impl<T> IntoSubdivisions for Quad<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions<F>(self, n: usize, mut f: F)
-    where
-        F: FnMut(Self),
-    {
-        for quad in n_map_polygon(n, self, |quad| {
+    fn into_subdivisions(self, n: usize) -> Vec<Self> {
+        n_map_polygon(n, self, |quad| {
             let Quad { a, b, c, d } = quad;
             let ab = a.midpoint(&b);
             let bc = b.midpoint(&c);
@@ -125,9 +113,7 @@ where
                 Quad::new(ac.clone(), bc, c, cd.clone()),
                 Quad::new(da, ac, cd, d),
             ]
-        }) {
-            f(quad);
-        }
+        })
     }
 }
 
@@ -135,16 +121,15 @@ impl<T> IntoTetrahedrons for Quad<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_tetrahedrons<F>(self, mut f: F)
-    where
-        F: FnMut(Triangle<Self::Point>),
-    {
+    fn into_tetrahedrons(self) -> Vec<Triangle<Self::Point>> {
         let Quad { a, b, c, d } = self;
         let ac = a.midpoint(&c); // Diagonal.
-        f(Triangle::new(a.clone(), b.clone(), ac.clone()));
-        f(Triangle::new(b, c.clone(), ac.clone()));
-        f(Triangle::new(c, d.clone(), ac.clone()));
-        f(Triangle::new(d, a, ac));
+        vec![
+            Triangle::new(a.clone(), b.clone(), ac.clone()),
+            Triangle::new(b, c.clone(), ac.clone()),
+            Triangle::new(c, d.clone(), ac.clone()),
+            Triangle::new(d, a, ac),
+        ]
     }
 }
 
@@ -152,16 +137,20 @@ impl<T> IntoSubdivisions for Polygon<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions<F>(self, n: usize, mut f: F)
-    where
-        F: FnMut(Self),
-    {
+    fn into_subdivisions(self, n: usize) -> Vec<Self> {
         match self {
             Polygon::Triangle(triangle) => {
-                triangle.into_subdivisions(n, |triangle| f(triangle.into()));
+                triangle
+                    .into_subdivisions(n)
+                    .into_iter()
+                    .map(|triangle| triangle.into())
+                    .collect()
             }
             Polygon::Quad(quad) => {
-                quad.into_subdivisions(n, |quad| f(quad.into()));
+                quad.into_subdivisions(n)
+                    .into_iter()
+                    .map(|quad| quad.into())
+                    .collect()
             }
         }
     }
@@ -242,9 +231,7 @@ where
     P: Primitive<Point = T>,
     T: Clone,
 {
-    let mut points = vec![];
-    primitive.into_points(|point| points.push(point));
-    points
+    primitive.into_points()
 }
 
 fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
@@ -252,9 +239,7 @@ where
     P: Polygonal<Point = T>,
     T: Clone,
 {
-    let mut triangles = vec![];
-    polygon.into_triangles(|triangle| triangles.push(triangle));
-    triangles
+    polygon.into_triangles()
 }
 
 fn into_subdivisions<P, T>(polygon: P, n: usize) -> Vec<P>
@@ -262,18 +247,14 @@ where
     P: IntoSubdivisions<Point = T>,
     T: Clone + Interpolate,
 {
-    let mut polygons = vec![];
-    polygon.into_subdivisions(n, |polygon| polygons.push(polygon));
-    polygons
+    polygon.into_subdivisions(n)
 }
 
 fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> Vec<Triangle<T>>
 where
     T: Clone + Interpolate,
 {
-    let mut triangles = vec![];
-    quad.into_tetrahedrons(|triangle| triangles.push(triangle));
-    triangles
+    quad.into_tetrahedrons()
 }
 
 fn n_map_polygon<T, P, F>(n: usize, polygon: P, f: F) -> Vec<P>

@@ -7,18 +7,12 @@ use math;
 pub trait Primitive: Sized {
     type Point: Clone;
 
-    fn into_points<F>(self, f: F)
-    where
-        F: FnMut(Self::Point);
-    fn into_lines<F>(self, f: F)
-    where
-        F: FnMut(Line<Self::Point>);
+    fn into_points(self) -> Vec<Self::Point>;
+    fn into_lines(self) -> Vec<Line<Self::Point>>;
 }
 
 pub trait Polygonal: Primitive {
-    fn into_triangles<F>(self, f: F)
-    where
-        F: FnMut(Triangle<Self::Point>);
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>>;
 }
 
 pub trait MapPrimitive<T, U>: Primitive<Point = T>
@@ -140,20 +134,13 @@ where
 {
     type Point = T;
 
-    fn into_points<F>(self, mut f: F)
-    where
-        F: FnMut(Self::Point),
-    {
+    fn into_points(self) -> Vec<Self::Point> {
         let Line { a, b } = self;
-        f(a);
-        f(b);
+        vec![a, b]
     }
 
-    fn into_lines<F>(self, mut f: F)
-    where
-        F: FnMut(Line<Self::Point>),
-    {
-        f(self);
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
+        vec![self]
     }
 }
 
@@ -215,24 +202,18 @@ where
 {
     type Point = T;
 
-    fn into_points<F>(self, mut f: F)
-    where
-        F: FnMut(Self::Point),
-    {
+    fn into_points(self) -> Vec<Self::Point> {
         let Triangle { a, b, c } = self;
-        f(a);
-        f(b);
-        f(c);
+        vec![a, b, c]
     }
 
-    fn into_lines<F>(self, mut f: F)
-    where
-        F: FnMut(Line<Self::Point>),
-    {
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
         let Triangle { a, b, c } = self;
-        f(Line::new(a.clone(), b.clone()));
-        f(Line::new(b, c.clone()));
-        f(Line::new(c, a));
+        vec![
+            Line::new(a.clone(), b.clone()),
+            Line::new(b, c.clone()),
+            Line::new(c, a),
+        ]
     }
 }
 
@@ -240,11 +221,8 @@ impl<T> Polygonal for Triangle<T>
 where
     T: Clone,
 {
-    fn into_triangles<F>(self, mut f: F)
-    where
-        F: FnMut(Triangle<Self::Point>),
-    {
-        f(self);
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
+        vec![self]
     }
 }
 
@@ -318,26 +296,19 @@ where
 {
     type Point = T;
 
-    fn into_points<F>(self, mut f: F)
-    where
-        F: FnMut(Self::Point),
-    {
+    fn into_points(self) -> Vec<Self::Point> {
         let Quad { a, b, c, d } = self;
-        f(a);
-        f(b);
-        f(c);
-        f(d);
+        vec![a, b, c, d]
     }
 
-    fn into_lines<F>(self, mut f: F)
-    where
-        F: FnMut(Line<Self::Point>),
-    {
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
         let Quad { a, b, c, d } = self;
-        f(Line::new(a.clone(), b.clone()));
-        f(Line::new(b, c.clone()));
-        f(Line::new(c, d.clone()));
-        f(Line::new(d, a));
+        vec![
+            Line::new(a.clone(), b.clone()),
+            Line::new(b, c.clone()),
+            Line::new(c, d.clone()),
+            Line::new(d, a),
+        ]
     }
 }
 
@@ -345,13 +316,12 @@ impl<T> Polygonal for Quad<T>
 where
     T: Clone,
 {
-    fn into_triangles<F>(self, mut f: F)
-    where
-        F: FnMut(Triangle<Self::Point>),
-    {
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
         let Quad { a, b, c, d } = self;
-        f(Triangle::new(a.clone(), b, c.clone()));
-        f(Triangle::new(c, d, a));
+        vec![
+            Triangle::new(a.clone(), b, c.clone()),
+            Triangle::new(c, d, a),
+        ]
     }
 }
 
@@ -407,23 +377,17 @@ where
 {
     type Point = T;
 
-    fn into_points<F>(self, f: F)
-    where
-        F: FnMut(Self::Point),
-    {
+    fn into_points(self) -> Vec<Self::Point> {
         match self {
-            Polygon::Triangle(triangle) => triangle.into_points(f),
-            Polygon::Quad(quad) => quad.into_points(f),
+            Polygon::Triangle(triangle) => triangle.into_points(),
+            Polygon::Quad(quad) => quad.into_points(),
         }
     }
 
-    fn into_lines<F>(self, f: F)
-    where
-        F: FnMut(Line<Self::Point>),
-    {
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
         match self {
-            Polygon::Triangle(triangle) => triangle.into_lines(f),
-            Polygon::Quad(quad) => quad.into_lines(f),
+            Polygon::Triangle(triangle) => triangle.into_lines(),
+            Polygon::Quad(quad) => quad.into_lines(),
         }
     }
 }
@@ -432,13 +396,10 @@ impl<T> Polygonal for Polygon<T>
 where
     T: Clone,
 {
-    fn into_triangles<F>(self, f: F)
-    where
-        F: FnMut(Triangle<Self::Point>),
-    {
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
         match self {
-            Polygon::Triangle(triangle) => triangle.into_triangles(f),
-            Polygon::Quad(quad) => quad.into_triangles(f),
+            Polygon::Triangle(triangle) => triangle.into_triangles(),
+            Polygon::Quad(quad) => quad.into_triangles(),
         }
     }
 }
