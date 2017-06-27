@@ -67,141 +67,21 @@ where
 }
 
 pub trait IntoPoints: Primitive {
-    fn into_points(self) -> Vec<Self::Point>;
-}
+    type Output: IntoIterator<Item = Self::Point>;
 
-impl<T> IntoPoints for Line<T>
-where
-    T: Clone,
-{
-    fn into_points(self) -> Vec<Self::Point> {
-        let Line { a, b } = self;
-        vec![a, b]
-    }
-}
-
-impl<T> IntoPoints for Triangle<T>
-where
-    T: Clone,
-{
-    fn into_points(self) -> Vec<Self::Point> {
-        let Triangle { a, b, c } = self;
-        vec![a, b, c]
-    }
-}
-
-impl<T> IntoPoints for Quad<T>
-where
-    T: Clone,
-{
-    fn into_points(self) -> Vec<Self::Point> {
-        let Quad { a, b, c, d } = self;
-        vec![a, b, c, d]
-    }
-}
-
-impl<T> IntoPoints for Polygon<T>
-where
-    T: Clone,
-{
-    fn into_points(self) -> Vec<Self::Point> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_points(),
-            Polygon::Quad(quad) => quad.into_points(),
-        }
-    }
+    fn into_points(self) -> Self::Output;
 }
 
 pub trait IntoLines: Primitive {
-    fn into_lines(self) -> Vec<Line<Self::Point>>;
-}
+    type Output: IntoIterator<Item = Line<Self::Point>>;
 
-impl<T> IntoLines for Line<T>
-where
-    T: Clone,
-{
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        vec![self]
-    }
-}
-
-impl<T> IntoLines for Triangle<T>
-where
-    T: Clone,
-{
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        let Triangle { a, b, c } = self;
-        vec![
-            Line::new(a.clone(), b.clone()),
-            Line::new(b, c.clone()),
-            Line::new(c, a),
-        ]
-    }
-}
-
-impl<T> IntoLines for Quad<T>
-where
-    T: Clone,
-{
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        let Quad { a, b, c, d } = self;
-        vec![
-            Line::new(a.clone(), b.clone()),
-            Line::new(b, c.clone()),
-            Line::new(c, d.clone()),
-            Line::new(d, a),
-        ]
-    }
-}
-
-impl<T> IntoLines for Polygon<T>
-where
-    T: Clone,
-{
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_lines(),
-            Polygon::Quad(quad) => quad.into_lines(),
-        }
-    }
+    fn into_lines(self) -> Self::Output;
 }
 
 pub trait IntoTriangles: Polygonal {
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>>;
-}
+    type Output: IntoIterator<Item = Triangle<Self::Point>>;
 
-impl<T> IntoTriangles for Triangle<T>
-where
-    T: Clone,
-{
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        vec![self]
-    }
-}
-
-impl<T> IntoTriangles for Quad<T>
-where
-    T: Clone,
-{
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        let Quad { a, b, c, d } = self;
-        vec![
-            Triangle::new(a.clone(), b, c.clone()),
-            Triangle::new(c, d, a),
-        ]
-    }
-}
-
-impl<T> IntoTriangles for Polygon<T>
-where
-    T: Clone,
-{
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_triangles(),
-            Polygon::Quad(quad) => quad.into_triangles(),
-        }
-    }
+    fn into_triangles(self) -> Self::Output;
 }
 
 pub trait IntoSubdivisions: Polygonal
@@ -216,6 +96,160 @@ where
     Self::Point: Clone + Interpolate,
 {
     fn into_tetrahedrons(self) -> ArrayVec<[Triangle<Self::Point>; 4]>;
+}
+
+impl<T> IntoPoints for Line<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Self::Point; 2]>;
+
+    fn into_points(self) -> Self::Output {
+        let Line { a, b } = self;
+        ArrayVec::from([a, b])
+    }
+}
+
+impl<T> IntoPoints for Triangle<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Self::Point; 3]>;
+
+    fn into_points(self) -> Self::Output {
+        let Triangle { a, b, c } = self;
+        ArrayVec::from([a, b, c])
+    }
+}
+
+impl<T> IntoPoints for Quad<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Self::Point; 4]>;
+
+    fn into_points(self) -> Self::Output {
+        let Quad { a, b, c, d } = self;
+        ArrayVec::from([a, b, c, d])
+    }
+}
+
+impl<T> IntoPoints for Polygon<T>
+where
+    T: Clone,
+{
+    type Output = Vec<Self::Point>;
+
+    fn into_points(self) -> Self::Output {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_points().into_iter().collect(),
+            Polygon::Quad(quad) => quad.into_points().into_iter().collect(),
+        }
+    }
+}
+
+impl<T> IntoLines for Line<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Line<Self::Point>; 1]>;
+
+    fn into_lines(self) -> Self::Output {
+        ArrayVec::from([self])
+    }
+}
+
+impl<T> IntoLines for Triangle<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Line<Self::Point>; 3]>;
+
+    fn into_lines(self) -> Self::Output {
+        let Triangle { a, b, c } = self;
+        ArrayVec::from(
+            [
+                Line::new(a.clone(), b.clone()),
+                Line::new(b, c.clone()),
+                Line::new(c, a),
+            ],
+        )
+    }
+}
+
+impl<T> IntoLines for Quad<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Line<Self::Point>; 4]>;
+
+    fn into_lines(self) -> Self::Output {
+        let Quad { a, b, c, d } = self;
+        ArrayVec::from(
+            [
+                Line::new(a.clone(), b.clone()),
+                Line::new(b, c.clone()),
+                Line::new(c, d.clone()),
+                Line::new(d, a),
+            ],
+        )
+    }
+}
+
+impl<T> IntoLines for Polygon<T>
+where
+    T: Clone,
+{
+    type Output = Vec<Line<Self::Point>>;
+
+    fn into_lines(self) -> Self::Output {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_lines().into_iter().collect(),
+            Polygon::Quad(quad) => quad.into_lines().into_iter().collect(),
+        }
+    }
+}
+
+impl<T> IntoTriangles for Triangle<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Triangle<Self::Point>; 1]>;
+
+    fn into_triangles(self) -> Self::Output {
+        ArrayVec::from([self])
+    }
+}
+
+impl<T> IntoTriangles for Quad<T>
+where
+    T: Clone,
+{
+    type Output = ArrayVec<[Triangle<Self::Point>; 2]>;
+
+    fn into_triangles(self) -> Self::Output {
+        let Quad { a, b, c, d } = self;
+        ArrayVec::from(
+            [
+                Triangle::new(a.clone(), b, c.clone()),
+                Triangle::new(c, d, a),
+            ],
+        )
+    }
+}
+
+impl<T> IntoTriangles for Polygon<T>
+where
+    T: Clone,
+{
+    type Output = Vec<Triangle<Self::Point>>;
+
+    fn into_triangles(self) -> Self::Output {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_triangles().into_iter().collect(),
+            Polygon::Quad(quad) => quad.into_triangles().into_iter().collect(),
+        }
+    }
 }
 
 impl<T> IntoSubdivisions for Triangle<T>
@@ -303,54 +337,53 @@ where
 
 pub trait Points<P>: Sized
 where
-    P: Primitive,
+    P: IntoPoints,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>>;
+    fn points(self) -> Decompose<Self, P, P::Point, (), P::Output>;
 }
 
-impl<I, T, P> Points<P> for I
+impl<I, P> Points<P> for I
 where
     I: Iterator<Item = P>,
-    P: IntoPoints<Point = T>,
-    T: Clone,
+    P: IntoPoints,
+    P::Point: Clone,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>> {
+    fn points(self) -> Decompose<Self, P, P::Point, (), P::Output> {
         Decompose::new(self, (), into_points)
     }
 }
 
 pub trait Triangulate<P>: Sized
 where
-    P: Polygonal,
+    P: IntoTriangles,
 {
-    #[allow(type_complexity)]
-    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>>;
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), P::Output>;
 }
 
-impl<I, T, P> Triangulate<P> for I
+impl<I, P> Triangulate<P> for I
 where
     I: Iterator<Item = P>,
-    P: IntoTriangles<Point = T>,
-    T: Clone,
+    P: IntoTriangles,
+    P::Point: Clone,
 {
-    #[allow(type_complexity)]
-    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), Vec<Triangle<P::Point>>> {
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), P::Output> {
         Decompose::new(self, (), into_triangles)
     }
 }
 
 pub trait Subdivide<P>: Sized
 where
-    P: Polygonal,
+    P: IntoSubdivisions,
+    P::Point: Clone + Interpolate,
 {
     fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>>;
 }
 
-impl<I, T, P> Subdivide<P> for I
+impl<I, P> Subdivide<P> for I
 where
     I: Iterator<Item = P>,
-    P: IntoSubdivisions<Point = T>,
-    T: Clone + Interpolate,
+    P: IntoSubdivisions,
+    P::Point: Clone + Interpolate,
 {
     fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>> {
         Decompose::new(self, n, P::into_subdivisions)
@@ -373,18 +406,18 @@ where
     }
 }
 
-fn into_points<P, T>(primitive: P, _: ()) -> Vec<T>
+fn into_points<P>(primitive: P, _: ()) -> P::Output
 where
-    P: IntoPoints<Point = T>,
-    T: Clone,
+    P: IntoPoints,
+    P::Point: Clone,
 {
     primitive.into_points()
 }
 
-fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
+fn into_triangles<P>(polygon: P, _: ()) -> P::Output
 where
-    P: IntoTriangles<Point = T>,
-    T: Clone,
+    P: IntoTriangles,
+    P::Point: Clone,
 {
     polygon.into_triangles()
 }
@@ -396,10 +429,10 @@ where
     quad.into_tetrahedrons()
 }
 
-fn n_map_polygon<T, P, A, F>(n: usize, polygon: P, f: F) -> Vec<P>
+fn n_map_polygon<P, A, F>(n: usize, polygon: P, f: F) -> Vec<P>
 where
-    P: Polygonal<Point = T>,
-    T: Clone,
+    P: Polygonal,
+    P::Point: Clone,
     A: Array<Item = P>,
     F: Fn(P) -> ArrayVec<A>,
 {
