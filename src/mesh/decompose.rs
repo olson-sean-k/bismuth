@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::iter::IntoIterator;
 
 use math::{self, FScalar};
-use super::primitive::{Polygon, Polygonal, Primitive, Triangle, Quad};
+use super::primitive::{Line, Polygon, Polygonal, Primitive, Triangle, Quad};
 
 // A type `F` constrained to `Fn(P, D) -> R` could be used here, but it would
 // not be possible to name that type for anything but functions (not closures).
@@ -64,6 +64,144 @@ impl<T> Interpolate for T
 where
     T: math::Interpolate<FScalar>,
 {
+}
+
+pub trait IntoPoints: Primitive {
+    fn into_points(self) -> Vec<Self::Point>;
+}
+
+impl<T> IntoPoints for Line<T>
+where
+    T: Clone,
+{
+    fn into_points(self) -> Vec<Self::Point> {
+        let Line { a, b } = self;
+        vec![a, b]
+    }
+}
+
+impl<T> IntoPoints for Triangle<T>
+where
+    T: Clone,
+{
+    fn into_points(self) -> Vec<Self::Point> {
+        let Triangle { a, b, c } = self;
+        vec![a, b, c]
+    }
+}
+
+impl<T> IntoPoints for Quad<T>
+where
+    T: Clone,
+{
+    fn into_points(self) -> Vec<Self::Point> {
+        let Quad { a, b, c, d } = self;
+        vec![a, b, c, d]
+    }
+}
+
+impl<T> IntoPoints for Polygon<T>
+where
+    T: Clone,
+{
+    fn into_points(self) -> Vec<Self::Point> {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_points(),
+            Polygon::Quad(quad) => quad.into_points(),
+        }
+    }
+}
+
+pub trait IntoLines: Primitive {
+    fn into_lines(self) -> Vec<Line<Self::Point>>;
+}
+
+impl<T> IntoLines for Line<T>
+where
+    T: Clone,
+{
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
+        vec![self]
+    }
+}
+
+impl<T> IntoLines for Triangle<T>
+where
+    T: Clone,
+{
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
+        let Triangle { a, b, c } = self;
+        vec![
+            Line::new(a.clone(), b.clone()),
+            Line::new(b, c.clone()),
+            Line::new(c, a),
+        ]
+    }
+}
+
+impl<T> IntoLines for Quad<T>
+where
+    T: Clone,
+{
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
+        let Quad { a, b, c, d } = self;
+        vec![
+            Line::new(a.clone(), b.clone()),
+            Line::new(b, c.clone()),
+            Line::new(c, d.clone()),
+            Line::new(d, a),
+        ]
+    }
+}
+
+impl<T> IntoLines for Polygon<T>
+where
+    T: Clone,
+{
+    fn into_lines(self) -> Vec<Line<Self::Point>> {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_lines(),
+            Polygon::Quad(quad) => quad.into_lines(),
+        }
+    }
+}
+
+pub trait IntoTriangles: Polygonal {
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>>;
+}
+
+impl<T> IntoTriangles for Triangle<T>
+where
+    T: Clone,
+{
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
+        vec![self]
+    }
+}
+
+impl<T> IntoTriangles for Quad<T>
+where
+    T: Clone,
+{
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
+        let Quad { a, b, c, d } = self;
+        vec![
+            Triangle::new(a.clone(), b, c.clone()),
+            Triangle::new(c, d, a),
+        ]
+    }
+}
+
+impl<T> IntoTriangles for Polygon<T>
+where
+    T: Clone,
+{
+    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
+        match self {
+            Polygon::Triangle(triangle) => triangle.into_triangles(),
+            Polygon::Quad(quad) => quad.into_triangles(),
+        }
+    }
 }
 
 pub trait IntoSubdivisions: Polygonal
@@ -173,7 +311,7 @@ where
 impl<I, T, P> Points<P> for I
 where
     I: Iterator<Item = P>,
-    P: Primitive<Point = T>,
+    P: IntoPoints<Point = T>,
     T: Clone,
 {
     fn points(self) -> Decompose<Self, P, P::Point, (), Vec<P::Point>> {
@@ -192,7 +330,7 @@ where
 impl<I, T, P> Triangulate<P> for I
 where
     I: Iterator<Item = P>,
-    P: Polygonal<Point = T>,
+    P: IntoTriangles<Point = T>,
     T: Clone,
 {
     #[allow(type_complexity)]
@@ -237,7 +375,7 @@ where
 
 fn into_points<P, T>(primitive: P, _: ()) -> Vec<T>
 where
-    P: Primitive<Point = T>,
+    P: IntoPoints<Point = T>,
     T: Clone,
 {
     primitive.into_points()
@@ -245,7 +383,7 @@ where
 
 fn into_triangles<P, T>(polygon: P, _: ()) -> Vec<Triangle<T>>
 where
-    P: Polygonal<Point = T>,
+    P: IntoTriangles<Point = T>,
     T: Clone,
 {
     polygon.into_triangles()

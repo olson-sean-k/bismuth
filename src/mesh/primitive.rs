@@ -6,14 +6,9 @@ use math;
 
 pub trait Primitive: Sized {
     type Point: Clone;
-
-    fn into_points(self) -> Vec<Self::Point>;
-    fn into_lines(self) -> Vec<Line<Self::Point>>;
 }
 
-pub trait Polygonal: Primitive {
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>>;
-}
+pub trait Polygonal: Primitive {}
 
 pub trait MapPrimitive<T, U>: Primitive<Point = T>
 where
@@ -130,15 +125,6 @@ where
     T: Clone,
 {
     type Point = T;
-
-    fn into_points(self) -> Vec<Self::Point> {
-        let Line { a, b } = self;
-        vec![a, b]
-    }
-
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        vec![self]
-    }
 }
 
 impl<T> Rotate for Line<T>
@@ -198,29 +184,12 @@ where
     T: Clone,
 {
     type Point = T;
-
-    fn into_points(self) -> Vec<Self::Point> {
-        let Triangle { a, b, c } = self;
-        vec![a, b, c]
-    }
-
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        let Triangle { a, b, c } = self;
-        vec![
-            Line::new(a.clone(), b.clone()),
-            Line::new(b, c.clone()),
-            Line::new(c, a),
-        ]
-    }
 }
 
 impl<T> Polygonal for Triangle<T>
 where
     T: Clone,
 {
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        vec![self]
-    }
 }
 
 impl<T> Rotate for Triangle<T>
@@ -292,34 +261,12 @@ where
     T: Clone,
 {
     type Point = T;
-
-    fn into_points(self) -> Vec<Self::Point> {
-        let Quad { a, b, c, d } = self;
-        vec![a, b, c, d]
-    }
-
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        let Quad { a, b, c, d } = self;
-        vec![
-            Line::new(a.clone(), b.clone()),
-            Line::new(b, c.clone()),
-            Line::new(c, d.clone()),
-            Line::new(d, a),
-        ]
-    }
 }
 
 impl<T> Polygonal for Quad<T>
 where
     T: Clone,
 {
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        let Quad { a, b, c, d } = self;
-        vec![
-            Triangle::new(a.clone(), b, c.clone()),
-            Triangle::new(c, d, a),
-        ]
-    }
 }
 
 impl<T> Rotate for Quad<T>
@@ -373,32 +320,12 @@ where
     T: Clone,
 {
     type Point = T;
-
-    fn into_points(self) -> Vec<Self::Point> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_points(),
-            Polygon::Quad(quad) => quad.into_points(),
-        }
-    }
-
-    fn into_lines(self) -> Vec<Line<Self::Point>> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_lines(),
-            Polygon::Quad(quad) => quad.into_lines(),
-        }
-    }
 }
 
 impl<T> Polygonal for Polygon<T>
 where
     T: Clone,
 {
-    fn into_triangles(self) -> Vec<Triangle<Self::Point>> {
-        match self {
-            Polygon::Triangle(triangle) => triangle.into_triangles(),
-            Polygon::Quad(quad) => quad.into_triangles(),
-        }
-    }
 }
 
 impl<T> Rotate for Polygon<T>
