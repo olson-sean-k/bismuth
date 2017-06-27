@@ -266,13 +266,12 @@ where
     T: Clone,
     F: Fn(P) -> Vec<P>,
 {
-    let mut queued = vec![];
-    let mut transformed = vec![polygon];
+    let mut polygons = vec![polygon];
     for _ in 0..n {
-        queued.extend(transformed.drain(..));
-        while let Some(polygon) = queued.pop() {
-            transformed.extend(f(polygon));
-        }
+        polygons = polygons
+            .into_iter()
+            .flat_map(|polygon| f(polygon))
+            .collect();
     }
-    transformed
+    polygons
 }
