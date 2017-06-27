@@ -43,7 +43,7 @@ unit!(integer => i8, i16, i32, i64, u8, u16, u32, u64);
 unit!(real => f32, f64);
 
 #[derive(Clone, Copy)]
-pub enum FacePlane {
+pub enum Plane {
     XY,
     NXY,
     ZY,
@@ -86,7 +86,7 @@ where
         Generate::new(self, 0..self.polygon_count(), Cube::polygon)
     }
 
-    pub fn plane_polygons(&self) -> Generate<Self, Quad<FacePlane>> {
+    pub fn plane_polygons(&self) -> Generate<Self, Quad<Plane>> {
         Generate::new(self, 0..self.polygon_count(), Cube::plane_polygon)
     }
 
@@ -103,14 +103,14 @@ where
             .map_primitive(|index| self.point(index))
     }
 
-    fn plane_polygon(&self, index: usize) -> Quad<FacePlane> {
+    fn plane_polygon(&self, index: usize) -> Quad<Plane> {
         match index {
-            0 => Quad::converged(FacePlane::XY),  // front
-            1 => Quad::converged(FacePlane::NZY), // right
-            2 => Quad::converged(FacePlane::XNZ), // top
-            3 => Quad::converged(FacePlane::ZY),  // left
-            4 => Quad::converged(FacePlane::XZ),  // bottom
-            5 => Quad::converged(FacePlane::NXY), // back
+            0 => Quad::converged(Plane::XY),  // front
+            1 => Quad::converged(Plane::NZY), // right
+            2 => Quad::converged(Plane::XNZ), // top
+            3 => Quad::converged(Plane::ZY),  // left
+            4 => Quad::converged(Plane::XZ),  // bottom
+            5 => Quad::converged(Plane::NXY), // back
             _ => panic!(),
         }
     }

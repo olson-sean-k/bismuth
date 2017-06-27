@@ -1,7 +1,7 @@
 use OptionExt;
 use math::{IntoSpace, FPoint2, FPoint3, FScalar, FVector3, UScalar};
 use mesh::{self, MapPoints, Points, Triangle, Triangulate};
-use mesh::cube::FacePlane;
+use mesh::cube::Plane;
 use render::{Color, Index, MeshBuffer, ToMeshBuffer, Vertex};
 use super::space::{LogWidth, Spatial};
 use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
@@ -37,9 +37,9 @@ where
                     .map(|(position, plane)| {
                         let color = Color::white();
                         Triangle::new(
-                            Vertex::new(&position.a, &planar_uv(plane.a, &position.a), &color),
-                            Vertex::new(&position.b, &planar_uv(plane.b, &position.b), &color),
-                            Vertex::new(&position.c, &planar_uv(plane.c, &position.c), &color),
+                            Vertex::new(&position.a, &uv(plane.a, &position.a), &color),
+                            Vertex::new(&position.b, &uv(plane.b, &position.b), &color),
+                            Vertex::new(&position.c, &uv(plane.c, &position.c), &color),
                         )
                     })
                     .points(),
@@ -55,16 +55,16 @@ where
     }
 }
 
-fn planar_uv(plane: FacePlane, point: &FPoint3) -> FPoint2 {
+fn uv(plane: Plane, point: &FPoint3) -> FPoint2 {
     fn map(x: FScalar) -> FScalar {
         x / LogWidth::unit().exp() as FScalar
     }
     match plane {
-        FacePlane::XY => FPoint2::new(map(point.x), map(point.y)),
-        FacePlane::NXY => FPoint2::new(-map(point.x), map(point.y)),
-        FacePlane::ZY => FPoint2::new(map(point.z), map(point.y)),
-        FacePlane::NZY => FPoint2::new(-map(point.z), map(point.y)),
-        FacePlane::XZ => FPoint2::new(map(point.x), map(point.z)),
-        FacePlane::XNZ => FPoint2::new(map(point.x), -map(point.z)),
+        Plane::XY => FPoint2::new(map(point.x), map(point.y)),
+        Plane::NXY => FPoint2::new(-map(point.x), map(point.y)),
+        Plane::ZY => FPoint2::new(map(point.z), map(point.y)),
+        Plane::NZY => FPoint2::new(-map(point.z), map(point.y)),
+        Plane::XZ => FPoint2::new(map(point.x), map(point.z)),
+        Plane::XNZ => FPoint2::new(map(point.x), -map(point.z)),
     }
 }
