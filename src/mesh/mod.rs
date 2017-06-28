@@ -10,16 +10,11 @@
 //! Generating position and index data for a scaled sphere mesh:
 //!
 //! ```
-//! use bismuth::mesh::{MapPoints, IndexPolygons, Points, Triangulate};
+//! use bismuth::mesh::{ConjointPoints, IndexPolygons, Points, Triangulate};
 //! use bismuth::mesh::sphere::UVSphere;
 //!
 //! let sphere = UVSphere::with_unit_radius(16, 16);
-//! let positions: Vec<_> = sphere
-//!     .polygons()
-//!     .map_points(|point| point * 10.0)
-//!     .triangulate()
-//!     .points()
-//!     .collect();
+//! let positions: Vec<_> = sphere.conjoint_points().map(|point| point * 10.0).collect();
 //! let indeces: Vec<_> = sphere.index_polygons().triangulate().points().collect();
 //! ```
 
