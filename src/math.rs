@@ -172,7 +172,7 @@ where
         Point3::new(
             cmp::max(self.x, other.x),
             cmp::max(self.y, other.y),
-            cmp::max(self.y, other.y),
+            cmp::max(self.z, other.z),
         )
     }
 }
@@ -189,7 +189,7 @@ where
         Point3::new(
             cmp::min(self.x, other.x),
             cmp::min(self.y, other.y),
-            cmp::min(self.y, other.y),
+            cmp::min(self.z, other.z),
         )
     }
 }
