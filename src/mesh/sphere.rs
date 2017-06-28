@@ -4,7 +4,7 @@ use num::traits::FloatConst;
 use std::cmp;
 use std::marker::PhantomData;
 
-use super::generate::{ConjointPointGenerator, Generate, IndexPolygonGenerator, PolygonGenerator};
+use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, PolygonGenerator};
 use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
@@ -31,10 +31,6 @@ where
         }
     }
 
-    pub fn polygons(&self) -> Generate<Self, Polygon<Point3<T>>> {
-        Generate::new(self, 0..self.polygon_count(), UVSphere::polygon)
-    }
-
     fn point(&self, u: usize, v: usize) -> Point3<T> {
         let u = (T::from(u).unwrap() / T::from(self.nu).unwrap()) * T::PI() * (T::one() + T::one());
         let v = (T::from(v).unwrap() / T::from(self.nv).unwrap()) * T::PI();
@@ -53,7 +49,42 @@ where
         }
     }
 
-    fn polygon(&self, index: usize) -> Polygon<Point3<T>> {
+    fn map_polygon_index(&self, index: usize) -> (usize, usize) {
+        (index % self.nu, index / self.nv)
+    }
+}
+
+impl<T> ConjointPointGenerator for UVSphere<T>
+where
+    T: Float + FloatConst + Scalar,
+{
+    type Output = Point3<T>;
+
+    fn conjoint_point(&self, index: usize) -> Self::Output {
+        if index == 0 {
+            self.point(0, 0)
+        }
+        else if index == self.conjoint_point_count() - 1 {
+            self.point(0, self.nv)
+        }
+        else {
+            let index = index - 1;
+            self.point(index % self.nu, (index / self.nv) + 1)
+        }
+    }
+
+    fn conjoint_point_count(&self) -> usize {
+        (self.nv - 1) * self.nu + 2
+    }
+}
+
+impl<T> PolygonGenerator for UVSphere<T>
+where
+    T: Float + FloatConst + Scalar,
+{
+    type Output = Polygon<Point3<T>>;
+
+    fn polygon(&self, index: usize) -> Self::Output {
         let (u, v) = self.map_polygon_index(index);
 
         // Generate the points at the requested meridian and parallel. The
@@ -78,47 +109,18 @@ where
         }
     }
 
-    fn map_polygon_index(&self, index: usize) -> (usize, usize) {
-        (index % self.nu, index / self.nv)
-    }
-}
-
-impl<T> ConjointPointGenerator<Point3<T>> for UVSphere<T>
-where
-    T: Float + FloatConst + Scalar,
-{
-    fn conjoint_point(&self, index: usize) -> Point3<T> {
-        if index == 0 {
-            self.point(0, 0)
-        }
-        else if index == self.conjoint_point_count() - 1 {
-            self.point(0, self.nv)
-        }
-        else {
-            let index = index - 1;
-            self.point(index % self.nu, (index / self.nv) + 1)
-        }
-    }
-
-    fn conjoint_point_count(&self) -> usize {
-        (self.nv - 1) * self.nu + 2
-    }
-}
-
-impl<T> PolygonGenerator for UVSphere<T>
-where
-    T: Float + FloatConst + Scalar,
-{
     fn polygon_count(&self) -> usize {
         self.nu * self.nv
     }
 }
 
-impl<T> IndexPolygonGenerator<Polygon<usize>> for UVSphere<T>
+impl<T> IndexPolygonGenerator for UVSphere<T>
 where
     T: Float + FloatConst + Scalar,
 {
-    fn index_polygon(&self, index: usize) -> Polygon<usize> {
+    type Output = Polygon<usize>;
+
+    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output {
         let (u, v) = self.map_polygon_index(index);
 
         let low = self.index_point(u, v);

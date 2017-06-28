@@ -82,10 +82,6 @@ where
         Cube::new(lower, upper)
     }
 
-    pub fn polygons(&self) -> Generate<Self, Quad<Point3<T>>> {
-        Generate::new(self, 0..self.polygon_count(), Cube::polygon)
-    }
-
     pub fn plane_polygons(&self) -> Generate<Self, Quad<Plane>> {
         Generate::new(self, 0..self.polygon_count(), Cube::plane_polygon)
     }
@@ -96,11 +92,6 @@ where
         let y = if index & 0b010 == 0b010 { self.upper } else { self.lower };
         let z = if index & 0b001 == 0b001 { self.upper } else { self.lower };
         Point3::new(x, y, z)
-    }
-
-    fn polygon(&self, index: usize) -> Quad<Point3<T>> {
-        self.index_polygon(index)
-            .map_primitive(|index| self.point(index))
     }
 
     fn plane_polygon(&self, index: usize) -> Quad<Plane> {
@@ -116,11 +107,13 @@ where
     }
 }
 
-impl<T> ConjointPointGenerator<Point3<T>> for Cube<T>
+impl<T> ConjointPointGenerator for Cube<T>
 where
     T: Unit,
 {
-    fn conjoint_point(&self, index: usize) -> Point3<T> {
+    type Output = Point3<T>;
+
+    fn conjoint_point(&self, index: usize) -> Self::Output {
         self.point(index)
     }
 
@@ -133,16 +126,25 @@ impl<T> PolygonGenerator for Cube<T>
 where
     T: Unit,
 {
+    type Output = Quad<Point3<T>>;
+
+    fn polygon(&self, index: usize) -> Self::Output {
+        self.index_polygon(index)
+            .map_primitive(|index| self.point(index))
+    }
+
     fn polygon_count(&self) -> usize {
         6
     }
 }
 
-impl<T> IndexPolygonGenerator<Quad<usize>> for Cube<T>
+impl<T> IndexPolygonGenerator for Cube<T>
 where
     T: Unit,
 {
-    fn index_polygon(&self, index: usize) -> Quad<usize> {
+    type Output = Quad<usize>;
+
+    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output {
         match index {
             0 => Quad::new(5, 7, 3, 1), // front
             1 => Quad::new(6, 7, 5, 4), // right
@@ -155,11 +157,13 @@ where
     }
 }
 
-impl<T> TexturePolygonGenerator<Quad<Point2<f32>>> for Cube<T>
+impl<T> TexturePolygonGenerator for Cube<T>
 where
     T: Unit,
 {
-    fn texture_polygon(&self, index: usize) -> Quad<Point2<f32>> {
+    type Output = Quad<Point2<f32>>;
+
+    fn texture_polygon(&self, index: usize) -> <Self as TexturePolygonGenerator>::Output {
         let uu = Point2::new(1.0, 1.0);
         let ul = Point2::new(1.0, 0.0);
         let ll = Point2::new(0.0, 0.0);

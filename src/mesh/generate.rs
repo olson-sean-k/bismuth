@@ -3,6 +3,8 @@
 
 use std::ops::Range;
 
+use super::primitive::Polygonal;
+
 // A type `F` constrained to `Fn(&'a G, usize) -> P` could be used here, but it
 // would not be possible to name that type for anything but functions (not
 // closures).  Instead of a limited and somewhat redundant type `F`, just use
@@ -42,8 +44,10 @@ where
     }
 }
 
-pub trait ConjointPointGenerator<P> {
-    fn conjoint_point(&self, index: usize) -> P;
+pub trait ConjointPointGenerator {
+    type Output;
+
+    fn conjoint_point(&self, index: usize) -> Self::Output;
     fn conjoint_point_count(&self) -> usize;
 }
 
@@ -53,7 +57,7 @@ pub trait ConjointPoints<P>: Sized {
 
 impl<G, P> ConjointPoints<P> for G
 where
-    G: ConjointPointGenerator<P>,
+    G: ConjointPointGenerator<Output = P>,
 {
     fn conjoint_points(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.conjoint_point_count(), G::conjoint_point)
@@ -61,11 +65,30 @@ where
 }
 
 pub trait PolygonGenerator {
+    type Output: Polygonal;
+
+    fn polygon(&self, index: usize) -> Self::Output;
     fn polygon_count(&self) -> usize;
 }
 
-pub trait IndexPolygonGenerator<P>: PolygonGenerator {
-    fn index_polygon(&self, index: usize) -> P;
+pub trait Polygons<P>: Sized {
+    fn polygons(&self) -> Generate<Self, P>;
+}
+
+impl<G, P> Polygons<P> for G
+where
+    G: PolygonGenerator<Output = P>,
+    P: Polygonal,
+{
+    fn polygons(&self) -> Generate<Self, P> {
+        Generate::new(self, 0..self.polygon_count(), G::polygon)
+    }
+}
+
+pub trait IndexPolygonGenerator: ConjointPointGenerator + PolygonGenerator {
+    type Output: Polygonal;
+
+    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output;
 }
 
 pub trait IndexPolygons<P>: Sized {
@@ -74,15 +97,18 @@ pub trait IndexPolygons<P>: Sized {
 
 impl<G, P> IndexPolygons<P> for G
 where
-    G: IndexPolygonGenerator<P> + PolygonGenerator,
+    G: IndexPolygonGenerator<Output = P> + ConjointPointGenerator + PolygonGenerator,
+    P: Polygonal,
 {
     fn index_polygons(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.polygon_count(), G::index_polygon)
     }
 }
 
-pub trait TexturePolygonGenerator<P>: PolygonGenerator {
-    fn texture_polygon(&self, index: usize) -> P;
+pub trait TexturePolygonGenerator: PolygonGenerator {
+    type Output: Polygonal;
+
+    fn texture_polygon(&self, index: usize) -> <Self as TexturePolygonGenerator>::Output;
 }
 
 pub trait TexturePolygons<P>: Sized {
@@ -91,7 +117,8 @@ pub trait TexturePolygons<P>: Sized {
 
 impl<G, P> TexturePolygons<P> for G
 where
-    G: PolygonGenerator + TexturePolygonGenerator<P>,
+    G: PolygonGenerator + TexturePolygonGenerator<Output = P>,
+    P: Polygonal,
 {
     fn texture_polygons(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.polygon_count(), G::texture_polygon)
