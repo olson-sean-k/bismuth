@@ -1,9 +1,10 @@
 //! This module provides tools for generating meshes for simple shapes like
-//! cubes and spheres. It uses an iterator-based interface that begins with a
-//! unit shape and manipulates its constituent primitives like points, lines,
-//! and polygons. All shapes provide position information and some can
-//! additionally generate index, texture, and conjoint point information as
-//! well.
+//! cubes and spheres.
+//!
+//! It uses an iterator-based interface that begins with a unit shape and
+//! manipulates its constituent primitives like points, lines, and polygons.
+//! All shapes provide position information and some can additionally generate
+//! index, texture, and conjoint point information as well.
 //!
 //! # Examples
 //!
@@ -14,8 +15,15 @@
 //! use bismuth::mesh::sphere::UVSphere;
 //!
 //! let sphere = UVSphere::with_unit_radius(16, 16);
-//! let positions: Vec<_> = sphere.conjoint_points().map(|point| point * 10.0).collect();
-//! let indeces: Vec<_> = sphere.index_polygons().triangulate().points().collect();
+//! let positions: Vec<_> = sphere
+//!     .conjoint_points() // Get the unique set of points.
+//!     .map(|point| point * 10.0) // Scale the points by 10.
+//!     .collect();
+//! let indeces: Vec<_> = sphere
+//!     .index_polygons() // Get indeces into the unique set of points as polygons.
+//!     .triangulate() // Decompose the polygons into triangles.
+//!     .points() // Decompose the triangles into points (indeces).
+//!     .collect();
 //! ```
 
 pub mod cube;
