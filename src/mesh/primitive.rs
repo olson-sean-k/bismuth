@@ -1,4 +1,4 @@
-use std::convert::Into;
+use std::convert::From;
 use std::marker::PhantomData;
 use std::mem;
 
@@ -157,12 +157,6 @@ impl<T> Triangle<T> {
     }
 }
 
-impl<T> Into<Polygon<T>> for Triangle<T> {
-    fn into(self) -> Polygon<T> {
-        Polygon::Triangle(self)
-    }
-}
-
 impl<T, U> MapPrimitive<T, U> for Triangle<T>
 where
     T: Clone,
@@ -234,12 +228,6 @@ impl<T> Quad<T> {
     }
 }
 
-impl<T> Into<Polygon<T>> for Quad<T> {
-    fn into(self) -> Polygon<T> {
-        Polygon::Quad(self)
-    }
-}
-
 impl<T, U> MapPrimitive<T, U> for Quad<T>
 where
     T: Clone,
@@ -295,6 +283,18 @@ where
 pub enum Polygon<T> {
     Triangle(Triangle<T>),
     Quad(Quad<T>),
+}
+
+impl<T> From<Triangle<T>> for Polygon<T> {
+    fn from(triangle: Triangle<T>) -> Self {
+        Polygon::Triangle(triangle)
+    }
+}
+
+impl<T> From<Quad<T>> for Polygon<T> {
+    fn from(quad: Quad<T>) -> Self {
+        Polygon::Quad(quad)
+    }
 }
 
 impl<T, U> MapPrimitive<T, U> for Polygon<T>
