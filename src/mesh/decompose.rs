@@ -1,9 +1,10 @@
 //! This module provides a generic iterator and traits for decomposing
 //! primitives and tessellating polygons.
 
-use arrayvec::{Array, ArrayVec};
+use arrayvec::ArrayVec;
 use std::collections::VecDeque;
 use std::iter::IntoIterator;
+use std::vec;
 
 use math::{self, FScalar};
 use super::primitive::{Line, Polygon, Polygonal, Primitive, Triangle, Quad};
@@ -12,47 +13,62 @@ use super::primitive::{Line, Polygon, Polygonal, Primitive, Triangle, Quad};
 // not be possible to name that type for anything but functions (not closures).
 // Instead of a limited and somewhat redundant type `F`, just use `fn(P, D) ->
 // R` for the member `f`.
-pub struct Decompose<I, P, Q, D, R>
+pub struct Decompose<I, P, Q, R>
 where
-    D: Copy,
     R: IntoIterator<Item = Q>,
 {
     input: I,
     output: VecDeque<Q>,
-    parameter: D,
-    f: fn(P, D) -> R,
+    f: fn(P) -> R,
 }
 
-impl<I, P, Q, D, R> Decompose<I, P, Q, D, R>
+impl<I, P, Q, R> Decompose<I, P, Q, R>
 where
-    D: Copy,
     R: IntoIterator<Item = Q>,
 {
-    pub(super) fn new(input: I, parameter: D, f: fn(P, D) -> R) -> Self {
+    pub(super) fn new(input: I, f: fn(P) -> R) -> Self {
         Decompose {
             input: input,
             output: VecDeque::new(),
-            parameter: parameter,
             f: f,
         }
     }
 }
 
-impl<I, P, Q, D, R> Iterator for Decompose<I, P, Q, D, R>
+impl<I, P, R> Decompose<I, P, P, R>
 where
     I: Iterator<Item = P>,
-    D: Copy,
+    P: Primitive,
+    R: IntoIterator<Item = P>,
+{
+    pub fn remap(self, n: usize) -> Decompose<vec::IntoIter<P>, P, P, R> {
+        let Decompose { input, output, f } = self;
+        Decompose::new(
+            output
+                .into_iter()
+                .rev()
+                .chain(remap(n, input, f))
+                .collect::<Vec<_>>() // TODO: Only needed to name the iterator.
+                .into_iter(),
+            f,
+        )
+    }
+}
+
+impl<I, P, Q, R> Iterator for Decompose<I, P, Q, R>
+where
+    I: Iterator<Item = P>,
     R: IntoIterator<Item = Q>,
 {
     type Item = Q;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(polygon) = self.output.pop_front() {
-                return Some(polygon);
+            if let Some(primitive) = self.output.pop_front() {
+                return Some(primitive);
             }
-            if let Some(polygon) = self.input.next() {
-                self.output.extend((self.f)(polygon, self.parameter));
+            if let Some(primitive) = self.input.next() {
+                self.output.extend((self.f)(primitive));
             }
             else {
                 return None;
@@ -91,7 +107,9 @@ pub trait IntoSubdivisions: Polygonal
 where
     Self::Point: Clone + Interpolate,
 {
-    fn into_subdivisions(self, n: usize) -> Vec<Self>;
+    type Output: IntoIterator<Item = Self>;
+
+    fn into_subdivisions(self) -> Self::Output;
 }
 
 pub trait IntoTetrahedrons: Polygonal
@@ -259,17 +277,17 @@ impl<T> IntoSubdivisions for Triangle<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions(self, n: usize) -> Vec<Self> {
-        n_map_polygon(n, self, |triangle| {
-            let Triangle { a, b, c } = triangle;
-            let ac = a.midpoint(&c);
-            ArrayVec::from(
-                [
-                    Triangle::new(b.clone(), ac.clone(), a),
-                    Triangle::new(c, ac, b),
-                ],
-            )
-        })
+    type Output = ArrayVec<[Triangle<Self::Point>; 2]>;
+
+    fn into_subdivisions(self) -> Self::Output {
+        let Triangle { a, b, c } = self;
+        let ac = a.midpoint(&c);
+        ArrayVec::from(
+            [
+                Triangle::new(b.clone(), ac.clone(), a),
+                Triangle::new(c, ac, b),
+            ],
+        )
     }
 }
 
@@ -277,23 +295,23 @@ impl<T> IntoSubdivisions for Quad<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions(self, n: usize) -> Vec<Self> {
-        n_map_polygon(n, self, |quad| {
-            let Quad { a, b, c, d } = quad;
-            let ab = a.midpoint(&b);
-            let bc = b.midpoint(&c);
-            let cd = c.midpoint(&d);
-            let da = d.midpoint(&a);
-            let ac = a.midpoint(&c); // Diagonal.
-            ArrayVec::from(
-                [
-                    Quad::new(a, ab.clone(), ac.clone(), da.clone()),
-                    Quad::new(ab, b, bc.clone(), ac.clone()),
-                    Quad::new(ac.clone(), bc, c, cd.clone()),
-                    Quad::new(da, ac, cd, d),
-                ],
-            )
-        })
+    type Output = ArrayVec<[Quad<Self::Point>; 4]>;
+
+    fn into_subdivisions(self) -> Self::Output {
+        let Quad { a, b, c, d } = self;
+        let ab = a.midpoint(&b);
+        let bc = b.midpoint(&c);
+        let cd = c.midpoint(&d);
+        let da = d.midpoint(&a);
+        let ac = a.midpoint(&c); // Diagonal.
+        ArrayVec::from(
+            [
+                Quad::new(a, ab.clone(), ac.clone(), da.clone()),
+                Quad::new(ab, b, bc.clone(), ac.clone()),
+                Quad::new(ac.clone(), bc, c, cd.clone()),
+                Quad::new(da, ac, cd, d),
+            ],
+        )
     }
 }
 
@@ -319,17 +337,19 @@ impl<T> IntoSubdivisions for Polygon<T>
 where
     T: Clone + Interpolate,
 {
-    fn into_subdivisions(self, n: usize) -> Vec<Self> {
+    type Output = Vec<Self>;
+
+    fn into_subdivisions(self) -> Self::Output {
         match self {
             Polygon::Triangle(triangle) => {
                 triangle
-                    .into_subdivisions(n)
+                    .into_subdivisions()
                     .into_iter()
                     .map(|triangle| triangle.into())
                     .collect()
             }
             Polygon::Quad(quad) => {
-                quad.into_subdivisions(n)
+                quad.into_subdivisions()
                     .into_iter()
                     .map(|quad| quad.into())
                     .collect()
@@ -342,7 +362,7 @@ pub trait Points<P>: Sized
 where
     P: IntoPoints,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), P::Output>;
+    fn points(self) -> Decompose<Self, P, P::Point, P::Output>;
 }
 
 impl<I, P> Points<P> for I
@@ -351,8 +371,8 @@ where
     P: IntoPoints,
     P::Point: Clone,
 {
-    fn points(self) -> Decompose<Self, P, P::Point, (), P::Output> {
-        Decompose::new(self, (), into_points)
+    fn points(self) -> Decompose<Self, P, P::Point, P::Output> {
+        Decompose::new(self, P::into_points)
     }
 }
 
@@ -360,7 +380,7 @@ pub trait Lines<P>: Sized
 where
     P: IntoLines,
 {
-    fn lines(self) -> Decompose<Self, P, Line<P::Point>, (), P::Output>;
+    fn lines(self) -> Decompose<Self, P, Line<P::Point>, P::Output>;
 }
 
 impl<I, P> Lines<P> for I
@@ -369,8 +389,8 @@ where
     P: IntoLines,
     P::Point: Clone,
 {
-    fn lines(self) -> Decompose<Self, P, Line<P::Point>, (), P::Output> {
-        Decompose::new(self, (), into_lines)
+    fn lines(self) -> Decompose<Self, P, Line<P::Point>, P::Output> {
+        Decompose::new(self, P::into_lines)
     }
 }
 
@@ -378,7 +398,7 @@ pub trait Triangulate<P>: Sized
 where
     P: IntoTriangles,
 {
-    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), P::Output>;
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, P::Output>;
 }
 
 impl<I, P> Triangulate<P> for I
@@ -387,8 +407,8 @@ where
     P: IntoTriangles,
     P::Point: Clone,
 {
-    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, (), P::Output> {
-        Decompose::new(self, (), into_triangles)
+    fn triangulate(self) -> Decompose<Self, P, Triangle<P::Point>, P::Output> {
+        Decompose::new(self, P::into_triangles)
     }
 }
 
@@ -397,7 +417,7 @@ where
     P: IntoSubdivisions,
     P::Point: Clone + Interpolate,
 {
-    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>>;
+    fn subdivide(self) -> Decompose<Self, P, P, P::Output>;
 }
 
 impl<I, P> Subdivide<P> for I
@@ -406,14 +426,14 @@ where
     P: IntoSubdivisions,
     P::Point: Clone + Interpolate,
 {
-    fn subdivide(self, n: usize) -> Decompose<Self, P, P, usize, Vec<P>> {
-        Decompose::new(self, n, P::into_subdivisions)
+    fn subdivide(self) -> Decompose<Self, P, P, P::Output> {
+        Decompose::new(self, P::into_subdivisions)
     }
 }
 
 pub trait Tetrahedrons<T>: Sized {
     #[allow(type_complexity)]
-    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>>;
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, ArrayVec<[Triangle<T>; 4]>>;
 }
 
 impl<I, T> Tetrahedrons<T> for I
@@ -422,52 +442,22 @@ where
     T: Clone + Interpolate,
 {
     #[allow(type_complexity)]
-    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, (), ArrayVec<[Triangle<T>; 4]>> {
-        Decompose::new(self, (), into_tetrahedrons)
+    fn tetrahedrons(self) -> Decompose<Self, Quad<T>, Triangle<T>, ArrayVec<[Triangle<T>; 4]>> {
+        Decompose::new(self, Quad::into_tetrahedrons)
     }
 }
 
-fn into_points<P>(primitive: P, _: ()) -> P::Output
+fn remap<I, P, R, F>(n: usize, primitives: I, f: F) -> Vec<P>
 where
-    P: IntoPoints,
+    I: IntoIterator<Item = P>,
+    P: Primitive,
     P::Point: Clone,
+    R: IntoIterator<Item = P>,
+    F: Fn(P) -> R,
 {
-    primitive.into_points()
-}
-
-fn into_lines<P>(primitive: P, _: ()) -> P::Output
-where
-    P: IntoLines,
-    P::Point: Clone,
-{
-    primitive.into_lines()
-}
-
-fn into_triangles<P>(polygon: P, _: ()) -> P::Output
-where
-    P: IntoTriangles,
-    P::Point: Clone,
-{
-    polygon.into_triangles()
-}
-
-fn into_tetrahedrons<T>(quad: Quad<T>, _: ()) -> ArrayVec<[Triangle<T>; 4]>
-where
-    T: Clone + Interpolate,
-{
-    quad.into_tetrahedrons()
-}
-
-fn n_map_polygon<P, A, F>(n: usize, polygon: P, f: F) -> Vec<P>
-where
-    P: Polygonal,
-    P::Point: Clone,
-    A: Array<Item = P>,
-    F: Fn(P) -> ArrayVec<A>,
-{
-    let mut polygons = vec![polygon];
+    let mut primitives: Vec<_> = primitives.into_iter().collect();
     for _ in 0..n {
-        polygons = polygons.into_iter().flat_map(&f).collect();
+        primitives = primitives.into_iter().flat_map(&f).collect();
     }
-    polygons
+    primitives
 }
