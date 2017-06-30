@@ -27,8 +27,8 @@ impl Element for MouseProximity {
 }
 
 pub struct Mouse {
-    state: MouseState,
-    snapshot: MouseState,
+    now: MouseState,
+    previous: MouseState,
 }
 
 impl Mouse {
@@ -40,8 +40,8 @@ impl Mouse {
 impl Default for Mouse {
     fn default() -> Self {
         Mouse {
-            state: MouseState::new(),
-            snapshot: MouseState::new(),
+            now: MouseState::new(),
+            previous: MouseState::new(),
         }
     }
 }
@@ -50,7 +50,7 @@ impl Deref for Mouse {
     type Target = MouseState;
 
     fn deref(&self) -> &Self::Target {
-        &self.state
+        &self.now
     }
 }
 
@@ -58,15 +58,15 @@ impl Input for Mouse {
     type State = MouseState;
 
     fn now(&self) -> &Self::State {
-        &self.state
+        &self.now
     }
 
     fn previous(&self) -> &Self::State {
-        &self.snapshot
+        &self.previous
     }
 
     fn snapshot(&mut self) {
-        self.snapshot = self.state.clone();
+        self.previous = self.now.clone();
     }
 }
 
@@ -85,7 +85,7 @@ impl InputDifference<MousePosition> for Mouse {
     // of the state itself. For mouse position, `transition` yields a point and
     // `difference` yields a vector.
     fn difference(&self) -> Self::Difference {
-        let difference = self.state.state(MousePosition) - self.snapshot.state(MousePosition);
+        let difference = self.now.state(MousePosition) - self.previous.state(MousePosition);
         (!difference.is_zero()).as_some((MousePosition, difference))
     }
 }
@@ -108,19 +108,19 @@ impl React for Mouse {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::MouseEntered => {
-                self.state.proximity = true;
+                self.now.proximity = true;
             }
             Event::MouseInput(ElementState::Pressed, button) => {
-                self.state.buttons.insert(button);
+                self.now.buttons.insert(button);
             }
             Event::MouseInput(ElementState::Released, button) => {
-                self.state.buttons.remove(&button);
+                self.now.buttons.remove(&button);
             }
             Event::MouseLeft => {
-                self.state.proximity = false;
+                self.now.proximity = false;
             }
             Event::MouseMoved(x, y) => {
-                self.state.position = Point2::new(x, y);
+                self.now.position = Point2::new(x, y);
             }
             _ => {}
         }

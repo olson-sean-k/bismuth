@@ -9,8 +9,8 @@ impl Element for VirtualKeyCode {
 }
 
 pub struct Keyboard {
-    state: KeyboardState,
-    snapshot: KeyboardState,
+    now: KeyboardState,
+    previous: KeyboardState,
 }
 
 impl Keyboard {
@@ -22,8 +22,8 @@ impl Keyboard {
 impl Default for Keyboard {
     fn default() -> Self {
         Keyboard {
-            state: KeyboardState::new(),
-            snapshot: KeyboardState::new(),
+            now: KeyboardState::new(),
+            previous: KeyboardState::new(),
         }
     }
 }
@@ -32,7 +32,7 @@ impl Deref for Keyboard {
     type Target = KeyboardState;
 
     fn deref(&self) -> &Self::Target {
-        &self.state
+        &self.now
     }
 }
 
@@ -40,15 +40,15 @@ impl Input for Keyboard {
     type State = KeyboardState;
 
     fn now(&self) -> &Self::State {
-        &self.state
+        &self.now
     }
 
     fn previous(&self) -> &Self::State {
-        &self.snapshot
+        &self.previous
     }
 
     fn snapshot(&mut self) {
-        self.snapshot = self.state.clone();
+        self.previous = self.now.clone();
     }
 }
 
@@ -58,10 +58,10 @@ impl React for Keyboard {
             if let Some(key) = key {
                 match state {
                     ElementState::Pressed => {
-                        self.state.keys.insert(key);
+                        self.now.keys.insert(key);
                     }
                     ElementState::Released => {
-                        self.state.keys.remove(&key);
+                        self.now.keys.remove(&key);
                     }
                 }
             }
