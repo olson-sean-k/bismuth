@@ -38,7 +38,6 @@ where
 impl<I, P, R> Decompose<I, P, P, R>
 where
     I: Iterator<Item = P>,
-    P: Primitive,
     R: IntoIterator<Item = P>,
 {
     pub fn remap(self, n: usize) -> Decompose<vec::IntoIter<P>, P, P, R> {
@@ -450,8 +449,6 @@ where
 fn remap<I, P, R, F>(n: usize, primitives: I, f: F) -> Vec<P>
 where
     I: IntoIterator<Item = P>,
-    P: Primitive,
-    P::Point: Clone,
     R: IntoIterator<Item = P>,
     F: Fn(P) -> R,
 {
