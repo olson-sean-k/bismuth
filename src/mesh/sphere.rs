@@ -141,3 +141,44 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+    use std::iter::FromIterator;
+
+    use super::super::*;
+
+    #[test]
+    fn conjoint_point_count() {
+        assert_eq!(
+            5,
+            sphere::UVSphere::<f32>::with_unit_radius(3, 2)
+                .conjoint_points() // 5 conjoint points.
+                .count()
+        );
+    }
+
+    #[test]
+    fn polygon_point_count() {
+        assert_eq!(
+            18,
+            sphere::UVSphere::<f32>::with_unit_radius(3, 2)
+                .polygons() // 6 triangles, 18 points.
+                .points()
+                .count()
+        );
+    }
+
+    #[test]
+    fn index_to_conjoint_point_mapping() {
+        assert_eq!(
+            5,
+            BTreeSet::from_iter(
+                sphere::UVSphere::<f32>::with_unit_radius(3, 2)
+                    .index_polygons() // 18 points, 5 indeces.
+                    .points()
+            ).len()
+        )
+    }
+}
