@@ -50,7 +50,7 @@ where
     }
 
     fn map_polygon_index(&self, index: usize) -> (usize, usize) {
-        (index % self.nu, index / self.nv)
+        (index % self.nu, index / self.nu)
     }
 }
 
