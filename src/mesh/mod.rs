@@ -1,7 +1,7 @@
 //! This module provides tools for generating meshes for simple shapes like
 //! cubes and spheres.
 //!
-//! It uses an iterator-based interface that begins with a unit shape and
+//! The interface is iterator-based and begins with a unit shape and
 //! manipulates its constituent primitives like points, lines, and polygons.
 //! All shapes provide position information and some can additionally generate
 //! index, texture, and conjoint point information as well.
