@@ -2,7 +2,6 @@
 
 extern crate alga;
 extern crate arrayvec;
-extern crate boolinator;
 #[macro_use]
 extern crate gfx;
 extern crate gfx_device_gl;
@@ -25,6 +24,21 @@ pub mod math;
 pub mod mesh;
 pub mod render;
 pub mod resource;
+
+pub trait BoolExt: Sized {
+    fn into_some<T>(self, some: T) -> Option<T>;
+}
+
+impl BoolExt for bool {
+    fn into_some<T>(self, some: T) -> Option<T> {
+        if self {
+            Some(some)
+        }
+        else {
+            None
+        }
+    }
+}
 
 pub trait OptionExt<T> {
     fn and_if<F>(self, f: F) -> Self

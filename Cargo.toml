@@ -21,7 +21,6 @@ doc = false
 [dependencies]
 alga = "0.5.*"
 arrayvec = "0.3.*"
-boolinator = "2.4.*"
 gfx = "0.14.*"
 gfx_device_gl = "0.13.*"
 gfx_window_glutin = "0.14.*"

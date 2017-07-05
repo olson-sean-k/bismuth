@@ -1,9 +1,9 @@
-use boolinator::Boolinator;
 use nalgebra::Point2;
 use num::Zero;
 use std::collections::HashSet;
 use std::ops::Deref;
 
+use BoolExt;
 use event::{ElementState, Event, MouseButton, React};
 use super::state::{CompositeState, Element, Input, InputState, InputDifference, InputTransition,
                    Snapshot, State};
@@ -82,7 +82,7 @@ impl InputDifference<MousePosition> for Mouse {
     // `difference` yields a vector.
     fn difference(&self) -> Self::Difference {
         let difference = self.live.state(MousePosition) - self.snapshot.state(MousePosition);
-        (!difference.is_zero()).as_some((MousePosition, difference))
+        (!difference.is_zero()).into_some((MousePosition, difference))
     }
 }
 
