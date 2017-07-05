@@ -12,14 +12,14 @@ impl Element for MouseButton {
     type State = ElementState;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MousePosition;
 
 impl Element for MousePosition {
     type State = Point2<i32>;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MouseProximity;
 
 impl Element for MouseProximity {
@@ -163,5 +163,37 @@ impl InputState<MousePosition> for MouseState {
 impl InputState<MouseProximity> for MouseState {
     fn state(&self, _: MouseProximity) -> <MouseProximity as Element>::State {
         self.proximity
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use nalgebra::Vector2;
+
+    use event::{Event, React};
+    use super::super::*;
+
+    #[test]
+    fn position_difference_some() {
+        let mut mouse = Mouse::new();
+        mouse.react(&Event::MouseMoved(1, 0));
+        mouse.snapshot();
+        mouse.react(&Event::MouseMoved(1, 1)); // Move 1 LU along the Y axis.
+
+        assert_eq!(
+            Vector2::<i32>::new(0, 1),
+            <Mouse as InputDifference<MousePosition>>::difference(&mouse)
+                .unwrap()
+                .1
+        );
+    }
+
+    #[test]
+    fn position_difference_none() {
+        let mut mouse = Mouse::new();
+        mouse.react(&Event::MouseMoved(1, 0));
+        mouse.snapshot();
+
+        assert!(<Mouse as InputDifference<MousePosition>>::difference(&mouse).is_none());
     }
 }
