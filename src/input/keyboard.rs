@@ -2,15 +2,15 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{CompositeState, Element, Input};
+use super::state::{CompositeState, Element, Input, Snapshot};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;
 }
 
 pub struct Keyboard {
-    now: KeyboardState,
-    previous: KeyboardState,
+    live: KeyboardState,
+    snapshot: KeyboardState,
 }
 
 impl Keyboard {
@@ -22,8 +22,8 @@ impl Keyboard {
 impl Default for Keyboard {
     fn default() -> Self {
         Keyboard {
-            now: KeyboardState::new(),
-            previous: KeyboardState::new(),
+            live: KeyboardState::new(),
+            snapshot: KeyboardState::new(),
         }
     }
 }
@@ -32,23 +32,19 @@ impl Deref for Keyboard {
     type Target = KeyboardState;
 
     fn deref(&self) -> &Self::Target {
-        &self.now
+        &self.live
     }
 }
 
 impl Input for Keyboard {
     type State = KeyboardState;
 
-    fn now(&self) -> &Self::State {
-        &self.now
+    fn live(&self) -> &Self::State {
+        &self.live
     }
 
-    fn previous(&self) -> &Self::State {
-        &self.previous
-    }
-
-    fn snapshot(&mut self) {
-        self.previous = self.now.clone();
+    fn snapshot(&self) -> &Self::State {
+        &self.snapshot
     }
 }
 
@@ -58,14 +54,20 @@ impl React for Keyboard {
             if let Some(key) = key {
                 match state {
                     ElementState::Pressed => {
-                        self.now.keys.insert(key);
+                        self.live.keys.insert(key);
                     }
                     ElementState::Released => {
-                        self.now.keys.remove(&key);
+                        self.live.keys.remove(&key);
                     }
                 }
             }
         }
+    }
+}
+
+impl Snapshot for Keyboard {
+    fn snapshot(&mut self) {
+        self.snapshot = self.live.clone();
     }
 }
 

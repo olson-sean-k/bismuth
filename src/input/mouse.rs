@@ -6,7 +6,7 @@ use std::ops::Deref;
 
 use event::{ElementState, Event, MouseButton, React};
 use super::state::{CompositeState, Element, Input, InputState, InputDifference, InputTransition,
-                   State};
+                   Snapshot, State};
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -27,8 +27,8 @@ impl Element for MouseProximity {
 }
 
 pub struct Mouse {
-    now: MouseState,
-    previous: MouseState,
+    live: MouseState,
+    snapshot: MouseState,
 }
 
 impl Mouse {
@@ -40,8 +40,8 @@ impl Mouse {
 impl Default for Mouse {
     fn default() -> Self {
         Mouse {
-            now: MouseState::new(),
-            previous: MouseState::new(),
+            live: MouseState::new(),
+            snapshot: MouseState::new(),
         }
     }
 }
@@ -50,23 +50,19 @@ impl Deref for Mouse {
     type Target = MouseState;
 
     fn deref(&self) -> &Self::Target {
-        &self.now
+        &self.live
     }
 }
 
 impl Input for Mouse {
     type State = MouseState;
 
-    fn now(&self) -> &Self::State {
-        &self.now
+    fn live(&self) -> &Self::State {
+        &self.live
     }
 
-    fn previous(&self) -> &Self::State {
-        &self.previous
-    }
-
-    fn snapshot(&mut self) {
-        self.previous = self.now.clone();
+    fn snapshot(&self) -> &Self::State {
+        &self.snapshot
     }
 }
 
@@ -85,7 +81,7 @@ impl InputDifference<MousePosition> for Mouse {
     // of the state itself. For mouse position, `transition` yields a point and
     // `difference` yields a vector.
     fn difference(&self) -> Self::Difference {
-        let difference = self.now.state(MousePosition) - self.previous.state(MousePosition);
+        let difference = self.live.state(MousePosition) - self.snapshot.state(MousePosition);
         (!difference.is_zero()).as_some((MousePosition, difference))
     }
 }
@@ -108,22 +104,28 @@ impl React for Mouse {
     fn react(&mut self, event: &Event) {
         match *event {
             Event::MouseEntered => {
-                self.now.proximity = true;
+                self.live.proximity = true;
             }
             Event::MouseInput(ElementState::Pressed, button) => {
-                self.now.buttons.insert(button);
+                self.live.buttons.insert(button);
             }
             Event::MouseInput(ElementState::Released, button) => {
-                self.now.buttons.remove(&button);
+                self.live.buttons.remove(&button);
             }
             Event::MouseLeft => {
-                self.now.proximity = false;
+                self.live.proximity = false;
             }
             Event::MouseMoved(x, y) => {
-                self.now.position = Point2::new(x, y);
+                self.live.position = Point2::new(x, y);
             }
             _ => {}
         }
+    }
+}
+
+impl Snapshot for Mouse {
+    fn snapshot(&mut self) {
+        self.snapshot = self.live.clone();
     }
 }
 

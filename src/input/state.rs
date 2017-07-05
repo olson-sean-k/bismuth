@@ -8,12 +8,12 @@ pub trait State: Copy + Eq {
     // TODO: Use a default type (`Self`) here once that feature stabilizes.
     type Difference;
 
-    fn transition(state: Self, snapshot: Self) -> Option<Self> {
-        if state == snapshot {
+    fn transition(live: Self, snapshot: Self) -> Option<Self> {
+        if live == snapshot {
             None
         }
         else {
-            Some(state)
+            Some(live)
         }
     }
 }
@@ -83,7 +83,7 @@ where
     E: Element,
 {
     fn transition(&self, element: E) -> Option<E::State> {
-        E::State::transition(self.now().state(element), self.previous().state(element))
+        E::State::transition(self.live().state(element), self.snapshot().state(element))
     }
 }
 
@@ -106,19 +106,27 @@ where
     type Difference = Vec<(E, <E::State as State>::Difference)>;
 
     fn difference(&self) -> Self::Difference {
-        self.now()
+        self.live()
             .composite()
-            .symmetric_difference(self.previous().composite())
-            .map(|element| (*element, self.now().state(*element)))
+            .symmetric_difference(self.snapshot().composite())
+            .map(|element| (*element, self.live().state(*element)))
             .collect()
     }
 }
 
-pub trait Input: React {
+pub trait Input: React + Snapshot {
     type State;
 
-    fn now(&self) -> &Self::State;
-    fn previous(&self) -> &Self::State;
+    fn live(&self) -> &Self::State;
+    // TODO: The term "snapshot" is ambiguous. Here, it refers to the snapshot
+    //       of the state of an input device. In the `Snapshot` trait, it is
+    //       used as a verb for the operation of taking a snapshot (copying the
+    //       live state into the snapshot state). However, the `Input` trait is
+    //       not exposed outside of this module, so this shouldn't affect
+    //       client code.
+    fn snapshot(&self) -> &Self::State;
+}
 
+pub trait Snapshot {
     fn snapshot(&mut self);
 }
