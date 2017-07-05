@@ -973,8 +973,3 @@ impl error::Error for SubdivideError {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

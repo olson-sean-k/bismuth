@@ -308,8 +308,3 @@ where
 {
     ((n % m) + m) % m
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

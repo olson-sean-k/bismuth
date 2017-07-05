@@ -55,8 +55,3 @@ impl DerefMut for Color {
         &mut self.0
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

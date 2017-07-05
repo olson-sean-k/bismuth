@@ -142,8 +142,3 @@ fn index_at_axis(axis: usize, unit: &UPoint3) -> usize {
     let q = if axis == 2 { 1 } else { 2 };
     (unit[p] | (unit[q] << 1)) as usize
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

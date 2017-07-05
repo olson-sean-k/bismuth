@@ -415,8 +415,3 @@ pub fn vector_at_index(index: usize, width: LogWidth) -> UVector3 {
         ((index >> 2) & UScalar::one()) * width,
     )
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

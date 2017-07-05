@@ -16,8 +16,3 @@ pub use self::mouse::{Mouse, MousePosition, MouseProximity, MouseState};
 pub use self::state::{InputState, InputDifference, InputTransition, Snapshot};
 
 pub use event::{MouseButton, VirtualKeyCode};
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

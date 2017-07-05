@@ -35,8 +35,3 @@ pub mod sphere;
 pub use self::decompose::{Lines, Points, Subdivide, Tetrahedrons, Triangulate};
 pub use self::generate::{ConjointPoints, IndexPolygons, Polygons, TexturePolygons};
 pub use self::primitive::{Line, MapPoints, Polygon, Rotate, Triangle, Quad};
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}
