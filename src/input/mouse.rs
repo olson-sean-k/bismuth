@@ -12,6 +12,7 @@ impl Element for MouseButton {
     type State = ElementState;
 }
 
+/// Mouse position (pointer) element.
 #[derive(Clone, Copy, Debug)]
 pub struct MousePosition;
 
@@ -19,6 +20,8 @@ impl Element for MousePosition {
     type State = Point2<i32>;
 }
 
+/// Mouse proximity element. Indicates whether or not the mouse position
+/// (pointer) is within the bounds of the window.
 #[derive(Clone, Copy, Debug)]
 pub struct MouseProximity;
 
@@ -26,6 +29,7 @@ impl Element for MouseProximity {
     type State = bool;
 }
 
+/// Mouse (pointer) input device.
 pub struct Mouse {
     live: MouseState,
     snapshot: MouseState,

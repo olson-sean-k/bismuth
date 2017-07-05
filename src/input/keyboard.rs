@@ -8,6 +8,7 @@ impl Element for VirtualKeyCode {
     type State = ElementState;
 }
 
+/// Keyboard input device.
 pub struct Keyboard {
     live: KeyboardState,
     snapshot: KeyboardState,
