@@ -6,5 +6,5 @@
 
 ![screenshot](doc/bismuth.png)
 
-Bismuth is a learning project that represents a 3D game world as an oct-tree.
-The tree can be manipulated in real time to enable in-game editing.
+Bismuth is a game library that represents a 3D world as an oct-tree that can be
+manipulated in real time to enable in-game editing.
