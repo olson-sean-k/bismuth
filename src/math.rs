@@ -81,7 +81,7 @@ pub trait FromSpace<T> {
 
 impl<T, U> FromSpace<Point2<U>> for Point2<T>
 where
-    T: SupersetOf<U> + Scalar,
+    T: Scalar + SupersetOf<U>,
     U: Scalar,
 {
     fn from_space(point: Point2<U>) -> Self {
@@ -91,7 +91,7 @@ where
 
 impl<T, U> FromSpace<Point3<U>> for Point3<T>
 where
-    T: SupersetOf<U> + Scalar,
+    T: Scalar + SupersetOf<U>,
     U: Scalar,
 {
     fn from_space(point: Point3<U>) -> Self {
@@ -101,7 +101,7 @@ where
 
 impl<T, U> FromSpace<Vector3<U>> for Vector3<T>
 where
-    T: SupersetOf<U> + Scalar,
+    T: Scalar + SupersetOf<U>,
     U: Scalar,
 {
     fn from_space(vector: Vector3<U>) -> Self {
@@ -207,8 +207,8 @@ where
 
 impl<T, F> Interpolate<F> for (T, T)
 where
-    T: SupersetOf<F> + Scalar,
-    F: SupersetOf<T> + Float,
+    T: Scalar + SupersetOf<F>,
+    F: Float + SupersetOf<T>,
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         (lerp(self.0, other.0, f), lerp(self.1, other.1, f))
@@ -217,8 +217,8 @@ where
 
 impl<T, F> Interpolate<F> for (T, T, T)
 where
-    T: SupersetOf<F> + Scalar,
-    F: SupersetOf<T> + Float,
+    T: Scalar + SupersetOf<F>,
+    F: Float + SupersetOf<T>,
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         (
@@ -231,8 +231,8 @@ where
 
 impl<T, F> Interpolate<F> for Point2<T>
 where
-    T: SupersetOf<F> + Scalar,
-    F: SupersetOf<T> + Float,
+    T: Scalar + SupersetOf<F>,
+    F: Float + SupersetOf<T>,
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         Point2::new(lerp(self.x, other.x, f), lerp(self.y, other.y, f))
@@ -241,8 +241,8 @@ where
 
 impl<T, F> Interpolate<F> for Point3<T>
 where
-    T: SupersetOf<F> + Scalar,
-    F: SupersetOf<T> + Float,
+    T: Scalar + SupersetOf<F>,
+    F: Float + SupersetOf<T>,
 {
     fn lerp(&self, other: &Self, f: F) -> Self {
         Point3::new(
@@ -255,8 +255,8 @@ where
 
 pub fn lerp<T, F>(a: T, b: T, f: F) -> T
 where
-    T: SupersetOf<F> + Scalar,
-    F: SupersetOf<T> + Float,
+    T: Scalar + SupersetOf<F>,
+    F: Float + SupersetOf<T>,
 {
     use nalgebra::{convert, clamp};
 

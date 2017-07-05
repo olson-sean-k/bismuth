@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use std::iter::IntoIterator;
 use std::vec;
 
-use math::{self, FScalar};
+use math;
 use super::primitive::{Line, Polygon, Polygonal, Primitive, Triangle, Quad};
 
 // A type `F` constrained to `Fn(P, D) -> R` could be used here, but it would
@@ -82,11 +82,11 @@ where
     }
 }
 
-pub trait Interpolate: math::Interpolate<FScalar> {}
+pub trait Interpolate: math::Interpolate<f32> {}
 
 impl<T> Interpolate for T
 where
-    T: math::Interpolate<FScalar>,
+    T: math::Interpolate<f32>,
 {
 }
 
