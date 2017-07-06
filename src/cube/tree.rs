@@ -416,7 +416,7 @@ where
     where
         F: FnMut(&Cube<&Node>),
     {
-        traverse!(cube => self.as_value(), |traversal| {
+        traverse!(cube => self.with_node_ref(), |traversal| {
             f(traversal.peek());
             traversal.push();
         });
@@ -426,7 +426,7 @@ where
     where
         F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>])),
     {
-        trace!(cube => self.as_value(), |trace| {
+        trace!(cube => self.with_node_ref(), |trace| {
             f(trace.peek());
             trace.push();
         });
@@ -470,7 +470,7 @@ where
     pub fn at_ray(&self, ray: &FRay3, width: LogWidth) -> Option<(RayIntersection, Cube<&Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
-        traverse!(cube => self.as_value(), |traversal| {
+        traverse!(cube => self.with_node_ref(), |traversal| {
             if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
@@ -496,7 +496,8 @@ where
         }
     }
 
-    fn as_value(&self) -> Cube<&Node> {
+    /// Resolves the type parameter `N` to `&Node`.
+    fn with_node_ref(&self) -> Cube<&Node> {
         Cube::new(self.node.as_ref(), self.root, self.partition)
     }
 }
@@ -551,7 +552,7 @@ where
     where
         F: FnMut(&mut Cube<&mut Node>),
     {
-        traverse!(cube => self.as_value_mut(), |traversal| {
+        traverse!(cube => self.with_node_mut(), |traversal| {
             f(traversal.peek_mut());
             traversal.push();
         });
@@ -566,7 +567,7 @@ where
             ),
         ),
     {
-        trace!(cube => self.as_value_mut(), |trace| {
+        trace!(cube => self.with_node_mut(), |trace| {
             f(trace.peek_mut());
             trace.push();
         });
@@ -595,7 +596,7 @@ where
     ) -> Option<(RayIntersection, Cube<&mut Node>)> {
         let mut min_distance = FScalar::max_value();
         let mut cube = None;
-        traverse!(cube => self.as_value_mut(), |traversal| {
+        traverse!(cube => self.with_node_mut(), |traversal| {
             if let Some(intersection) = traversal.peek().aabb().ray_intersection(ray) {
                 if traversal.peek().partition.width() >= width {
                     if !traversal.peek().is_empty() { // Non-empty leaf.
@@ -637,7 +638,7 @@ where
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
         let mut cubes = vec![];
-        traverse!(cube => self.as_value_mut(), |traversal| {
+        traverse!(cube => self.with_node_mut(), |traversal| {
             if traversal.peek().aabb().intersects(&cursor.aabb()) {
                 if traversal.peek().partition.width() == cursor.width() {
                     cubes.push(traversal.take());
@@ -705,7 +706,8 @@ where
         }
     }
 
-    fn as_value_mut(&mut self) -> Cube<&mut Node> {
+    /// Resolves the type parameter `N` to `&mut Node`.
+    fn with_node_mut(&mut self) -> Cube<&mut Node> {
         Cube::new(self.node.as_mut(), self.root, self.partition)
     }
 }
