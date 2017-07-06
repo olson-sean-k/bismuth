@@ -1,9 +1,8 @@
 use num::Bounded;
 use std::convert::{AsMut, AsRef};
-use std::error;
 use std::error::Error;
-use std::fmt;
-use std::ops;
+use std::fmt::{self, Display, Formatter};
+use std::ops::{Deref, DerefMut};
 
 use math::{Clamp, FRay3, FScalar, UPoint3};
 use resource::ResourceId;
@@ -233,7 +232,7 @@ impl LeafNode {
     }
 }
 
-impl ops::Deref for LeafNode {
+impl Deref for LeafNode {
     type Target = LeafPayload;
 
     fn deref(&self) -> &Self::Target {
@@ -241,7 +240,7 @@ impl ops::Deref for LeafNode {
     }
 }
 
-impl ops::DerefMut for LeafNode {
+impl DerefMut for LeafNode {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.payload
     }
@@ -307,7 +306,7 @@ impl Clone for BranchNode {
     }
 }
 
-impl ops::Deref for BranchNode {
+impl Deref for BranchNode {
     type Target = BranchPayload;
 
     fn deref(&self) -> &Self::Target {
@@ -315,7 +314,7 @@ impl ops::Deref for BranchNode {
     }
 }
 
-impl ops::DerefMut for BranchNode {
+impl DerefMut for BranchNode {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.payload
     }
@@ -753,7 +752,7 @@ where
     }
 }
 
-impl<'a, N> ops::Deref for Cube<'a, N>
+impl<'a, N> Deref for Cube<'a, N>
 where
     N: AsRef<Node>,
 {
@@ -764,7 +763,7 @@ where
     }
 }
 
-impl<'a, N> ops::DerefMut for Cube<'a, N>
+impl<'a, N> DerefMut for Cube<'a, N>
 where
     N: AsRef<Node> + AsMut<Node>,
 {
@@ -898,7 +897,7 @@ where
     }
 }
 
-impl<'a, L, B> ops::Deref for OrphanCube<'a, L, B>
+impl<'a, L, B> Deref for OrphanCube<'a, L, B>
 where
     L: AsRef<LeafPayload>,
     B: AsRef<BranchPayload>,
@@ -910,7 +909,7 @@ where
     }
 }
 
-impl<'a, L, B> ops::DerefMut for OrphanCube<'a, L, B>
+impl<'a, L, B> DerefMut for OrphanCube<'a, L, B>
 where
     L: AsRef<LeafPayload> + AsMut<LeafPayload>,
     B: AsRef<BranchPayload> + AsMut<BranchPayload>,
@@ -939,13 +938,13 @@ pub enum JoinError {
     AlreadyJoined,
 }
 
-impl fmt::Display for JoinError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+impl Display for JoinError {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "{}", self.description())
     }
 }
 
-impl error::Error for JoinError {
+impl Error for JoinError {
     fn description(&self) -> &str {
         match *self {
             JoinError::AlreadyJoined => "attempted to join leaf",
@@ -959,13 +958,13 @@ pub enum SubdivideError {
     AlreadySubdivided,
 }
 
-impl fmt::Display for SubdivideError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+impl Display for SubdivideError {
+    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "{}", self.description())
     }
 }
 
-impl error::Error for SubdivideError {
+impl Error for SubdivideError {
     fn description(&self) -> &str {
         match *self {
             SubdivideError::LimitExceeded => "minimum width limit exceeded",
