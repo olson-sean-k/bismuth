@@ -37,9 +37,9 @@ where
     B: 'b + TraversalBuffer<'b, N>,
     'b: 'a,
 {
-    // This probably shouldn't be `pub`, but because of the use of macros, it
-    // must be.
-    pub fn new(cubes: &'a mut B, cube: Cube<'b, N>) -> Self {
+    // This probably shouldn't be `pub` at all, but because of the use of
+    // macros, it must be.
+    pub(super) fn new(cubes: &'a mut B, cube: Cube<'b, N>) -> Self {
         Traversal {
             cubes: cubes,
             cube: cube,
@@ -116,9 +116,9 @@ where
     T: 'b + TraversalBuffer<'b, N>,
     'b: 'a,
 {
-    // This probably shouldn't be `pub`, but because of the use of macros, it
-    // must be.
-    pub fn new(
+    // This probably shouldn't be `pub` at all, but because of the use of
+    // macros, it must be.
+    pub(super) fn new(
         traversal: Traversal<'a, 'b, N, T>,
         path: &'a mut Vec<OrphanCube<'b, L, B>>,
     ) -> Self {
