@@ -354,14 +354,14 @@ impl Hint {
     }
 }
 
-pub struct Root {
+pub struct Tree {
     node: Box<Node>,
     partition: Partition,
 }
 
-impl Root {
+impl Tree {
     pub fn new(width: LogWidth) -> Self {
-        Root {
+        Tree {
             node: Box::new(Node::new()),
             partition: Partition::at_point(&UPoint3::origin(), width),
         }
@@ -376,7 +376,7 @@ impl Root {
     }
 }
 
-impl Spatial for Root {
+impl Spatial for Tree {
     fn partition(&self) -> &Partition {
         &self.partition
     }

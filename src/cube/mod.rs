@@ -22,7 +22,7 @@
 //! `OrphanCubeMut` are the orphan analogues of `CubeRef` and `CubeMut`,
 //! respectively. Orphans of course do not support indexing or traversal.
 //!
-//! `Root` can be used to create a new tree, and owns the root `Node`. `Root`s
+//! `Tree` can be used to create a new tree, and owns the root `Node`. `Tree`s
 //! expose `Cube`s to manipulate the tree.
 //!
 //! In the abstract, "cube" refers to the amalgamation of all the types used to
@@ -34,11 +34,11 @@
 //! Subdividing and iterating over the cubes in a tree:
 //!
 //! ```
-//! use bismuth::cube::{LogWidth, Root, Spatial};
+//! use bismuth::cube::{LogWidth, Spatial, Tree};
 //!
-//! let mut root = Root::new(LogWidth::max_value());
-//! let _ = root.as_cube_mut().subdivide();
-//! for cube in root.as_cube().iter() {
+//! let mut tree = Tree::new(LogWidth::max_value());
+//! let _ = tree.as_cube_mut().subdivide();
+//! for cube in tree.as_cube().iter() {
 //!     println!(
 //!         "origin: {}; width: {}",
 //!         cube.partition().origin(),
@@ -61,7 +61,7 @@ pub use self::edit::Cursor;
 pub use self::geometry::{Edge, Geometry, Offset};
 pub use self::space::{AABB, Axis, Direction, Intersects, LogWidth, Orientation, Partition,
                       RayCast, RayIntersection, Spatial};
-pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Root};
+pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Tree};
 
 pub type CubeRef<'a, 'b> = Cube<'a, &'b Node>;
 pub type CubeMut<'a, 'b> = Cube<'a, &'b mut Node>;

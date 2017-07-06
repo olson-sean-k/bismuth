@@ -2,7 +2,7 @@ extern crate bismuth;
 extern crate glutin;
 extern crate nalgebra;
 
-use bismuth::cube::{Cursor, Geometry, LogWidth, Root, Spatial};
+use bismuth::cube::{Cursor, Geometry, LogWidth, Spatial, Tree};
 use bismuth::event::{ElementState, Event, MouseButton, React};
 use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, RenderResult,
                          Transition, UpdateContextView, UpdateResult, WindowView};
@@ -34,7 +34,7 @@ struct MainActivity<R>
 where
     R: MetaRenderer,
 {
-    root: Root,
+    tree: Tree,
     mesh: MeshBuffer,
     camera: Camera,
     phantom: PhantomData<R>,
@@ -45,11 +45,11 @@ where
     R: MetaRenderer,
 {
     pub fn new(context: &mut Context<State, R>) -> Self {
-        let root = new_root(LogWidth::new(8));
-        let mesh = root.as_cube().to_mesh_buffer();
-        let camera = new_camera(&context.renderer.window, &root);
+        let tree = new_tree(LogWidth::new(8));
+        let mesh = tree.as_cube().to_mesh_buffer();
+        let camera = new_camera(&context.renderer.window, &tree);
         MainActivity {
-            root: root,
+            tree: tree,
             mesh: mesh,
             camera: camera,
             phantom: PhantomData,
@@ -68,7 +68,7 @@ where
                 context.window(),
                 &context.state().mouse.state(MousePosition),
             );
-            let mut cube = self.root.as_cube_mut();
+            let mut cube = self.tree.as_cube_mut();
             if let Some((_, mut cube)) = cube.at_ray_mut(&ray, LogWidth::min_value()) {
                 if let Some(leaf) = cube.as_leaf_mut() {
                     leaf.geometry = Geometry::empty();
@@ -77,7 +77,7 @@ where
             }
         }
         if dirty {
-            self.mesh = self.root.as_cube().to_mesh_buffer();
+            self.mesh = self.tree.as_cube().to_mesh_buffer();
         }
         context.state_mut().mouse.snapshot();
         Ok(Transition::None)
@@ -107,11 +107,11 @@ where
     }
 }
 
-fn new_root(width: LogWidth) -> Root {
+fn new_tree(width: LogWidth) -> Tree {
     let cursor = Cursor::at_point_with_span(&UPoint3::origin(), width - 3, &UVector3::new(7, 1, 7));
-    let mut root = Root::new(width);
-    root.as_cube_mut().subdivide_to_cursor(&cursor);
-    root
+    let mut tree = Tree::new(width);
+    tree.as_cube_mut().subdivide_to_cursor(&cursor);
+    tree
 }
 
 fn new_camera<C>(window: &WindowView, cube: &C) -> Camera
