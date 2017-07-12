@@ -64,7 +64,9 @@ where
     R: MetaRenderer,
 {
     pub fn new(activity: BoxActivity<T, R>) -> Self {
-        ActivityStack { stack: vec![activity] }
+        ActivityStack {
+            stack: vec![activity],
+        }
     }
 
     pub fn update<C>(&mut self, context: &mut C) -> Result<bool, ActivityStackError>

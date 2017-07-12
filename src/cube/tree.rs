@@ -109,18 +109,16 @@ impl Node {
 
     fn subdivide(&mut self) -> Result<(), SubdivideError> {
         if let Node::Leaf(..) = *self {
-            *self = Node::Branch(BranchNode::new(Box::new(
-                [
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                    self.clone(),
-                ],
-            )));
+            *self = Node::Branch(BranchNode::new(Box::new([
+                self.clone(),
+                self.clone(),
+                self.clone(),
+                self.clone(),
+                self.clone(),
+                self.clone(),
+                self.clone(),
+                self.clone(),
+            ])));
             Ok(())
         }
         else {
@@ -228,7 +226,9 @@ pub struct LeafNode {
 
 impl LeafNode {
     fn new() -> Self {
-        LeafNode { payload: LeafPayload::new() }
+        LeafNode {
+            payload: LeafPayload::new(),
+        }
     }
 }
 
@@ -291,18 +291,16 @@ impl BranchNode {
 
 impl Clone for BranchNode {
     fn clone(&self) -> Self {
-        BranchNode::new(Box::new(
-            [
-                self.nodes[0].clone(),
-                self.nodes[1].clone(),
-                self.nodes[2].clone(),
-                self.nodes[3].clone(),
-                self.nodes[4].clone(),
-                self.nodes[5].clone(),
-                self.nodes[6].clone(),
-                self.nodes[7].clone(),
-            ],
-        ))
+        BranchNode::new(Box::new([
+            self.nodes[0].clone(),
+            self.nodes[1].clone(),
+            self.nodes[2].clone(),
+            self.nodes[3].clone(),
+            self.nodes[4].clone(),
+            self.nodes[5].clone(),
+            self.nodes[6].clone(),
+            self.nodes[7].clone(),
+        ]))
     }
 }
 

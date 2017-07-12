@@ -18,7 +18,9 @@ where
     T: State,
 {
     pub fn from_glutin_window(state: T, window: Window) -> Self {
-        Harness { context: Context::from_glutin_window(state, window) }
+        Harness {
+            context: Context::from_glutin_window(state, window),
+        }
     }
 }
 

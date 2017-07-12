@@ -18,7 +18,9 @@ struct State {
 
 impl State {
     pub fn new() -> Self {
-        State { mouse: Mouse::new() }
+        State {
+            mouse: Mouse::new(),
+        }
     }
 }
 

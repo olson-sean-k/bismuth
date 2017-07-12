@@ -79,7 +79,9 @@ pub struct KeyboardState {
 
 impl KeyboardState {
     fn new() -> Self {
-        KeyboardState { keys: HashSet::new() }
+        KeyboardState {
+            keys: HashSet::new(),
+        }
     }
 }
 
