@@ -511,11 +511,13 @@ where
         (
             self,
             nodes.map(|nodes| {
-                let mut cubes = Vec::with_capacity(8);
-                for (index, node) in nodes.iter().enumerate() {
-                    cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
-                }
-                cubes
+                nodes
+                    .iter()
+                    .enumerate()
+                    .map(|(index, node)| {
+                        Cube::new(node, root, partition.at_index(index).unwrap())
+                    })
+                    .collect()
             }),
         )
     }
@@ -726,11 +728,13 @@ where
         (
             OrphanCube::new(orphan, root, partition),
             nodes.map(|nodes| {
-                let mut cubes = Vec::with_capacity(8);
-                for (index, node) in nodes.iter_mut().enumerate() {
-                    cubes.push(Cube::new(node, root, partition.at_index(index).unwrap()));
-                }
-                cubes
+                nodes
+                    .iter_mut()
+                    .enumerate()
+                    .map(|(index, node)| {
+                        Cube::new(node, root, partition.at_index(index).unwrap())
+                    })
+                    .collect()
             }),
         )
     }
