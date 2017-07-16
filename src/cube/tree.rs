@@ -1,3 +1,4 @@
+use arrayvec::ArrayVec;
 use num::Bounded;
 use std::convert::{AsMut, AsRef};
 use std::error::Error;
@@ -504,7 +505,7 @@ impl<'a, 'b, N> Cube<'a, &'b N>
 where
     N: AsRef<Node>,
 {
-    pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<Vec<Cube<'a, &'b Node>>>) {
+    pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<ArrayVec<[Cube<'a, &'b Node>; 8]>>) {
         let root = self.root;
         let partition = self.partition;
         let (_, nodes) = self.node.as_ref().as_orphan();
@@ -720,7 +721,7 @@ where
         self,
     ) -> (
         OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>,
-        Option<Vec<Cube<'a, &'b mut Node>>>,
+        Option<ArrayVec<[Cube<'a, &'b mut Node>; 8]>>,
     ) {
         let root = self.root;
         let partition = self.partition;
