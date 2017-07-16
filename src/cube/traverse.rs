@@ -96,7 +96,7 @@ where
     }
 }
 
-pub struct Trace<'a, 'b, N, L, B, T>
+pub struct PathTraversal<'a, 'b, N, L, B, T>
 where
     N: 'b + AsRef<Node>,
     L: 'b + AsRef<LeafPayload>,
@@ -108,7 +108,7 @@ where
     path: &'a mut Vec<OrphanCube<'b, L, B>>,
 }
 
-impl<'a, 'b, N, L, B, T> Trace<'a, 'b, N, L, B, T>
+impl<'a, 'b, N, L, B, T> PathTraversal<'a, 'b, N, L, B, T>
 where
     N: 'b + AsRef<Node>,
     L: 'b + AsRef<LeafPayload>,
@@ -122,7 +122,7 @@ where
         traversal: Traversal<'a, 'b, N, T>,
         path: &'a mut Vec<OrphanCube<'b, L, B>>,
     ) -> Self {
-        Trace {
+        PathTraversal {
             traversal: traversal,
             path: path,
         }
@@ -138,7 +138,7 @@ where
     }
 }
 
-impl<'a, 'b, N, L, B, T> Trace<'a, 'b, N, L, B, T>
+impl<'a, 'b, N, L, B, T> PathTraversal<'a, 'b, N, L, B, T>
 where
     N: 'b + AsRef<Node> + AsMut<Node>,
     L: 'b + AsRef<LeafPayload> + AsMut<LeafPayload>,
@@ -151,7 +151,7 @@ where
     }
 }
 
-impl<'a, 'b, 'c, T> Trace<'a, 'b, &'c Node, &'c LeafPayload, &'c BranchPayload, T>
+impl<'a, 'b, 'c, T> PathTraversal<'a, 'b, &'c Node, &'c LeafPayload, &'c BranchPayload, T>
 where
     T: 'b + TraversalBuffer<'b, &'c Node>,
 {
@@ -160,7 +160,8 @@ where
     }
 }
 
-impl<'a, 'b, 'c, T> Trace<'a, 'b, &'c mut Node, &'c mut LeafPayload, &'c mut BranchPayload, T>
+impl<'a, 'b, 'c, T>
+    PathTraversal<'a, 'b, &'c mut Node, &'c mut LeafPayload, &'c mut BranchPayload, T>
 where
     T: 'b + TraversalBuffer<'b, &'c mut Node>,
 {
@@ -186,10 +187,10 @@ macro_rules! traverse {
 }
 
 #[macro_export]
-macro_rules! trace {
+macro_rules! traverse_with_path {
     (cube => $c:expr, | $t:ident | $f:block) => {{
         let mut path = vec![];
-        trace!(cube => $c, path => path, |$t| $f)
+        traverse_with_path!(cube => $c, path => path, |$t| $f)
     }};
     (cube => $c:expr, path => $p:expr, | $t:ident | $f:block) => {{
         let mut depth = $c.depth();
@@ -202,7 +203,7 @@ macro_rules! trace {
             depth = traversal.peek().depth();
             let terminal = traversal.peek().is_leaf();
             {
-                let mut $t = Trace::new(traversal, &mut $p);
+                let mut $t = PathTraversal::new(traversal, &mut $p);
                 $f
             }
             if terminal {

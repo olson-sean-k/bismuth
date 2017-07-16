@@ -10,7 +10,7 @@ use resource::ResourceId;
 use super::edit::Cursor;
 use super::geometry::Geometry;
 use super::space::{self, Intersects, LogWidth, Partition, RayCast, RayIntersection, Spatial};
-use super::traverse::{Trace, Traversal};
+use super::traverse::{PathTraversal, Traversal};
 
 type NodeLink = Box<[Node; 8]>;
 
@@ -425,9 +425,9 @@ where
     where
         F: FnMut((&Cube<&Node>, &[OrphanCube<&LeafPayload, &BranchPayload>])),
     {
-        trace!(cube => self.with_node_ref(), |trace| {
-            f(trace.peek());
-            trace.push();
+        traverse_with_path!(cube => self.with_node_ref(), |traversal| {
+            f(traversal.peek());
+            traversal.push();
         });
     }
 
@@ -568,9 +568,9 @@ where
             ),
         ),
     {
-        trace!(cube => self.with_node_mut(), |trace| {
-            f(trace.peek_mut());
-            trace.push();
+        traverse_with_path!(cube => self.with_node_mut(), |traversal| {
+            f(traversal.peek_mut());
+            traversal.push();
         });
     }
 
