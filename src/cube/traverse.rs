@@ -1,6 +1,6 @@
 use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
-pub trait TraversalBuffer<'a, N>
+pub trait TraversalBuffer<'a, N>: Extend<Cube<'a, N>>
 where
     N: AsRef<Node>,
 {
@@ -73,9 +73,7 @@ where
     pub fn push(self) -> Cube<'b, &'c Node> {
         let (cube, cubes) = self.cube.into_subdivisions();
         if let Some(cubes) = cubes {
-            for cube in cubes {
-                self.cubes.push(cube);
-            }
+            self.cubes.extend(cubes);
         }
         cube
     }
@@ -88,9 +86,7 @@ where
     pub fn push(self) -> OrphanCube<'b, &'c mut LeafPayload, &'c mut BranchPayload> {
         let (orphan, cubes) = self.cube.into_subdivisions_mut();
         if let Some(cubes) = cubes {
-            for cube in cubes {
-                self.cubes.push(cube);
-            }
+            self.cubes.extend(cubes);
         }
         orphan
     }
