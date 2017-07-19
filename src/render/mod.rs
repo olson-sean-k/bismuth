@@ -4,6 +4,7 @@ use std::ops::{Deref, DerefMut};
 use math::{FScalar, FVector4};
 
 mod camera;
+pub mod error;
 mod mesh;
 pub mod pipeline;
 mod renderer;
@@ -12,7 +13,7 @@ mod texture;
 pub use self::camera::{AspectRatio, Camera, Projection};
 pub use self::mesh::{MeshBuffer, ToMeshBuffer};
 pub use self::pipeline::{Transform, Vertex};
-pub use self::renderer::{GlutinRenderer, MetaRenderer, Renderer, RenderError};
+pub use self::renderer::{GlutinRenderer, MetaRenderer, Renderer};
 pub use self::texture::Texture;
 
 pub type Index = u32;

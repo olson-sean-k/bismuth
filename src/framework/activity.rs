@@ -1,10 +1,7 @@
-use std::convert::From;
-use std::error;
-use std::fmt;
-
 use event::{Event, React};
 use render::MetaRenderer;
 use super::context::{RenderContextView, State, UpdateContextView};
+use super::error::*;
 
 pub enum Transition<T, R>
 where
@@ -31,8 +28,8 @@ where
 }
 
 pub type BoxActivity<T, R> = Box<Activity<T, R>>;
-pub type UpdateResult<T, R> = Result<Transition<T, R>, ActivityError>;
-pub type RenderResult = Result<(), ActivityError>;
+pub type UpdateResult<T, R> = Result<Transition<T, R>>;
+pub type RenderResult = Result<()>;
 
 pub trait Activity<T, R>: React
 where
@@ -69,7 +66,7 @@ where
         }
     }
 
-    pub fn update<C>(&mut self, context: &mut C) -> Result<bool, ActivityStackError>
+    pub fn update<C>(&mut self, context: &mut C) -> Result<bool>
     where
         C: UpdateContextView<State = T>,
     {
@@ -91,7 +88,7 @@ where
         Ok(signal)
     }
 
-    pub fn render<C>(&mut self, context: &mut C) -> Result<(), ActivityStackError>
+    pub fn render<C>(&mut self, context: &mut C) -> Result<()>
     where
         C: RenderContextView<R, State = T>,
     {
@@ -153,45 +150,5 @@ where
         if let Some(activity) = self.peek_mut() {
             activity.react(event);
         }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct ActivityError;
-
-impl fmt::Display for ActivityError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use std::error::Error;
-
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl error::Error for ActivityError {
-    fn description(&self) -> &str {
-        ""
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct ActivityStackError;
-
-impl fmt::Display for ActivityStackError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use std::error::Error;
-
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl error::Error for ActivityStackError {
-    fn description(&self) -> &str {
-        ""
-    }
-}
-
-impl From<ActivityError> for ActivityStackError {
-    fn from(_: ActivityError) -> Self {
-        ActivityStackError
     }
 }

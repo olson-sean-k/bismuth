@@ -5,7 +5,7 @@ use gfx::texture::{AaMode, FilterMethod, Kind, SamplerInfo, WrapMode};
 use image;
 use std::path::Path;
 
-use super::renderer::RenderError;
+use super::error::*;
 
 pub trait NormalizedChannel {}
 pub trait UnsignedChannel {}
@@ -62,7 +62,7 @@ where
     C: NormalizedChannel + TextureChannel + UnsignedChannel,
     (R8_G8_B8_A8, C): TextureFormat,
 {
-    pub fn from_file<F, P>(factory: &mut F, path: P) -> Result<Self, RenderError>
+    pub fn from_file<F, P>(factory: &mut F, path: P) -> Result<Self>
     where
         F: Factory<R>,
         P: AsRef<Path>,
@@ -85,7 +85,7 @@ impl<R> Texture<R, Rgba8>
 where
     R: Resources,
 {
-    pub fn white<F>(factory: &mut F) -> Result<Self, RenderError>
+    pub fn white<F>(factory: &mut F) -> Result<Self>
     where
         F: Factory<R>,
     {

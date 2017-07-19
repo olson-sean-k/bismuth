@@ -1,13 +1,12 @@
 use arrayvec::ArrayVec;
 use num::Bounded;
 use std::convert::{AsMut, AsRef};
-use std::error::Error;
-use std::fmt::{self, Display, Formatter};
 use std::ops::{Deref, DerefMut};
 
 use math::{Clamp, FRay3, FScalar, UPoint3};
 use resource::ResourceId;
 use super::edit::Cursor;
+use super::error::*;
 use super::geometry::Geometry;
 use super::space::{self, Intersects, LogWidth, Partition, RayCast, RayIntersection, Spatial};
 use super::traverse::{PathTraversal, Traversal};
@@ -98,17 +97,17 @@ impl Node {
         }
     }
 
-    fn join(&mut self) -> Result<(), JoinError> {
+    fn join(&mut self) -> Result<()> {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
             Ok(())
         }
         else {
-            Err(JoinError::AlreadyJoined)
+            Err(ErrorKind::JoinLeaf.into())
         }
     }
 
-    fn subdivide(&mut self) -> Result<(), SubdivideError> {
+    fn subdivide(&mut self) -> Result<()> {
         if let Node::Leaf(..) = *self {
             *self = Node::Branch(BranchNode::new(Box::new([
                 self.clone(),
@@ -123,7 +122,7 @@ impl Node {
             Ok(())
         }
         else {
-            Err(SubdivideError::AlreadySubdivided)
+            Err(ErrorKind::SubdivideBranch.into())
         }
     }
 }
@@ -616,13 +615,13 @@ where
         cube
     }
 
-    pub fn join(&mut self) -> Result<(), JoinError> {
+    pub fn join(&mut self) -> Result<()> {
         self.node.as_mut().join()
     }
 
-    pub fn subdivide(&mut self) -> Result<(), SubdivideError> {
+    pub fn subdivide(&mut self) -> Result<()> {
         if self.partition().is_min_width() {
-            Err(SubdivideError::LimitExceeded)
+            Err(ErrorKind::LimitExceeded.into())
         }
         else {
             self.node.as_mut().subdivide()
@@ -935,45 +934,5 @@ where
 
     fn depth(&self) -> u8 {
         self.root.width().to_inner() - self.partition.width().to_inner()
-    }
-}
-
-#[derive(Debug)]
-pub enum JoinError {
-    AlreadyJoined,
-}
-
-impl Display for JoinError {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl Error for JoinError {
-    fn description(&self) -> &str {
-        match *self {
-            JoinError::AlreadyJoined => "attempted to join leaf",
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum SubdivideError {
-    LimitExceeded,
-    AlreadySubdivided,
-}
-
-impl Display for SubdivideError {
-    fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.description())
-    }
-}
-
-impl Error for SubdivideError {
-    fn description(&self) -> &str {
-        match *self {
-            SubdivideError::LimitExceeded => "minimum width limit exceeded",
-            SubdivideError::AlreadySubdivided => "attempted to subdivide branch",
-        }
     }
 }

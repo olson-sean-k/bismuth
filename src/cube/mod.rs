@@ -48,6 +48,7 @@
 //! ```
 
 mod edit;
+pub mod error;
 mod geometry;
 mod mesh;
 mod space;
