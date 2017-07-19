@@ -1,10 +1,11 @@
-use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
+use gfx::{CombinedError, CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
 use gfx::format::{DepthStencil, Rgba8, Srgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::{ContextError, Window};
+use image::ImageError;
 use std::error::{self, Error};
 use std::fmt;
 
@@ -107,7 +108,8 @@ where
                 pipeline::new(),
             )
             .unwrap();
-        let texture = Texture::<_, Srgba8>::from_file(&mut factory, "data/texture/default.png");
+        let texture =
+            Texture::<_, Srgba8>::from_file(&mut factory, "data/texture/default.png").unwrap();
         let data = Data {
             // Using an empty slice here causes an error.
             buffer: factory.create_vertex_buffer(&[Vertex::default()]),
@@ -197,5 +199,17 @@ impl error::Error for RenderError {
             RenderError::ContextLost => "rendering context lost",
             _ => "unknown rendering error",
         }
+    }
+}
+
+impl From<CombinedError> for RenderError {
+    fn from(_: CombinedError) -> Self {
+        RenderError::Unknown
+    }
+}
+
+impl From<ImageError> for RenderError {
+    fn from(_: ImageError) -> Self {
+        RenderError::Unknown
     }
 }
