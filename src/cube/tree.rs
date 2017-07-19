@@ -504,6 +504,7 @@ impl<'a, 'b, N> Cube<'a, &'b N>
 where
     N: AsRef<Node>,
 {
+    #[allow(type_complexity)]
     pub fn into_subdivisions(self) -> (Cube<'a, &'b N>, Option<ArrayVec<[Cube<'a, &'b Node>; 8]>>) {
         let root = self.root;
         let partition = self.partition;
@@ -716,6 +717,7 @@ impl<'a, 'b, N> Cube<'a, &'b mut N>
 where
     N: AsRef<Node> + AsMut<Node>,
 {
+    #[allow(type_complexity)]
     pub fn into_subdivisions_mut(
         self,
     ) -> (
