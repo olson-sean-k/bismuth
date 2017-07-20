@@ -26,30 +26,21 @@ where
         if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().coords.into_space();
             let width = self.partition().width().exp() as FScalar;
-            let ucube = mesh::cube::Cube::<UScalar>::with_unit_width();
-            buffer.extend(
-                ucube
-                    .spatial_polygons()
-                    .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
-                    .map_points(|point| (point * width) + origin)
-                    .triangulate()
-                    .zip(ucube.planar_polygons().triangulate())
-                    .map(|(position, plane)| {
-                        let color = Color::white();
-                        Triangle::new(
-                            Vertex::new(&position.a, &uv(plane.a, &position.a), &color),
-                            Vertex::new(&position.b, &uv(plane.b, &position.b), &color),
-                            Vertex::new(&position.c, &uv(plane.c, &position.c), &color),
-                        )
-                    })
-                    .points(),
-                ucube
-                    .spatial_polygons()
-                    .triangulate()
-                    .points()
-                    .enumerate()
-                    .map(|(index, _)| index as Index),
-            );
+            let cube = mesh::cube::Cube::<UScalar>::with_unit_width();
+            buffer.append(&mut cube.spatial_polygons()
+                .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
+                .map_points(|point| (point * width) + origin)
+                .triangulate()
+                .zip(cube.planar_polygons().triangulate())
+                .map(|(position, plane)| {
+                    let color = Color::white();
+                    Triangle::new(
+                        Vertex::new(&position.a, &uv(plane.a, &position.a), &color),
+                        Vertex::new(&position.b, &uv(plane.b, &position.b), &color),
+                        Vertex::new(&position.c, &uv(plane.c, &position.c), &color),
+                    )
+                })
+                .collect());
         }
         buffer
     }
