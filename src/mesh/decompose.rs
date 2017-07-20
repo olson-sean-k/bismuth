@@ -9,10 +9,6 @@ use std::vec;
 use math;
 use super::primitive::{Line, Polygon, Polygonal, Primitive, Triangle, Quad};
 
-// A type `F` constrained to `Fn(P, D) -> R` could be used here, but it would
-// not be possible to name that type for anything but functions (not closures).
-// Instead of a limited and somewhat redundant type `F`, just use `fn(P, D) ->
-// R` for the member `f`.
 pub struct Decompose<I, P, Q, R>
 where
     R: IntoIterator<Item = Q>,

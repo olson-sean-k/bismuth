@@ -29,9 +29,14 @@
 pub mod cube;
 mod decompose;
 mod generate;
+mod index;
 mod primitive;
 pub mod sphere;
 
 pub use self::decompose::{Lines, Points, Subdivide, Tetrahedrons, Triangulate};
 pub use self::generate::{ConjointPoints, IndexPolygons, Polygons, TexturePolygons};
+pub use self::index::{HashIndexer, Index};
 pub use self::primitive::{Line, MapPoints, Polygon, Rotate, Triangle, Quad};
+
+pub use self::decompose::IntoPoints;
+pub use self::primitive::{Primitive, Polygonal};

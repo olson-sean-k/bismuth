@@ -1,14 +1,16 @@
 //! This module provides a generic iterator and traits for mapping from an
 //! index to a primitive from some shape.
 
+// TODO: Naming is hard. Names like `index_polygons` are ambiguous; does that
+//       get polygons containing indeces (nominal) or dynamically index a
+//       stream of polygons (verbal)? This is particularly bad when both
+//       notions exist. See the `index` module. Maybe generators should use
+//       obvious adjectives, so `index_polygons` becomes `indexed_polygons`.
+
 use std::ops::Range;
 
 use super::primitive::Polygonal;
 
-// A type `F` constrained to `Fn(&'a G, usize) -> P` could be used here, but it
-// would not be possible to name that type for anything but functions (not
-// closures).  Instead of a limited and somewhat redundant type `F`, just use
-// `fn(&'a G, usize) -> P` for the member `f`.
 pub struct Generate<'a, G, P>
 where
     G: 'a,
