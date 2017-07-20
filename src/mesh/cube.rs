@@ -1,7 +1,7 @@
 use nalgebra::{Point2, Point3, Scalar};
 
-use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, Generate, PolygonGenerator,
-                      TexturePolygonGenerator};
+use super::generate::{Generate, IndexedPolygonGenerator, PointGenerator, PolygonGenerator,
+                      TexturedPolygonGenerator};
 use super::primitive::{MapPrimitive, Quad};
 
 pub trait Unit: Scalar {
@@ -82,19 +82,11 @@ where
         Cube::new(lower, upper)
     }
 
-    pub fn plane_polygons(&self) -> Generate<Self, Quad<Plane>> {
-        Generate::new(self, 0..self.polygon_count(), Cube::plane_polygon)
+    pub fn planar_polygons(&self) -> Generate<Self, Quad<Plane>> {
+        Generate::new(self, 0..self.polygon_count(), Cube::planar_polygon)
     }
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn point(&self, index: usize) -> Point3<T> {
-        let x = if index & 0b100 == 0b100 { self.upper } else { self.lower };
-        let y = if index & 0b010 == 0b010 { self.upper } else { self.lower };
-        let z = if index & 0b001 == 0b001 { self.upper } else { self.lower };
-        Point3::new(x, y, z)
-    }
-
-    fn plane_polygon(&self, index: usize) -> Quad<Plane> {
+    fn planar_polygon(&self, index: usize) -> Quad<Plane> {
         match index {
             0 => Quad::converged(Plane::XY),  // front
             1 => Quad::converged(Plane::NZY), // right
@@ -107,17 +99,21 @@ where
     }
 }
 
-impl<T> ConjointPointGenerator for Cube<T>
+impl<T> PointGenerator for Cube<T>
 where
     T: Unit,
 {
     type Output = Point3<T>;
 
-    fn conjoint_point(&self, index: usize) -> Self::Output {
-        self.point(index)
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn spatial_point(&self, index: usize) -> Self::Output {
+        let x = if index & 0b100 == 0b100 { self.upper } else { self.lower };
+        let y = if index & 0b010 == 0b010 { self.upper } else { self.lower };
+        let z = if index & 0b001 == 0b001 { self.upper } else { self.lower };
+        Point3::new(x, y, z)
     }
 
-    fn conjoint_point_count(&self) -> usize {
+    fn point_count(&self) -> usize {
         8
     }
 }
@@ -128,9 +124,9 @@ where
 {
     type Output = Quad<Point3<T>>;
 
-    fn polygon(&self, index: usize) -> Self::Output {
-        self.index_polygon(index)
-            .map_primitive(|index| self.point(index))
+    fn spatial_polygon(&self, index: usize) -> Self::Output {
+        self.indexed_polygon(index)
+            .map_primitive(|index| self.spatial_point(index))
     }
 
     fn polygon_count(&self) -> usize {
@@ -138,13 +134,13 @@ where
     }
 }
 
-impl<T> IndexPolygonGenerator for Cube<T>
+impl<T> IndexedPolygonGenerator for Cube<T>
 where
     T: Unit,
 {
     type Output = Quad<usize>;
 
-    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output {
+    fn indexed_polygon(&self, index: usize) -> <Self as IndexedPolygonGenerator>::Output {
         match index {
             0 => Quad::new(5, 7, 3, 1), // front
             1 => Quad::new(6, 7, 5, 4), // right
@@ -157,13 +153,13 @@ where
     }
 }
 
-impl<T> TexturePolygonGenerator for Cube<T>
+impl<T> TexturedPolygonGenerator for Cube<T>
 where
     T: Unit,
 {
     type Output = Quad<Point2<f32>>;
 
-    fn texture_polygon(&self, index: usize) -> <Self as TexturePolygonGenerator>::Output {
+    fn textured_polygon(&self, index: usize) -> <Self as TexturedPolygonGenerator>::Output {
         let uu = Point2::new(1.0, 1.0);
         let ul = Point2::new(1.0, 0.0);
         let ll = Point2::new(0.0, 0.0);

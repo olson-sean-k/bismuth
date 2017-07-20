@@ -1,12 +1,6 @@
 //! This module provides a generic iterator and traits for mapping from an
 //! index to a primitive from some shape.
 
-// TODO: Naming is hard. Names like `index_polygons` are ambiguous; does that
-//       get polygons containing indeces (nominal) or dynamically index a
-//       stream of polygons (verbal)? This is particularly bad when both
-//       notions exist. See the `index` module. Maybe generators should use
-//       obvious adjectives, so `index_polygons` becomes `indexed_polygons`.
-
 use std::ops::Range;
 
 use super::primitive::Polygonal;
@@ -46,83 +40,85 @@ where
     }
 }
 
-pub trait ConjointPointGenerator {
+pub trait PointGenerator {
     type Output;
 
-    fn conjoint_point(&self, index: usize) -> Self::Output;
-    fn conjoint_point_count(&self) -> usize;
+    // TODO: Should this have its own `SpatialPointGenerator` trait?
+    fn spatial_point(&self, index: usize) -> Self::Output;
+    fn point_count(&self) -> usize;
 }
 
-pub trait ConjointPoints<P>: Sized {
-    fn conjoint_points(&self) -> Generate<Self, P>;
+pub trait SpatialPoints<P>: Sized {
+    fn spatial_points(&self) -> Generate<Self, P>;
 }
 
-impl<G, P> ConjointPoints<P> for G
+impl<G, P> SpatialPoints<P> for G
 where
-    G: ConjointPointGenerator<Output = P>,
+    G: PointGenerator<Output = P>,
 {
-    fn conjoint_points(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.conjoint_point_count(), G::conjoint_point)
+    fn spatial_points(&self) -> Generate<Self, P> {
+        Generate::new(self, 0..self.point_count(), G::spatial_point)
     }
 }
 
 pub trait PolygonGenerator {
     type Output: Polygonal;
 
-    fn polygon(&self, index: usize) -> Self::Output;
+    // TODO: Should this have its own `SpatialPolygonGenerator` trait?
+    fn spatial_polygon(&self, index: usize) -> Self::Output;
     fn polygon_count(&self) -> usize;
 }
 
-pub trait Polygons<P>: Sized {
-    fn polygons(&self) -> Generate<Self, P>;
+pub trait SpatialPolygons<P>: Sized {
+    fn spatial_polygons(&self) -> Generate<Self, P>;
 }
 
-impl<G, P> Polygons<P> for G
+impl<G, P> SpatialPolygons<P> for G
 where
     G: PolygonGenerator<Output = P>,
     P: Polygonal,
 {
-    fn polygons(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.polygon_count(), G::polygon)
+    fn spatial_polygons(&self) -> Generate<Self, P> {
+        Generate::new(self, 0..self.polygon_count(), G::spatial_polygon)
     }
 }
 
-pub trait IndexPolygonGenerator: ConjointPointGenerator + PolygonGenerator {
+pub trait IndexedPolygonGenerator: PointGenerator + PolygonGenerator {
     type Output: Polygonal;
 
-    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output;
+    fn indexed_polygon(&self, index: usize) -> <Self as IndexedPolygonGenerator>::Output;
 }
 
-pub trait IndexPolygons<P>: Sized {
-    fn index_polygons(&self) -> Generate<Self, P>;
+pub trait IndexedPolygons<P>: Sized {
+    fn indexed_polygons(&self) -> Generate<Self, P>;
 }
 
-impl<G, P> IndexPolygons<P> for G
+impl<G, P> IndexedPolygons<P> for G
 where
-    G: IndexPolygonGenerator<Output = P> + ConjointPointGenerator + PolygonGenerator,
+    G: IndexedPolygonGenerator<Output = P> + PointGenerator + PolygonGenerator,
     P: Polygonal,
 {
-    fn index_polygons(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.polygon_count(), G::index_polygon)
+    fn indexed_polygons(&self) -> Generate<Self, P> {
+        Generate::new(self, 0..self.polygon_count(), G::indexed_polygon)
     }
 }
 
-pub trait TexturePolygonGenerator: PolygonGenerator {
+pub trait TexturedPolygonGenerator: PolygonGenerator {
     type Output: Polygonal;
 
-    fn texture_polygon(&self, index: usize) -> <Self as TexturePolygonGenerator>::Output;
+    fn textured_polygon(&self, index: usize) -> <Self as TexturedPolygonGenerator>::Output;
 }
 
-pub trait TexturePolygons<P>: Sized {
-    fn texture_polygons(&self) -> Generate<Self, P>;
+pub trait TexturedPolygons<P>: Sized {
+    fn textured_polygons(&self) -> Generate<Self, P>;
 }
 
-impl<G, P> TexturePolygons<P> for G
+impl<G, P> TexturedPolygons<P> for G
 where
-    G: PolygonGenerator + TexturePolygonGenerator<Output = P>,
+    G: PolygonGenerator + TexturedPolygonGenerator<Output = P>,
     P: Polygonal,
 {
-    fn texture_polygons(&self) -> Generate<Self, P> {
-        Generate::new(self, 0..self.polygon_count(), G::texture_polygon)
+    fn textured_polygons(&self) -> Generate<Self, P> {
+        Generate::new(self, 0..self.polygon_count(), G::textured_polygon)
     }
 }

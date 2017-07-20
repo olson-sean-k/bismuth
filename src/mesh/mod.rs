@@ -11,16 +11,16 @@
 //! Generating position and index data for a scaled sphere mesh:
 //!
 //! ```
-//! use bismuth::mesh::{ConjointPoints, IndexPolygons, Points, Triangulate};
+//! use bismuth::mesh::{IndexedPolygons, Points, SpatialPoints, Triangulate};
 //! use bismuth::mesh::sphere::UVSphere;
 //!
 //! let sphere = UVSphere::with_unit_radius(16, 16);
 //! let positions: Vec<_> = sphere
-//!     .conjoint_points() // Get the unique set of points.
+//!     .spatial_points() // Get the unique set of points.
 //!     .map(|point| point * 10.0) // Scale the points by 10.
 //!     .collect();
 //! let indeces: Vec<_> = sphere
-//!     .index_polygons() // Get indeces into the unique set of points as polygons.
+//!     .indexed_polygons() // Get indeces into the unique set of points as polygons.
 //!     .triangulate() // Decompose the polygons into triangles.
 //!     .points() // Decompose the triangles into points (indeces).
 //!     .collect();
@@ -34,8 +34,8 @@ mod primitive;
 pub mod sphere;
 
 pub use self::decompose::{Lines, Points, Subdivide, Tetrahedrons, Triangulate};
-pub use self::generate::{ConjointPoints, IndexPolygons, Polygons, TexturePolygons};
-pub use self::index::{HashIndexer, Index};
+pub use self::generate::{IndexedPolygons, SpatialPoints, SpatialPolygons, TexturedPolygons};
+pub use self::index::{HashIndexer, IndexPrimitives};
 pub use self::primitive::{Line, MapPoints, Polygon, Rotate, Triangle, Quad};
 
 pub use self::decompose::IntoPoints;

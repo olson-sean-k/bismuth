@@ -1,8 +1,3 @@
-// TODO: Naming is hard. `Index` is a bit generic and conflicts with the
-//       `Index` type from the `render` module. Moreover, the name `index` in
-//       iterator expressions is generic, but the obvious alternative
-//       `index_polygons` conflicts with the `generate` module.
-
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::iter::FromIterator;
@@ -67,34 +62,34 @@ where
     }
 }
 
-pub trait Index<T>: Sized
+pub trait IndexPrimitives<T>: Sized
 where
     T: IntoPoints + Primitive,
 {
-    fn index_with_key<I, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives_with_key<N, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
     where
-        I: Indexer<T, K>,
+        N: Indexer<T, K>,
         F: Fn(&T::Point) -> &K;
 
-    fn index<I>(self) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives<N>(self) -> (Vec<usize>, Vec<T::Point>)
     where
-        I: Indexer<T, T::Point>,
+        N: Indexer<T, T::Point>,
     {
-        self.index_with_key::<I, T::Point, _>(|point| point)
+        self.index_primitives_with_key::<N, T::Point, _>(|point| point)
     }
 }
 
-impl<T, I> Index<T> for I
+impl<T, I> IndexPrimitives<T> for I
 where
     I: Iterator<Item = T>,
     T: IntoPoints + Primitive,
 {
-    fn index_with_key<J, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives_with_key<N, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
     where
-        J: Indexer<T, K>,
+        N: Indexer<T, K>,
         F: Fn(&T::Point) -> &K,
     {
-        let mut indexer = J::default();
+        let mut indexer = N::default();
         let mut indeces = Vec::new();
         let mut points = Vec::new();
         for primitive in self {
@@ -124,7 +119,7 @@ where
         I: IntoIterator<Item = T>,
     {
         let mut buffer = MeshBuffer::new();
-        let (indeces, points) = input.into_iter().index::<HashIndexer<_, _>>();
+        let (indeces, points) = input.into_iter().index_primitives::<HashIndexer<_, _>>();
         buffer.extend(
             points,
             indeces.into_iter().map(|index| index as render::Index),

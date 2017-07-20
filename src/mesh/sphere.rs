@@ -4,7 +4,7 @@ use num::traits::FloatConst;
 use std::cmp;
 use std::marker::PhantomData;
 
-use super::generate::{ConjointPointGenerator, IndexPolygonGenerator, PolygonGenerator};
+use super::generate::{IndexedPolygonGenerator, PointGenerator, PolygonGenerator};
 use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
@@ -31,13 +31,13 @@ where
         }
     }
 
-    fn point(&self, u: usize, v: usize) -> Point3<T> {
+    fn spatial_point(&self, u: usize, v: usize) -> Point3<T> {
         let u = (T::from(u).unwrap() / T::from(self.nu).unwrap()) * T::PI() * (T::one() + T::one());
         let v = (T::from(v).unwrap() / T::from(self.nv).unwrap()) * T::PI();
         Point3::new(u.cos() * v.sin(), u.sin() * v.sin(), v.cos())
     }
 
-    fn index_point(&self, u: usize, v: usize) -> usize {
+    fn indexed_point(&self, u: usize, v: usize) -> usize {
         if v == 0 {
             0
         }
@@ -54,26 +54,26 @@ where
     }
 }
 
-impl<T> ConjointPointGenerator for UVSphere<T>
+impl<T> PointGenerator for UVSphere<T>
 where
     T: Float + FloatConst + Scalar,
 {
     type Output = Point3<T>;
 
-    fn conjoint_point(&self, index: usize) -> Self::Output {
+    fn spatial_point(&self, index: usize) -> Self::Output {
         if index == 0 {
-            self.point(0, 0)
+            self.spatial_point(0, 0)
         }
-        else if index == self.conjoint_point_count() - 1 {
-            self.point(0, self.nv)
+        else if index == self.point_count() - 1 {
+            self.spatial_point(0, self.nv)
         }
         else {
             let index = index - 1;
-            self.point(index % self.nu, (index / self.nv) + 1)
+            self.spatial_point(index % self.nu, (index / self.nv) + 1)
         }
     }
 
-    fn conjoint_point_count(&self) -> usize {
+    fn point_count(&self) -> usize {
         (self.nv - 1) * self.nu + 2
     }
 }
@@ -84,27 +84,27 @@ where
 {
     type Output = Polygon<Point3<T>>;
 
-    fn polygon(&self, index: usize) -> Self::Output {
+    fn spatial_polygon(&self, index: usize) -> Self::Output {
         let (u, v) = self.map_polygon_index(index);
 
         // Generate the points at the requested meridian and parallel. The
         // upper and lower bounds of (u, v) are always used, so generate them
         // in advance (`low` and `high`). Emit triangles at the poles,
         // otherwise quads.
-        let low = self.point(u, v);
-        let high = self.point(u + 1, v + 1);
+        let low = self.spatial_point(u, v);
+        let high = self.spatial_point(u + 1, v + 1);
         if v == 0 {
-            Polygon::Triangle(Triangle::new(low, self.point(u, v + 1), high))
+            Polygon::Triangle(Triangle::new(low, self.spatial_point(u, v + 1), high))
         }
         else if v == self.nv - 1 {
-            Polygon::Triangle(Triangle::new(high, self.point(u + 1, v), low))
+            Polygon::Triangle(Triangle::new(high, self.spatial_point(u + 1, v), low))
         }
         else {
             Polygon::Quad(Quad::new(
                 low,
-                self.point(u, v + 1),
+                self.spatial_point(u, v + 1),
                 high,
-                self.point(u + 1, v),
+                self.spatial_point(u + 1, v),
             ))
         }
     }
@@ -114,29 +114,29 @@ where
     }
 }
 
-impl<T> IndexPolygonGenerator for UVSphere<T>
+impl<T> IndexedPolygonGenerator for UVSphere<T>
 where
     T: Float + FloatConst + Scalar,
 {
     type Output = Polygon<usize>;
 
-    fn index_polygon(&self, index: usize) -> <Self as IndexPolygonGenerator>::Output {
+    fn indexed_polygon(&self, index: usize) -> <Self as IndexedPolygonGenerator>::Output {
         let (u, v) = self.map_polygon_index(index);
 
-        let low = self.index_point(u, v);
-        let high = self.index_point(u + 1, v + 1);
+        let low = self.indexed_point(u, v);
+        let high = self.indexed_point(u + 1, v + 1);
         if v == 0 {
-            Polygon::Triangle(Triangle::new(low, self.index_point(u, v + 1), high))
+            Polygon::Triangle(Triangle::new(low, self.indexed_point(u, v + 1), high))
         }
         else if v == self.nv - 1 {
-            Polygon::Triangle(Triangle::new(high, self.index_point(u + 1, v), low))
+            Polygon::Triangle(Triangle::new(high, self.indexed_point(u + 1, v), low))
         }
         else {
             Polygon::Quad(Quad::new(
                 low,
-                self.index_point(u, v + 1),
+                self.indexed_point(u, v + 1),
                 high,
-                self.index_point(u + 1, v),
+                self.indexed_point(u + 1, v),
             ))
         }
     }
@@ -150,11 +150,11 @@ mod tests {
     use super::super::*;
 
     #[test]
-    fn conjoint_point_count() {
+    fn point_count() {
         assert_eq!(
             5,
             sphere::UVSphere::<f32>::with_unit_radius(3, 2)
-                .conjoint_points() // 5 conjoint points.
+                .spatial_points() // 5 conjoint points.
                 .count()
         );
     }
@@ -164,19 +164,19 @@ mod tests {
         assert_eq!(
             18,
             sphere::UVSphere::<f32>::with_unit_radius(3, 2)
-                .polygons() // 6 triangles, 18 points.
+                .spatial_polygons() // 6 triangles, 18 points.
                 .points()
                 .count()
         );
     }
 
     #[test]
-    fn index_to_conjoint_point_mapping() {
+    fn index_to_point_mapping() {
         assert_eq!(
             5,
             BTreeSet::from_iter(
                 sphere::UVSphere::<f32>::with_unit_radius(3, 2)
-                    .index_polygons() // 18 points, 5 indeces.
+                    .indexed_polygons() // 18 points, 5 indeces.
                     .points()
             ).len()
         )

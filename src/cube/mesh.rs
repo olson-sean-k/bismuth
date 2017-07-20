@@ -1,6 +1,6 @@
 use OptionExt;
 use math::{IntoSpace, FPoint2, FPoint3, FScalar, FVector3, UScalar};
-use mesh::{self, MapPoints, Points, Polygons, Triangle, Triangulate};
+use mesh::{self, MapPoints, Points, SpatialPolygons, Triangle, Triangulate};
 use mesh::cube::Plane;
 use render::{Color, Index, MeshBuffer, ToMeshBuffer, Vertex};
 use super::space::{LogWidth, Spatial};
@@ -29,11 +29,11 @@ where
             let ucube = mesh::cube::Cube::<UScalar>::with_unit_width();
             buffer.extend(
                 ucube
-                    .polygons()
+                    .spatial_polygons()
                     .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
                     .map_points(|point| (point * width) + origin)
                     .triangulate()
-                    .zip(ucube.plane_polygons().triangulate())
+                    .zip(ucube.planar_polygons().triangulate())
                     .map(|(position, plane)| {
                         let color = Color::white();
                         Triangle::new(
@@ -44,7 +44,7 @@ where
                     })
                     .points(),
                 ucube
-                    .polygons()
+                    .spatial_polygons()
                     .triangulate()
                     .points()
                     .enumerate()
