@@ -4,7 +4,8 @@ use num::traits::FloatConst;
 use std::cmp;
 use std::marker::PhantomData;
 
-use super::generate::{IndexedPolygonGenerator, PointGenerator, PolygonGenerator};
+use super::generate::{IndexedPolygonGenerator, PointGenerator, PolygonGenerator,
+                      SpatialPointGenerator, SpatialPolygonGenerator};
 use super::primitive::{Polygon, Triangle, Quad};
 
 #[derive(Clone)]
@@ -58,6 +59,15 @@ impl<T> PointGenerator for UVSphere<T>
 where
     T: Float + FloatConst + Scalar,
 {
+    fn point_count(&self) -> usize {
+        (self.nv - 1) * self.nu + 2
+    }
+}
+
+impl<T> SpatialPointGenerator for UVSphere<T>
+where
+    T: Float + FloatConst + Scalar,
+{
     type Output = Point3<T>;
 
     fn spatial_point(&self, index: usize) -> Self::Output {
@@ -72,13 +82,18 @@ where
             self.spatial_point(index % self.nu, (index / self.nv) + 1)
         }
     }
-
-    fn point_count(&self) -> usize {
-        (self.nv - 1) * self.nu + 2
-    }
 }
 
 impl<T> PolygonGenerator for UVSphere<T>
+where
+    T: Float + FloatConst + Scalar,
+{
+    fn polygon_count(&self) -> usize {
+        self.nu * self.nv
+    }
+}
+
+impl<T> SpatialPolygonGenerator for UVSphere<T>
 where
     T: Float + FloatConst + Scalar,
 {
@@ -107,10 +122,6 @@ where
                 self.spatial_point(u + 1, v),
             ))
         }
-    }
-
-    fn polygon_count(&self) -> usize {
-        self.nu * self.nv
     }
 }
 

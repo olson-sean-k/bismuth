@@ -41,11 +41,13 @@ where
 }
 
 pub trait PointGenerator {
+    fn point_count(&self) -> usize;
+}
+
+pub trait SpatialPointGenerator: PointGenerator {
     type Output;
 
-    // TODO: Should this have its own `SpatialPointGenerator` trait?
     fn spatial_point(&self, index: usize) -> Self::Output;
-    fn point_count(&self) -> usize;
 }
 
 pub trait SpatialPoints<P>: Sized {
@@ -54,7 +56,7 @@ pub trait SpatialPoints<P>: Sized {
 
 impl<G, P> SpatialPoints<P> for G
 where
-    G: PointGenerator<Output = P>,
+    G: SpatialPointGenerator<Output = P>,
 {
     fn spatial_points(&self) -> Generate<Self, P> {
         Generate::new(self, 0..self.point_count(), G::spatial_point)
@@ -62,11 +64,13 @@ where
 }
 
 pub trait PolygonGenerator {
+    fn polygon_count(&self) -> usize;
+}
+
+pub trait SpatialPolygonGenerator: PolygonGenerator {
     type Output: Polygonal;
 
-    // TODO: Should this have its own `SpatialPolygonGenerator` trait?
     fn spatial_polygon(&self, index: usize) -> Self::Output;
-    fn polygon_count(&self) -> usize;
 }
 
 pub trait SpatialPolygons<P>: Sized {
@@ -75,7 +79,7 @@ pub trait SpatialPolygons<P>: Sized {
 
 impl<G, P> SpatialPolygons<P> for G
 where
-    G: PolygonGenerator<Output = P>,
+    G: SpatialPolygonGenerator<Output = P>,
     P: Polygonal,
 {
     fn spatial_polygons(&self) -> Generate<Self, P> {

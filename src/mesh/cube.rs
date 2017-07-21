@@ -1,7 +1,7 @@
 use nalgebra::{Point2, Point3, Scalar};
 
 use super::generate::{Generate, IndexedPolygonGenerator, PointGenerator, PolygonGenerator,
-                      TexturedPolygonGenerator};
+                      SpatialPointGenerator, SpatialPolygonGenerator, TexturedPolygonGenerator};
 use super::primitive::{MapPrimitive, Quad};
 
 pub trait Unit: Scalar {
@@ -103,6 +103,15 @@ impl<T> PointGenerator for Cube<T>
 where
     T: Unit,
 {
+    fn point_count(&self) -> usize {
+        8
+    }
+}
+
+impl<T> SpatialPointGenerator for Cube<T>
+where
+    T: Unit,
+{
     type Output = Point3<T>;
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -112,13 +121,18 @@ where
         let z = if index & 0b001 == 0b001 { self.upper } else { self.lower };
         Point3::new(x, y, z)
     }
-
-    fn point_count(&self) -> usize {
-        8
-    }
 }
 
 impl<T> PolygonGenerator for Cube<T>
+where
+    T: Unit,
+{
+    fn polygon_count(&self) -> usize {
+        6
+    }
+}
+
+impl<T> SpatialPolygonGenerator for Cube<T>
 where
     T: Unit,
 {
@@ -127,10 +141,6 @@ where
     fn spatial_polygon(&self, index: usize) -> Self::Output {
         self.indexed_polygon(index)
             .map_primitive(|index| self.spatial_point(index))
-    }
-
-    fn polygon_count(&self) -> usize {
-        6
     }
 }
 
