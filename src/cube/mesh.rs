@@ -1,8 +1,8 @@
 use OptionExt;
 use math::{IntoSpace, FPoint2, FPoint3, FScalar, FVector3, UScalar};
-use mesh::{self, MapPoints, Points, SpatialPolygons, Triangle, Triangulate};
+use mesh::{self, MapPoints, SpatialPolygons, Triangle, Triangulate};
 use mesh::cube::Plane;
-use render::{Color, Index, MeshBuffer, ToMeshBuffer, Vertex};
+use render::{Color, MeshBuffer, ToMeshBuffer, Vertex};
 use super::space::{LogWidth, Spatial};
 use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
