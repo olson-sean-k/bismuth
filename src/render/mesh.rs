@@ -1,3 +1,6 @@
+use std::iter::FromIterator;
+
+use mesh::{HashIndexer, IndexPrimitives, IntoPoints, Primitive};
 use super::Index;
 use super::pipeline::Vertex;
 
@@ -46,6 +49,26 @@ impl Default for MeshBuffer {
             vertices: vec![],
             indices: vec![],
         }
+    }
+}
+
+// This allows for streams of polygons containing `Vertex`s to be `collect`ed
+// into a `MeshBuffer`. This is a bit dubious; the high cost and complexity is
+// hidden behind an innocuous `collect` invocation.
+impl<T> FromIterator<T> for MeshBuffer
+where
+    T: IntoPoints + Primitive<Point = Vertex>,
+{
+    fn from_iter<I>(input: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let mut buffer = MeshBuffer::new();
+        // TODO: This won't build, because `Vertex` is not `Eq` or `Hash` and
+        //       contains floating point values.
+        let (indeces, points) = input.into_iter().index_primitives(HashIndexer::default());
+        buffer.extend(points, indeces.into_iter().map(|index| index as Index));
+        buffer
     }
 }
 

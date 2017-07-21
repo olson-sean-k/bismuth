@@ -33,7 +33,8 @@ mod index;
 mod primitive;
 pub mod sphere;
 
-pub use self::decompose::{Lines, Points, Subdivide, Tetrahedrons, Triangulate};
+pub use self::decompose::{IntoLines, IntoPoints, IntoSubdivisions, IntoTetrahedrons,
+                          IntoTriangles, Lines, Points, Subdivide, Tetrahedrons, Triangulate};
 pub use self::generate::{IndexedPolygons, SpatialPoints, SpatialPolygons, TexturedPolygons};
 pub use self::index::{HashIndexer, IndexPrimitives};
-pub use self::primitive::{Line, MapPoints, Polygon, Rotate, Triangle, Quad};
+pub use self::primitive::{Line, MapPoints, Polygon, Polygonal, Primitive, Rotate, Triangle, Quad};
