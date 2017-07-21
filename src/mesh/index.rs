@@ -7,7 +7,7 @@ use render::{self, MeshBuffer, Vertex};
 use super::decompose::IntoPoints;
 use super::primitive::Primitive;
 
-pub trait Indexer<T, K>: Default
+pub trait Indexer<T, K>
 where
     T: IntoPoints + Primitive,
 {
@@ -26,17 +26,27 @@ where
     phantom: PhantomData<T>,
 }
 
+impl<T, K> HashIndexer<T, K>
+where
+    T: IntoPoints + Primitive,
+    K: Clone + Eq + Hash,
+{
+    fn new() -> Self {
+        HashIndexer {
+            hash: HashMap::new(),
+            n: 0,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<T, K> Default for HashIndexer<T, K>
 where
     T: IntoPoints + Primitive,
     K: Clone + Eq + Hash,
 {
     fn default() -> Self {
-        HashIndexer {
-            hash: HashMap::new(),
-            n: 0,
-            phantom: PhantomData,
-        }
+        HashIndexer::new()
     }
 }
 
@@ -54,7 +64,7 @@ where
         let index = self.hash.entry(f(&input).clone()).or_insert_with(|| {
             point = Some(input);
             let m = n;
-            n = n + 1;
+            n += 1;
             m
         });
         self.n = n;
@@ -66,16 +76,16 @@ pub trait IndexPrimitives<T>: Sized
 where
     T: IntoPoints + Primitive,
 {
-    fn index_primitives_with_key<N, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives_with_key<N, K, F>(self, indexer: N, f: F) -> (Vec<usize>, Vec<T::Point>)
     where
         N: Indexer<T, K>,
         F: Fn(&T::Point) -> &K;
 
-    fn index_primitives<N>(self) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives<N>(self, indexer: N) -> (Vec<usize>, Vec<T::Point>)
     where
         N: Indexer<T, T::Point>,
     {
-        self.index_primitives_with_key::<N, T::Point, _>(|point| point)
+        self.index_primitives_with_key::<N, T::Point, _>(indexer, |point| point)
     }
 }
 
@@ -84,12 +94,11 @@ where
     I: Iterator<Item = T>,
     T: IntoPoints + Primitive,
 {
-    fn index_primitives_with_key<N, K, F>(self, f: F) -> (Vec<usize>, Vec<T::Point>)
+    fn index_primitives_with_key<N, K, F>(self, mut indexer: N, f: F) -> (Vec<usize>, Vec<T::Point>)
     where
         N: Indexer<T, K>,
         F: Fn(&T::Point) -> &K,
     {
-        let mut indexer = N::default();
         let mut indeces = Vec::new();
         let mut points = Vec::new();
         for primitive in self {
@@ -105,8 +114,6 @@ where
     }
 }
 
-// TODO: This won't build, because `Vertex` is not `Eq` or `Hash` and contains
-//       floating point values.
 // This allows for streams of polygons containing `Vertex`s to be `collect`ed
 // into a `MeshBuffer`. This is a bit dubious; the high cost and complexity is
 // hidden behind an innocuous `collect` invocation.
@@ -119,7 +126,9 @@ where
         I: IntoIterator<Item = T>,
     {
         let mut buffer = MeshBuffer::new();
-        let (indeces, points) = input.into_iter().index_primitives::<HashIndexer<_, _>>();
+        // TODO: This won't build, because `Vertex` is not `Eq` or `Hash` and
+        //       contains floating point values.
+        let (indeces, points) = input.into_iter().index_primitives(HashIndexer::default());
         buffer.extend(
             points,
             indeces.into_iter().map(|index| index as render::Index),
