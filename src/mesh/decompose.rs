@@ -2,8 +2,8 @@
 //! primitives and tessellating polygons.
 
 use arrayvec::ArrayVec;
-use std::collections::VecDeque;
-use std::iter::IntoIterator;
+use std::collections::{vec_deque, VecDeque};
+use std::iter::{Chain, IntoIterator, Rev};
 use std::vec;
 
 use math;
@@ -31,6 +31,9 @@ where
     }
 }
 
+// Names the iterator fed into the `Decompose` adapter in `remap`.
+type Remap<P> = Chain<Rev<vec_deque::IntoIter<P>>, vec::IntoIter<P>>;
+
 impl<I, P, R> Decompose<I, P, P, R>
 where
     I: Iterator<Item = P>,
@@ -42,17 +45,9 @@ where
     //       can be used to emulate that behavior. This is especially useful
     //       for larger `n` values, where chaining calls to `subdivide` is not
     //       practical.
-    pub fn remap(self, n: usize) -> Decompose<vec::IntoIter<P>, P, P, R> {
+    pub fn remap(self, n: usize) -> Decompose<Remap<P>, P, P, R> {
         let Decompose { input, output, f } = self;
-        Decompose::new(
-            output
-                .into_iter()
-                .rev()
-                .chain(remap(n, input, f))
-                .collect::<Vec<_>>() // TODO: Only needed to name the iterator.
-                .into_iter(),
-            f,
-        )
+        Decompose::new(output.into_iter().rev().chain(remap(n, input, f)), f)
     }
 }
 
