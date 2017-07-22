@@ -64,8 +64,6 @@ where
         I: IntoIterator<Item = T>,
     {
         let mut buffer = MeshBuffer::new();
-        // TODO: This won't build, because `Vertex` is not `Eq` or `Hash` and
-        //       contains floating point values.
         let (indeces, points) = input.into_iter().index_primitives(HashIndexer::default());
         buffer.extend(points, indeces.into_iter().map(|index| index as Index));
         buffer

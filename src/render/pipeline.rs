@@ -3,6 +3,7 @@
 //! Namely, this includes vertex and uniform buffer types.
 
 use gfx;
+use std::hash::{Hash, Hasher};
 
 use math::{FPoint2, FPoint3, FMatrix4, Matrix4Ext};
 use super::Color;
@@ -69,5 +70,33 @@ impl Default for Vertex {
             &FPoint2::origin(),
             &Color::new(0.0, 0.0, 0.0, 1.0),
         )
+    }
+}
+
+// TODO: This violates the contract of the `Eq` trait, because `Vertex`
+//       includes floating point data. For example, NaN is problematic. See the
+//       implementation of `Hash`.
+impl Eq for Vertex {}
+
+impl Hash for Vertex {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        use std::mem;
+
+        // TODO: This is awful. See the ordered-float crate for a far better
+        //       approach to hashing floats.
+        unsafe {
+            mem::transmute::<[f32; 3], [u32; 3]>(self.position).hash(state);
+            mem::transmute::<[f32; 2], [u32; 2]>(self.uv).hash(state);
+            mem::transmute::<[f32; 4], [u32; 4]>(self.color).hash(state);
+        }
+    }
+}
+
+impl PartialEq for Vertex {
+    fn eq(&self, other: &Self) -> bool {
+        (self.position == other.position) && (self.uv == other.uv) && (self.color == other.color)
     }
 }
