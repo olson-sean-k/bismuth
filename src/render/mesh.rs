@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::iter::FromIterator;
 
 use mesh::{HashIndexer, IndexPrimitives, IntoPoints, Primitive};
@@ -57,7 +58,8 @@ impl Default for MeshBuffer {
 // hidden behind an innocuous `collect` invocation.
 impl<T> FromIterator<T> for MeshBuffer
 where
-    T: IntoPoints + Primitive<Point = Vertex>,
+    T: IntoPoints + Primitive,
+    T::Point: Eq + Hash + Into<Vertex>,
 {
     fn from_iter<I>(input: I) -> Self
     where
@@ -65,7 +67,10 @@ where
     {
         let mut buffer = MeshBuffer::new();
         let (indeces, points) = input.into_iter().index_primitives(HashIndexer::default());
-        buffer.extend(points, indeces.into_iter().map(|index| index as Index));
+        buffer.extend(
+            points.into_iter().map(|point| point.into()),
+            indeces.into_iter().map(|index| index as Index),
+        );
         buffer
     }
 }
