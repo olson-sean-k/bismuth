@@ -5,7 +5,7 @@
 use gfx;
 use std::hash::{Hash, Hasher};
 
-use math::{FPoint2, FPoint3, FMatrix4, Matrix4Ext};
+use math::{FMatrix4, FPoint2, FPoint3, Matrix4Ext};
 use super::Color;
 
 pub use self::pipeline::*;

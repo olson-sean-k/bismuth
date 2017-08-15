@@ -60,8 +60,8 @@ use self::tree::{Cube, OrphanCube};
 
 pub use self::edit::Cursor;
 pub use self::geometry::{Edge, Geometry, Offset};
-pub use self::space::{AABB, Axis, Direction, Intersects, LogWidth, Orientation, Partition,
-                      RayCast, RayIntersection, Spatial};
+pub use self::space::{Axis, Direction, Intersects, LogWidth, Orientation, Partition, RayCast,
+                      RayIntersection, Spatial, AABB};
 pub use self::tree::{BranchNode, BranchPayload, LeafNode, LeafPayload, Node, OrphanNode, Tree};
 
 pub type CubeRef<'a, 'b> = Cube<'a, &'b Node>;

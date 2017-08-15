@@ -4,8 +4,8 @@ use num::{Bounded, One, Zero}; // TODO: `use ::std::num::{One, Zero};`.
 use std::ops::Range;
 
 use clamp::{Clamped, ClampedRange};
-use math::{self, FRay3, FPoint3, FromSpace, FScalar, FVector3, LowerBound, Mask, UPoint3,
-           UpperBound, UScalar, UVector3};
+use math::{self, FPoint3, FRay3, FScalar, FVector3, FromSpace, LowerBound, Mask, UPoint3, UScalar,
+           UVector3, UpperBound};
 
 /// Defines the bounds for `LogWidth` values.
 #[derive(Clone, Copy)]

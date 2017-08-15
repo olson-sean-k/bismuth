@@ -5,11 +5,12 @@ use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::Window;
+use plexus::buffer::conjoint::ConjointBuffer;
 
 use event::{Event, PollEvents, React};
+use super::Index;
 use super::camera::AspectRatio;
 use super::error::*;
-use super::mesh::MeshBuffer;
 use super::pipeline::{self, Data, Meta, Transform, Vertex};
 use super::texture::Texture;
 
@@ -133,9 +134,9 @@ where
             .chain_err(|| "failed to write transform buffer")
     }
 
-    pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer) {
+    pub fn draw_conjoint_buffer(&mut self, buffer: &ConjointBuffer<Index, Vertex>) {
         let (buffer, slice) = self.factory
-            .create_vertex_buffer_with_slice(buffer.vertices(), buffer.indices());
+            .create_vertex_buffer_with_slice(buffer.as_vertex_slice(), buffer.as_index_slice());
         self.data.buffer = buffer;
         self.encoder.draw(&slice, &self.state, &self.data);
     }

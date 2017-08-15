@@ -32,3 +32,7 @@ nalgebra = "0.11.*"
 num = "0.1.*"
 rand = "0.3.*"
 winit = "0.5.*"
+
+[dependencies.plexus]
+git = "https://github.com/olson-sean-k/plexus"
+rev = "305d760390604e23b9c7c65fed7c8b9d42a5f547"

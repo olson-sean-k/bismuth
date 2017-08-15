@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use BoolExt;
 use event::{ElementState, Event, MouseButton, React};
-use super::state::{CompositeState, Element, Input, InputState, InputDifference, InputTransition,
+use super::state::{CompositeState, Element, Input, InputDifference, InputState, InputTransition,
                    Snapshot, State};
 
 impl Element for MouseButton {

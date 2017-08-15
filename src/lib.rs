@@ -14,6 +14,7 @@ extern crate image;
 extern crate lazy_static;
 extern crate nalgebra;
 extern crate num;
+extern crate plexus;
 extern crate rand;
 extern crate winit;
 
@@ -24,7 +25,6 @@ pub mod event;
 pub mod framework;
 pub mod input;
 pub mod math;
-pub mod mesh;
 pub mod render;
 pub mod resource;
 
@@ -55,14 +55,12 @@ impl<T> OptionExt<T> for Option<T> {
         F: Fn(&T) -> bool,
     {
         match self.take() {
-            Some(value) => {
-                if f(&value) {
-                    Some(value)
-                }
-                else {
-                    None
-                }
+            Some(value) => if f(&value) {
+                Some(value)
             }
+            else {
+                None
+            },
             _ => None,
         }
     }

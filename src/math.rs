@@ -258,7 +258,7 @@ where
     T: Scalar + SupersetOf<F>,
     F: Float + SupersetOf<T>,
 {
-    use nalgebra::{convert, clamp};
+    use nalgebra::{clamp, convert};
 
     let f = clamp(f, F::zero(), F::one());
     let af = convert::<T, F>(a) * (F::one() - f);

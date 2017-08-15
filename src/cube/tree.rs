@@ -88,12 +88,10 @@ impl Node {
     ) {
         match *self {
             Node::Leaf(ref mut leaf) => (OrphanNode::Leaf(&mut leaf.payload), None),
-            Node::Branch(ref mut branch) => {
-                (
-                    OrphanNode::Branch(&mut branch.payload),
-                    Some(&mut branch.nodes),
-                )
-            }
+            Node::Branch(ref mut branch) => (
+                OrphanNode::Branch(&mut branch.payload),
+                Some(&mut branch.nodes),
+            ),
         }
     }
 

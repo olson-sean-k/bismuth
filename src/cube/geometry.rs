@@ -1,5 +1,5 @@
 use clamp::{Clamped, ClampedRange};
-use math::{Clamp, FPoint3, FromSpace, FScalar, UPoint3};
+use math::{Clamp, FPoint3, FScalar, FromSpace, UPoint3};
 use super::space::Axis;
 
 /// Defines the bounds for `Offset` values.

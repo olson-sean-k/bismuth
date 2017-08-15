@@ -1,3 +1,4 @@
+use plexus::buffer::conjoint::ConjointBuffer;
 use rand;
 use std::ops::{Deref, DerefMut};
 
@@ -5,13 +6,11 @@ use math::{FScalar, FVector4};
 
 mod camera;
 pub mod error;
-mod mesh;
 pub mod pipeline;
 mod renderer;
 mod texture;
 
 pub use self::camera::{AspectRatio, Camera, Projection};
-pub use self::mesh::{MeshBuffer, ToMeshBuffer};
 pub use self::pipeline::{Transform, Vertex};
 pub use self::renderer::{GlutinRenderer, MetaRenderer, Renderer};
 pub use self::texture::Texture;
@@ -55,4 +54,8 @@ impl DerefMut for Color {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
+}
+
+pub trait ToConjointBuffer {
+    fn to_conjoint_buffer(&self) -> ConjointBuffer<Index, Vertex>;
 }

@@ -1,35 +1,39 @@
+use plexus;
+use plexus::buffer::conjoint::ConjointBuffer;
+use plexus::generate::{MapVertices, SpatialPolygons, Triangle, Triangulate};
+use plexus::generate::cube::Plane;
+
 use OptionExt;
-use math::{IntoSpace, FPoint2, FPoint3, FScalar, FVector3, UScalar};
-use mesh::{self, MapPoints, SpatialPolygons, Triangle, Triangulate};
-use mesh::cube::Plane;
-use render::{Color, MeshBuffer, ToMeshBuffer, Vertex};
+use math::{FPoint2, FPoint3, FScalar, FVector3, IntoSpace, UPoint3, UScalar};
+use render::{Color, Index, ToConjointBuffer, Vertex};
 use super::space::{LogWidth, Spatial};
 use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
-impl<'a, 'b> ToMeshBuffer for Cube<'a, &'b Node> {
-    fn to_mesh_buffer(&self) -> MeshBuffer {
-        let mut buffer = MeshBuffer::new();
+impl<'a, 'b> ToConjointBuffer for Cube<'a, &'b Node> {
+    fn to_conjoint_buffer(&self) -> ConjointBuffer<Index, Vertex> {
+        let mut buffer = ConjointBuffer::new();
         for cube in self.iter() {
-            buffer.append(&mut cube.as_orphan().to_mesh_buffer());
+            buffer.append(&mut cube.as_orphan().to_conjoint_buffer());
         }
         buffer
     }
 }
 
-impl<'a, L, B> ToMeshBuffer for OrphanCube<'a, L, B>
+impl<'a, L, B> ToConjointBuffer for OrphanCube<'a, L, B>
 where
     L: AsRef<LeafPayload>,
     B: AsRef<BranchPayload>,
 {
-    fn to_mesh_buffer(&self) -> MeshBuffer {
-        let mut buffer = MeshBuffer::new();
+    fn to_conjoint_buffer(&self) -> ConjointBuffer<Index, Vertex> {
+        let mut buffer = ConjointBuffer::new();
         if let Some(leaf) = self.as_leaf().and_if(|leaf| !leaf.geometry.is_empty()) {
             let origin: FVector3 = self.partition().origin().coords.into_space();
             let width = self.partition().width().exp() as FScalar;
-            let cube = mesh::cube::Cube::<UScalar>::with_unit_width();
-            buffer.append(&mut cube.spatial_polygons()
-                .map_points(|point| leaf.geometry.map_unit_cube_point(&point))
-                .map_points(|point| (point * width) + origin)
+            let cube = plexus::generate::cube::Cube::<UScalar>::with_unit_width();
+            buffer.append::<Index, Vertex>(&mut cube.spatial_polygons()
+                .map_vertices(|(x, y, z)| UPoint3::new(x, y, z))
+                .map_vertices(|point| leaf.geometry.map_unit_cube_point(&point))
+                .map_vertices(|point| (point * width) + origin)
                 .triangulate()
                 .zip(cube.planar_polygons().triangulate())
                 .map(|(position, plane)| {

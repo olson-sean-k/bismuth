@@ -1,6 +1,7 @@
 extern crate bismuth;
 extern crate glutin;
 extern crate nalgebra;
+extern crate plexus;
 
 use bismuth::cube::{Cursor, Geometry, LogWidth, Spatial, Tree};
 use bismuth::event::{ElementState, Event, MouseButton, React};
@@ -8,8 +9,9 @@ use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, Re
                          Transition, UpdateContextView, UpdateResult, WindowView};
 use bismuth::input::{InputState, InputTransition, Mouse, MousePosition, Snapshot};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{Camera, MeshBuffer, MetaRenderer, Projection, ToMeshBuffer, Transform};
+use bismuth::render::{Camera, Index, MetaRenderer, Projection, ToConjointBuffer, Transform, Vertex};
 use glutin::WindowBuilder;
+use plexus::buffer::conjoint::ConjointBuffer;
 use std::marker::PhantomData;
 
 struct State {
@@ -37,7 +39,7 @@ where
     R: MetaRenderer,
 {
     tree: Tree,
-    mesh: MeshBuffer,
+    mesh: ConjointBuffer<Index, Vertex>,
     camera: Camera,
     phantom: PhantomData<R>,
 }
@@ -48,7 +50,7 @@ where
 {
     pub fn new(context: &mut Context<State, R>) -> Self {
         let tree = new_tree(LogWidth::new(8));
-        let mesh = tree.as_cube().to_mesh_buffer();
+        let mesh = tree.as_cube().to_conjoint_buffer();
         let camera = new_camera(&context.renderer.window, &tree);
         MainActivity {
             tree: tree,
@@ -79,14 +81,14 @@ where
             }
         }
         if dirty {
-            self.mesh = self.tree.as_cube().to_mesh_buffer();
+            self.mesh = self.tree.as_cube().to_conjoint_buffer();
         }
         context.state_mut().mouse.snapshot();
         Ok(Transition::None)
     }
 
     fn render(&mut self, context: &mut RenderContextView<R, State = State>) -> RenderResult {
-        let mut renderer = context.renderer_mut();
+        let renderer = context.renderer_mut();
         renderer.clear();
         renderer
             .set_transform(&Transform::new(
@@ -94,7 +96,7 @@ where
                 &FMatrix4::identity(),
             ))
             .unwrap();
-        renderer.draw_mesh_buffer(&self.mesh);
+        renderer.draw_conjoint_buffer(&self.mesh);
         renderer.flush().unwrap();
         Ok(())
     }
