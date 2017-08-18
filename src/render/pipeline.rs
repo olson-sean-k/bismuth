@@ -3,6 +3,7 @@
 //! Namely, this includes vertex and uniform buffer types.
 
 use gfx;
+use plexus::r32;
 use std::hash::{Hash, Hasher};
 
 use math::{FMatrix4, FPoint2, FPoint3, Matrix4Ext};
@@ -61,6 +62,23 @@ impl Vertex {
             color: [color.x, color.y, color.z, color.w],
         }
     }
+
+    fn ordered(&self) -> OrderedVertex {
+        OrderedVertex {
+            position: [
+                r32::from(self.position[0]),
+                r32::from(self.position[1]),
+                r32::from(self.position[2]),
+            ],
+            uv: [r32::from(self.uv[0]), r32::from(self.uv[1])],
+            color: [
+                r32::from(self.color[0]),
+                r32::from(self.color[1]),
+                r32::from(self.color[2]),
+                r32::from(self.color[3]),
+            ],
+        }
+    }
 }
 
 impl Default for Vertex {
@@ -73,9 +91,6 @@ impl Default for Vertex {
     }
 }
 
-// TODO: This violates the contract of the `Eq` trait, because `Vertex`
-//       includes floating point data. For example, NaN is problematic. See the
-//       implementation of `Hash`.
 impl Eq for Vertex {}
 
 impl Hash for Vertex {
@@ -83,20 +98,19 @@ impl Hash for Vertex {
     where
         H: Hasher,
     {
-        use std::mem;
-
-        // TODO: This is awful. See the ordered-float crate for a far better
-        //       approach to hashing floats.
-        unsafe {
-            mem::transmute::<[f32; 3], [u32; 3]>(self.position).hash(state);
-            mem::transmute::<[f32; 2], [u32; 2]>(self.uv).hash(state);
-            mem::transmute::<[f32; 4], [u32; 4]>(self.color).hash(state);
-        }
+        self.ordered().hash(state);
     }
 }
 
 impl PartialEq for Vertex {
     fn eq(&self, other: &Self) -> bool {
-        (self.position == other.position) && (self.uv == other.uv) && (self.color == other.color)
+        self.ordered().eq(&other.ordered())
     }
+}
+
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct OrderedVertex {
+    position: [r32; 3],
+    uv: [r32; 2],
+    color: [r32; 4],
 }
