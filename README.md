@@ -7,7 +7,6 @@ be manipulated in real time.
 [![Build Status](https://ci.appveyor.com/api/projects/status/1j5kjy2ucps4cpbl/branch/master?svg=true)](https://ci.appveyor.com/project/olson-sean-k/bismuth)
 [![Documentation](https://docs.rs/bismuth/badge.svg)](https://docs.rs/bismuth)
 [![Crate](https://img.shields.io/crates/v/bismuth.svg)](https://crates.io/crates/bismuth)
-[![LoC](https://tokei.rs/b1/github/olson-sean-k/bismuth)](https://github.com/olson-sean-k/bismuth)
 
 ## Oct-Tree Structure
 
