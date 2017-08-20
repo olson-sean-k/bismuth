@@ -1,6 +1,6 @@
 [package]
 name = "bismuth"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Sean Olson <olson.sean.k@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -30,9 +30,6 @@ image = "0.13.*"
 lazy_static = "0.1.*"
 nalgebra = "0.11.*"
 num = "0.1.*"
+plexus = "0.0.1"
 rand = "0.3.*"
 winit = "0.5.*"
-
-[dependencies.plexus]
-git = "https://github.com/olson-sean-k/plexus"
-rev = "987e805ea71f65a123051cf58deb0b4c574edd06"
