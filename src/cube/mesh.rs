@@ -4,10 +4,10 @@ use plexus::generate::{MapVertices, SpatialPolygons, Triangle, Triangulate};
 use plexus::generate::cube::Plane;
 
 use OptionExt;
+use cube::space::{LogWidth, Spatial};
+use cube::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 use math::{FPoint2, FPoint3, FScalar, FVector3, IntoSpace, UPoint3, UScalar};
 use render::{Color, Index, ToConjointBuffer, Vertex};
-use super::space::{LogWidth, Spatial};
-use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
 impl<'a, 'b> ToConjointBuffer for Cube<'a, &'b Node> {
     fn to_conjoint_buffer(&self) -> ConjointBuffer<Index, Vertex> {

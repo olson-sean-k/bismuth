@@ -1,6 +1,6 @@
-use super::cube;
-use super::framework;
-use super::render;
+use cube;
+use framework;
+use render;
 
 error_chain! {
     links {

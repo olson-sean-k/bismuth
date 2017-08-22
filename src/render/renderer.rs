@@ -9,11 +9,11 @@ use plexus::buffer::conjoint::ConjointBuffer;
 
 use event::{Event, PollEvents, React};
 use framework::WindowView;
-use super::Index;
-use super::camera::AspectRatio;
-use super::error::*;
-use super::pipeline::{self, Data, Meta, Transform, Vertex};
-use super::texture::Texture;
+use render::Index;
+use render::camera::AspectRatio;
+use render::error::*;
+use render::pipeline::{self, Data, Meta, Transform, Vertex};
+use render::texture::Texture;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 

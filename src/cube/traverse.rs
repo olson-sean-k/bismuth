@@ -1,4 +1,4 @@
-use super::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
+use cube::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 
 pub trait TraversalBuffer<'a, N>: Extend<Cube<'a, N>>
 where

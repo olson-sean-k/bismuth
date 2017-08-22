@@ -1,6 +1,6 @@
 use clamp::{Clamped, ClampedRange};
+use cube::space::Axis;
 use math::{Clamp, FPoint3, FScalar, FromSpace, UPoint3};
-use super::space::Axis;
 
 /// Defines the bounds for `Offset` values.
 #[derive(Clone, Copy)]

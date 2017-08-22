@@ -1,9 +1,9 @@
 use glutin::Window;
 
 use event::{Event, PollEvents, React};
+use framework::activity::{ActivityStack, BoxActivity};
+use framework::context::{Context, State};
 use render::{GlutinRenderer, MetaRenderer};
-use super::activity::{ActivityStack, BoxActivity};
-use super::context::{Context, State};
 
 pub struct Harness<T, R>
 where

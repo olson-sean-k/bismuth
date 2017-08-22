@@ -1,7 +1,7 @@
 use event::{Event, React};
+use framework::context::{RenderContextView, State, UpdateContextView};
+use framework::error::*;
 use render::MetaRenderer;
-use super::context::{RenderContextView, State, UpdateContextView};
-use super::error::*;
 
 pub enum Transition<T, R>
 where

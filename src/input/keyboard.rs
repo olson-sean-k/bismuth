@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::ops::Deref;
 
 use event::{ElementState, Event, React, VirtualKeyCode};
-use super::state::{CompositeState, Element, Input, Snapshot};
+use input::state::{CompositeState, Element, Input, Snapshot};
 
 impl Element for VirtualKeyCode {
     type State = ElementState;

@@ -5,7 +5,7 @@ use gfx::texture::{AaMode, FilterMethod, Kind, SamplerInfo, WrapMode};
 use image;
 use std::path::Path;
 
-use super::error::*;
+use render::error::*;
 
 pub trait NormalizedChannel {}
 pub trait UnsignedChannel {}

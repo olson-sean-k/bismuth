@@ -7,7 +7,7 @@ use plexus::r32;
 use std::hash::{Hash, Hasher};
 
 use math::{FMatrix4, FPoint2, FPoint3, Matrix4Ext};
-use super::Color;
+use render::Color;
 
 pub use self::pipeline::*;
 
