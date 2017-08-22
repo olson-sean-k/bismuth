@@ -85,14 +85,29 @@ impl<R> Texture<R, Rgba8>
 where
     R: Resources,
 {
+    #[inline(always)]
     pub fn white<F>(factory: &mut F) -> Result<Self>
     where
         F: Factory<R>,
     {
-        let max = u8::max_value();
+        Self::grayscale(factory, u8::max_value())
+    }
+
+    #[inline(always)]
+    pub fn black<F>(factory: &mut F) -> Result<Self>
+    where
+        F: Factory<R>,
+    {
+        Self::grayscale(factory, u8::min_value())
+    }
+
+    pub fn grayscale<F>(factory: &mut F, value: u8) -> Result<Self>
+    where
+        F: Factory<R>,
+    {
         let (surface, view) = factory.create_texture_immutable_u8::<Rgba8>(
             Kind::D2(1, 1, AaMode::Single),
-            &[&[max, max, max, max]],
+            &[&[value, value, value, value]],
         )?;
         Ok(Texture::new(
             surface,
