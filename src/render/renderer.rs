@@ -8,6 +8,7 @@ use glutin::Window;
 use plexus::buffer::conjoint::ConjointBuffer;
 
 use event::{Event, PollEvents, React};
+use framework::WindowView;
 use super::Index;
 use super::camera::AspectRatio;
 use super::error::*;
@@ -48,7 +49,9 @@ impl UpdateFrameBufferView<gfx_device_gl::Resources> for Window {
 }
 
 pub trait MetaRenderer {
-    type Window: AspectRatio + PollEvents + SwapBuffers + UpdateFrameBufferView<Self::Resources>;
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    type Window: AspectRatio + PollEvents + SwapBuffers + UpdateFrameBufferView<Self::Resources> +
+                 WindowView;
     type Resources: Resources;
     type Factory: Factory<Self::Resources>;
     type CommandBuffer: CommandBuffer<Self::Resources>;

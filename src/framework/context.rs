@@ -5,11 +5,7 @@ use render::{AspectRatio, GlutinRenderer, MetaRenderer, Renderer};
 
 pub trait WindowView: AspectRatio {}
 
-impl<T> WindowView for T
-where
-    T: AspectRatio,
-{
-}
+impl WindowView for Window {}
 
 pub trait State: Sized + React {}
 
