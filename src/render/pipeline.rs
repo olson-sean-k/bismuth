@@ -2,8 +2,8 @@
 //!
 //! Namely, this includes vertex and uniform buffer types.
 
+use decorum;
 use gfx;
-use plexus::r32;
 use std::hash::{Hash, Hasher};
 
 use math::{FMatrix4, FPoint2, FPoint3, Matrix4Ext};
@@ -46,8 +46,9 @@ impl Default for Transform {
     }
 }
 
-gfx_vertex_struct!{
-    Vertex {
+gfx_vertex_struct_meta!{
+    #[derive(PartialEq, PartialOrd)]
+    vertex_struct_meta Vertex {
         position: [f32; 3] = "a_position",
         uv: [f32; 2] = "a_uv",
         color: [f32; 4] = "a_color",
@@ -62,23 +63,6 @@ impl Vertex {
             color: [color.x, color.y, color.z, color.w],
         }
     }
-
-    fn ordered(&self) -> OrderedVertex {
-        OrderedVertex {
-            position: [
-                r32::from(self.position[0]),
-                r32::from(self.position[1]),
-                r32::from(self.position[2]),
-            ],
-            uv: [r32::from(self.uv[0]), r32::from(self.uv[1])],
-            color: [
-                r32::from(self.color[0]),
-                r32::from(self.color[1]),
-                r32::from(self.color[2]),
-                r32::from(self.color[3]),
-            ],
-        }
-    }
 }
 
 impl Default for Vertex {
@@ -91,6 +75,8 @@ impl Default for Vertex {
     }
 }
 
+// TODO: This is incomplete and conversions are not a very efficient or
+//       ergonomic way to implement `PartialEq`.
 impl Eq for Vertex {}
 
 impl Hash for Vertex {
@@ -98,19 +84,8 @@ impl Hash for Vertex {
     where
         H: Hasher,
     {
-        self.ordered().hash(state);
+        decorum::hash_float_array(&self.position, state);
+        decorum::hash_float_array(&self.uv, state);
+        decorum::hash_float_array(&self.color, state);
     }
-}
-
-impl PartialEq for Vertex {
-    fn eq(&self, other: &Self) -> bool {
-        self.ordered().eq(&other.ordered())
-    }
-}
-
-#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
-struct OrderedVertex {
-    position: [r32; 3],
-    uv: [r32; 2],
-    color: [r32; 4],
 }

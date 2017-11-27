@@ -1,4 +1,4 @@
-use plexus::buffer::conjoint::ConjointBuffer;
+use plexus::buffer::MeshBuffer;
 use rand;
 use std::ops::{Deref, DerefMut};
 
@@ -56,6 +56,6 @@ impl DerefMut for Color {
     }
 }
 
-pub trait ToConjointBuffer {
-    fn to_conjoint_buffer(&self) -> ConjointBuffer<Index, Vertex>;
+pub trait ToMeshBuffer {
+    fn to_mesh_buffer(&self) -> MeshBuffer<Index, Vertex>;
 }

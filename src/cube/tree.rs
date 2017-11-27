@@ -632,7 +632,9 @@ where
         point: &UPoint3,
         width: LogWidth,
     ) -> Option<Cube<&mut Node>> {
-        self.for_each_node_to_point(point, width, |node| { let _ = node.subdivide(); })
+        self.for_each_node_to_point(point, width, |node| {
+            let _ = node.subdivide();
+        })
     }
 
     pub fn subdivide_to_cursor(&mut self, cursor: &Cursor) -> Vec<Cube<&mut Node>> {
@@ -653,14 +655,16 @@ where
 
     #[allow(dead_code)]
     fn instrument(&mut self) -> usize {
-        self.for_each_path_mut(|(cube, path)| if cube.is_leaf() {
-            cube.hint_mut().load = 0;
-        }
-        else {
-            for cube in path.iter_mut() {
-                cube.hint_mut().load += 1;
+        self.for_each_path_mut(|(cube, path)| {
+            if cube.is_leaf() {
+                cube.hint_mut().load = 0;
             }
-            cube.hint_mut().load = 1;
+            else {
+                for cube in path.iter_mut() {
+                    cube.hint_mut().load += 1;
+                }
+                cube.hint_mut().load = 1;
+            }
         });
         self.hint().load
     }

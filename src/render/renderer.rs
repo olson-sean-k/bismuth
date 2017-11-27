@@ -5,7 +5,7 @@ use gfx::traits::FactoryExt;
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::Window;
-use plexus::buffer::conjoint::ConjointBuffer;
+use plexus::buffer::MeshBuffer;
 
 use event::{Event, PollEvents, React};
 use framework::WindowView;
@@ -137,7 +137,7 @@ where
             .chain_err(|| "failed to write transform buffer")
     }
 
-    pub fn draw_conjoint_buffer(&mut self, buffer: &ConjointBuffer<Index, Vertex>) {
+    pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer<Index, Vertex>) {
         let (buffer, slice) = self.factory
             .create_vertex_buffer_with_slice(buffer.as_vertex_slice(), buffer.as_index_slice());
         self.data.buffer = buffer;

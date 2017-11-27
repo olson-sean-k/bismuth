@@ -9,9 +9,9 @@ use bismuth::framework::{self, Activity, Context, Harness, RenderContextView, Re
                          Transition, UpdateContextView, UpdateResult, WindowView};
 use bismuth::input::{InputState, InputTransition, Mouse, MousePosition, Snapshot};
 use bismuth::math::{FMatrix4, FPoint3, FScalar, IntoSpace, UPoint3, UVector3};
-use bismuth::render::{Camera, Index, MetaRenderer, Projection, ToConjointBuffer, Transform, Vertex};
+use bismuth::render::{Camera, Index, MetaRenderer, Projection, ToMeshBuffer, Transform, Vertex};
 use glutin::WindowBuilder;
-use plexus::buffer::conjoint::ConjointBuffer;
+use plexus::buffer::MeshBuffer;
 use std::marker::PhantomData;
 
 struct State {
@@ -39,7 +39,7 @@ where
     R: MetaRenderer,
 {
     tree: Tree,
-    mesh: ConjointBuffer<Index, Vertex>,
+    mesh: MeshBuffer<Index, Vertex>,
     camera: Camera,
     phantom: PhantomData<R>,
 }
@@ -50,7 +50,7 @@ where
 {
     pub fn new(context: &mut Context<State, R>) -> Self {
         let tree = new_tree(LogWidth::new(8));
-        let mesh = tree.as_cube().to_conjoint_buffer();
+        let mesh = tree.as_cube().to_mesh_buffer();
         let camera = new_camera(&context.renderer.window, &tree);
         MainActivity {
             tree: tree,
@@ -81,7 +81,7 @@ where
             }
         }
         if dirty {
-            self.mesh = self.tree.as_cube().to_conjoint_buffer();
+            self.mesh = self.tree.as_cube().to_mesh_buffer();
         }
         context.state_mut().mouse.snapshot();
         Ok(Transition::None)
@@ -96,7 +96,7 @@ where
                 &FMatrix4::identity(),
             ))
             .unwrap();
-        renderer.draw_conjoint_buffer(&self.mesh);
+        renderer.draw_mesh_buffer(&self.mesh);
         renderer.flush().unwrap();
         Ok(())
     }
