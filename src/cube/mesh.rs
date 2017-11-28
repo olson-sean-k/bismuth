@@ -1,3 +1,4 @@
+use decorum::R32;
 use plexus;
 use plexus::buffer::MeshBuffer;
 use plexus::generate::{self, HashIndexer};
@@ -39,15 +40,7 @@ where
                 0..36u32,
                 generate::zip_vertices((
                     cube.polygons_with_position()
-                        .map_vertices(|position| -> FPoint3 { position.into() })
-                        .map_vertices(|position| position + FVector3::new(0.5, 0.5, 0.5))
-                        .map_vertices(|position| {
-                            UPoint3::new(
-                                position.x as UScalar,
-                                position.y as UScalar,
-                                position.z as UScalar,
-                            )
-                        })
+                        .map_vertices(|position| unit(&position))
                         .map_vertices(|position| leaf.geometry.map_unit_cube_point(&position))
                         .map_vertices(|position| (position * width) + origin),
                     cube.polygons_with_plane(),
@@ -60,6 +53,14 @@ where
         }
         buffer
     }
+}
+
+fn unit(position: &Triplet<R32>) -> UPoint3 {
+    UPoint3::new(
+        (position.0.into_raw_float() + 0.5) as UScalar,
+        (position.1.into_raw_float() + 0.5) as UScalar,
+        (position.2.into_raw_float() + 0.5) as UScalar,
+    )
 }
 
 fn uv(plane: Plane, point: &FPoint3) -> FPoint2 {
