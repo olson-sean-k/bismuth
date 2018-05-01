@@ -4,7 +4,7 @@ extern crate alga;
 extern crate arrayvec;
 extern crate decorum;
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
 #[macro_use]
 extern crate gfx;
 extern crate gfx_device_gl;
@@ -21,7 +21,6 @@ extern crate winit;
 
 pub mod clamp;
 pub mod cube;
-pub mod error;
 pub mod event;
 pub mod framework;
 pub mod input;

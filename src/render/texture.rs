@@ -1,11 +1,10 @@
-use gfx::{self, Factory, Resources};
+use failure::Error;
 use gfx::format::{R8_G8_B8_A8, Rgba8, Srgb, TextureChannel, TextureFormat, Unorm};
 use gfx::handle::{Sampler, ShaderResourceView};
 use gfx::texture::{AaMode, FilterMethod, Kind, SamplerInfo, WrapMode};
+use gfx::{self, Factory, Resources};
 use image;
 use std::path::Path;
-
-use render::error::*;
 
 pub trait NormalizedChannel {}
 pub trait UnsignedChannel {}
@@ -62,7 +61,7 @@ where
     C: NormalizedChannel + TextureChannel + UnsignedChannel,
     (R8_G8_B8_A8, C): TextureFormat,
 {
-    pub fn from_file<F, P>(factory: &mut F, path: P) -> Result<Self>
+    pub fn from_file<F, P>(factory: &mut F, path: P) -> Result<Self, Error>
     where
         F: Factory<R>,
         P: AsRef<Path>,
@@ -86,7 +85,7 @@ where
     R: Resources,
 {
     #[inline(always)]
-    pub fn white<F>(factory: &mut F) -> Result<Self>
+    pub fn white<F>(factory: &mut F) -> Result<Self, Error>
     where
         F: Factory<R>,
     {
@@ -94,14 +93,14 @@ where
     }
 
     #[inline(always)]
-    pub fn black<F>(factory: &mut F) -> Result<Self>
+    pub fn black<F>(factory: &mut F) -> Result<Self, Error>
     where
         F: Factory<R>,
     {
         Self::grayscale(factory, u8::min_value())
     }
 
-    pub fn grayscale<F>(factory: &mut F, value: u8) -> Result<Self>
+    pub fn grayscale<F>(factory: &mut F, value: u8) -> Result<Self, Error>
     where
         F: Factory<R>,
     {

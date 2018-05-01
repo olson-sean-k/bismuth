@@ -1,7 +1,8 @@
-use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
+use failure::{Error, Fail};
 use gfx::format::{DepthStencil, Rgba8, Srgba8};
 use gfx::handle::{DepthStencilView, RenderTargetView};
 use gfx::traits::FactoryExt;
+use gfx::{CommandBuffer, Device, Encoder, Factory, PipelineState, Resources};
 use gfx_device_gl;
 use gfx_window_glutin;
 use glutin::Window;
@@ -9,21 +10,20 @@ use plexus::buffer::MeshBuffer;
 
 use event::{Event, PollEvents, React};
 use framework::WindowView;
-use render::Index;
 use render::camera::AspectRatio;
-use render::error::*;
 use render::pipeline::{self, Data, Meta, Transform, Vertex};
 use render::texture::Texture;
+use render::Index;
 
 const CLEAR_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 pub trait SwapBuffers {
-    fn swap_buffers(&mut self) -> Result<()>;
+    fn swap_buffers(&mut self) -> Result<(), Error>;
 }
 
 impl SwapBuffers for Window {
-    fn swap_buffers(&mut self) -> Result<()> {
-        Window::swap_buffers(self).chain_err(|| "failed to swap frame buffers")
+    fn swap_buffers(&mut self) -> Result<(), Error> {
+        Window::swap_buffers(self).map_err(|error| error.into())
     }
 }
 
@@ -129,12 +129,12 @@ where
         }
     }
 
-    pub fn set_transform(&mut self, transform: &Transform) -> Result<()> {
+    pub fn set_transform(&mut self, transform: &Transform) -> Result<(), Error> {
         self.data.camera = transform.camera;
         self.data.model = transform.model;
         self.encoder
             .update_buffer(&self.data.transform, &[*transform], 0)
-            .chain_err(|| "failed to write transform buffer")
+            .map_err(|error| error.context("failed to write transform buffer").into())
     }
 
     pub fn draw_mesh_buffer(&mut self, buffer: &MeshBuffer<Index, Vertex>) {
@@ -149,7 +149,7 @@ where
         self.encoder.clear_depth(&self.data.depth, 1.0);
     }
 
-    pub fn flush(&mut self) -> Result<()> {
+    pub fn flush(&mut self) -> Result<(), Error> {
         self.encoder.flush(&mut self.device);
         self.window.swap_buffers().and_then(|_| {
             self.device.cleanup();

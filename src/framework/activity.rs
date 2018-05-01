@@ -1,6 +1,7 @@
 use event::{Event, React};
+use failure::Error;
 use framework::context::{RenderContextView, State, UpdateContextView};
-use framework::error::*;
+use framework::FrameworkError;
 use render::MetaRenderer;
 
 pub enum Transition<T, R>
@@ -28,8 +29,8 @@ where
 }
 
 pub type BoxActivity<T, R> = Box<Activity<T, R>>;
-pub type UpdateResult<T, R> = Result<Transition<T, R>>;
-pub type RenderResult = Result<()>;
+pub type UpdateResult<T, R> = Result<Transition<T, R>, FrameworkError>;
+pub type RenderResult = Result<(), FrameworkError>;
 
 pub trait Activity<T, R>: React
 where
@@ -66,7 +67,7 @@ where
         }
     }
 
-    pub fn update<C>(&mut self, context: &mut C) -> Result<bool>
+    pub fn update<C>(&mut self, context: &mut C) -> Result<bool, Error>
     where
         C: UpdateContextView<State = T>,
     {
@@ -88,7 +89,7 @@ where
         Ok(signal)
     }
 
-    pub fn render<C>(&mut self, context: &mut C) -> Result<()>
+    pub fn render<C>(&mut self, context: &mut C) -> Result<(), Error>
     where
         C: RenderContextView<R, State = T>,
     {

@@ -3,10 +3,10 @@ use num::Zero;
 use std::collections::HashSet;
 use std::ops::Deref;
 
-use BoolExt;
 use event::{ElementState, Event, MouseButton, React};
 use input::state::{CompositeState, Element, Input, InputDifference, InputState, InputTransition,
                    Snapshot, State};
+use BoolExt;
 
 impl Element for MouseButton {
     type State = ElementState;
@@ -71,12 +71,10 @@ impl Input for Mouse {
 }
 
 impl InputDifference<MousePosition> for Mouse {
-    type Difference = Option<
-        (
-            MousePosition,
-            <<MousePosition as Element>::State as State>::Difference,
-        ),
-    >;
+    type Difference = Option<(
+        MousePosition,
+        <<MousePosition as Element>::State as State>::Difference,
+    )>;
 
     // This is distinct from `InputTransition::transition`. That function
     // indicates whether or not a change has occurred and yields the current
@@ -91,12 +89,10 @@ impl InputDifference<MousePosition> for Mouse {
 }
 
 impl InputDifference<MouseProximity> for Mouse {
-    type Difference = Option<
-        (
-            MouseProximity,
-            <<MouseProximity as Element>::State as State>::Difference,
-        ),
-    >;
+    type Difference = Option<(
+        MouseProximity,
+        <<MouseProximity as Element>::State as State>::Difference,
+    )>;
 
     fn difference(&self) -> Self::Difference {
         self.transition(MouseProximity)
@@ -174,8 +170,8 @@ impl InputState<MouseProximity> for MouseState {
 mod tests {
     use nalgebra::Vector2;
 
-    use event::{Event, React};
     use super::super::*;
+    use event::{Event, React};
 
     #[test]
     fn position_difference_some() {

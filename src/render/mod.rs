@@ -5,7 +5,6 @@ use std::ops::{Deref, DerefMut};
 use math::{FScalar, FVector4};
 
 mod camera;
-pub mod error;
 pub mod pipeline;
 mod renderer;
 mod texture;

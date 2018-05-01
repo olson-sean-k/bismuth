@@ -1,8 +1,8 @@
 use num::Zero;
 use std::cmp;
 
-use math::{LowerBound, UPoint3, UVector3, UpperBound};
 use cube::space::{LogWidth, Partition, Spatial, AABB};
+use math::{LowerBound, UPoint3, UVector3, UpperBound};
 
 /// A contiguous selection of cubes in a tree.
 ///

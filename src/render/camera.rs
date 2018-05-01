@@ -86,7 +86,7 @@ impl Camera {
         let far = self.projection
             .unproject_point(&FPoint3::new(point.x, point.y, 1.0));
         let inverse = self.view.inverse();
-        FRay3::new(inverse * near, (inverse * (far - near)))
+        FRay3::new(inverse * near, inverse * (far - near))
     }
 
     pub fn transform(&self) -> FMatrix4 {

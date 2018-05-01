@@ -48,7 +48,6 @@
 //! ```
 
 mod edit;
-pub mod error;
 mod geometry;
 mod mesh;
 mod space;
@@ -68,3 +67,13 @@ pub type CubeRef<'a, 'b> = Cube<'a, &'b Node>;
 pub type CubeMut<'a, 'b> = Cube<'a, &'b mut Node>;
 pub type OrphanCubeRef<'a, 'b> = OrphanCube<'a, &'b LeafPayload, &'b BranchPayload>;
 pub type OrphanCubeMut<'a, 'b> = OrphanCube<'a, &'b mut LeafPayload, &'b mut BranchPayload>;
+
+#[derive(Debug, Fail)]
+pub enum CubeError {
+    #[fail(display = "minimum width limit exceeded")]
+    LimitExceeded,
+    #[fail(display = "attempted to join leaf")]
+    JoinLeaf,
+    #[fail(display = "attempted to subdivide branch")]
+    SubdivideBranch,
+}

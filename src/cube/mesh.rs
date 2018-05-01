@@ -1,15 +1,14 @@
 use decorum::R32;
-use plexus;
 use plexus::buffer::MeshBuffer;
-use plexus::generate::{self, HashIndexer};
+use plexus::generate;
 use plexus::generate::cube::Plane;
 use plexus::prelude::*;
 
-use OptionExt;
 use cube::space::{LogWidth, Spatial};
 use cube::tree::{BranchPayload, Cube, LeafPayload, Node, OrphanCube};
 use math::{FPoint2, FPoint3, FScalar, FVector3, IntoSpace, UPoint3, UScalar};
 use render::{Color, Index, ToMeshBuffer, Vertex};
+use OptionExt;
 
 impl<'a, 'b> ToMeshBuffer for Cube<'a, &'b Node> {
     fn to_mesh_buffer(&self) -> MeshBuffer<Index, Vertex> {
@@ -57,9 +56,9 @@ where
 
 fn unit(position: &Triplet<R32>) -> UPoint3 {
     UPoint3::new(
-        (position.0.into_raw_float() + 0.5) as UScalar,
-        (position.1.into_raw_float() + 0.5) as UScalar,
-        (position.2.into_raw_float() + 0.5) as UScalar,
+        (position.0.into_inner() + 0.5) as UScalar,
+        (position.1.into_inner() + 0.5) as UScalar,
+        (position.2.into_inner() + 0.5) as UScalar,
     )
 }
 

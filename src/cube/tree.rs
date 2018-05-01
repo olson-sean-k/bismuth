@@ -4,10 +4,10 @@ use std::convert::{AsMut, AsRef};
 use std::ops::{Deref, DerefMut};
 
 use cube::edit::Cursor;
-use cube::error::*;
 use cube::geometry::Geometry;
 use cube::space::{self, Intersects, LogWidth, Partition, RayCast, RayIntersection, Spatial};
 use cube::traverse::{PathTraversal, Traversal};
+use cube::CubeError;
 use math::{Clamp, FRay3, FScalar, UPoint3};
 use resource::ResourceId;
 
@@ -95,17 +95,17 @@ impl Node {
         }
     }
 
-    fn join(&mut self) -> Result<()> {
+    fn join(&mut self) -> Result<(), CubeError> {
         if let Node::Branch(..) = *self {
             *self = Node::Leaf(LeafNode::new());
             Ok(())
         }
         else {
-            Err(ErrorKind::JoinLeaf.into())
+            Err(CubeError::JoinLeaf)
         }
     }
 
-    fn subdivide(&mut self) -> Result<()> {
+    fn subdivide(&mut self) -> Result<(), CubeError> {
         if let Node::Leaf(..) = *self {
             *self = Node::Branch(BranchNode::new(Box::new([
                 self.clone(),
@@ -120,7 +120,7 @@ impl Node {
             Ok(())
         }
         else {
-            Err(ErrorKind::SubdivideBranch.into())
+            Err(CubeError::SubdivideBranch)
         }
     }
 }
@@ -457,9 +457,9 @@ where
 
     pub fn at_index(&self, index: usize) -> Option<Cube<&Node>> {
         self.node.as_ref().as_branch().map_or(None, |branch| {
-            self.partition.at_index(index).map(|partition| {
-                Cube::new(&branch.nodes[index], self.root, partition)
-            })
+            self.partition
+                .at_index(index)
+                .map(|partition| Cube::new(&branch.nodes[index], self.root, partition))
         })
     }
 
@@ -513,9 +513,7 @@ where
                 nodes
                     .iter()
                     .enumerate()
-                    .map(|(index, node)| {
-                        Cube::new(node, root, partition.at_index(index).unwrap())
-                    })
+                    .map(|(index, node)| Cube::new(node, root, partition.at_index(index).unwrap()))
                     .collect()
             }),
         )
@@ -580,9 +578,9 @@ where
         match *self.node.as_mut() {
             Node::Branch(ref mut branch) => {
                 let root = self.root;
-                self.partition.at_index(index).map(move |partition| {
-                    Cube::new(&mut branch.nodes[index], root, partition)
-                })
+                self.partition
+                    .at_index(index)
+                    .map(move |partition| Cube::new(&mut branch.nodes[index], root, partition))
             }
             _ => None,
         }
@@ -614,13 +612,13 @@ where
         cube
     }
 
-    pub fn join(&mut self) -> Result<()> {
+    pub fn join(&mut self) -> Result<(), CubeError> {
         self.node.as_mut().join()
     }
 
-    pub fn subdivide(&mut self) -> Result<()> {
+    pub fn subdivide(&mut self) -> Result<(), CubeError> {
         if self.partition().is_min_width() {
-            Err(ErrorKind::LimitExceeded.into())
+            Err(CubeError::LimitExceeded)
         }
         else {
             self.node.as_mut().subdivide()
@@ -735,9 +733,7 @@ where
                 nodes
                     .iter_mut()
                     .enumerate()
-                    .map(|(index, node)| {
-                        Cube::new(node, root, partition.at_index(index).unwrap())
-                    })
+                    .map(|(index, node)| Cube::new(node, root, partition.at_index(index).unwrap()))
                     .collect()
             }),
         )
