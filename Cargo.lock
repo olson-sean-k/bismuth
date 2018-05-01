@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "bismuth"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "alga 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "arrayvec 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)",
